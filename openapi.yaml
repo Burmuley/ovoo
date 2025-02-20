@@ -1,0 +1,909 @@
+openapi: 3.0.3
+info:
+  title: Ovoo API
+  description: >-
+    Ovoo - privacy email gateway to manage aliases hiding real (protected)
+    emails from senders.
+  termsOfService: ''
+  contact:
+    email: burmuley@gmail.com
+    name: Konstantin Vasilev
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: '1.0'
+externalDocs:
+  description: Ovoo service source code
+  url: https://github.com/Burmuley/ovoo
+servers:
+  - url: http://localhost:8808
+    description: Local testing server
+    variables: {}
+tags:
+  - name: Aliases
+    description: >-
+      API endpoint provides basic operations to manage alias emails for regular
+      users and admins
+    externalDocs:
+      description: ''
+      url: ''
+  - name: Protected Addresses
+    description: >-
+      API endpoint provides operations on protected addresses for regular users
+      and admins
+    externalDocs:
+      description: ''
+      url: ''
+  - name: Users
+    description: ''
+    externalDocs:
+      description: ''
+      url: ''
+  - name: Email chains
+    description: ''
+    externalDocs:
+      description: ''
+      url: ''
+paths:
+  /api/v1/aliases:
+    get:
+      summary: Get all aliases
+      description: >-
+        Retrieve a list of alias addresses for particular owner. Path parameter
+        \`owner\` is required.
+      operationId: getAliases
+      tags:
+        - Aliases
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          $ref: '#/components/responses/getAliasesResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+      security:
+        - OAuth2: []
+      parameters:
+        - in: query
+          name: owner
+          description: owner ID to fetch parameters for
+          schema:
+            type: string
+          required: true
+    post:
+      description: Create new alias address. Request is of the type \`application/json\`.
+      operationId: createAlias
+      tags:
+        - Aliases
+      requestBody:
+        $ref: '#/components/requestBodies/createAliasRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/createAliasResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+      summary: Create new Alias
+      security:
+        - OAuth2: []
+  /api/v1/aliases/{alias_id}:
+    get:
+      description: >-
+        Retrieve deteiled information of a particular alias address by its ID.
+        The ID is defined as a path parameter and should be of ULID format.
+      operationId: getAliasDetails
+      tags:
+        - Aliases
+      parameters:
+        - in: path
+          name: alias_id
+          description: ''
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/getAliasDetailsResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      summary: Get details of a particular Alias
+      security:
+        - OAuth2: []
+    delete:
+      description: >-
+        Delete a particular alias address by its ID. The ID is defined as a path
+        parameter and should be of ULID format.
+      operationId: deleteAlias
+      tags:
+        - Aliases
+      parameters:
+        - in: path
+          name: alias_id
+          description: ''
+          schema:
+            type: string
+          required: true
+      responses:
+        '204':
+          description: ''
+          content: {}
+          headers: {}
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      summary: Delete Alias by ID
+      security:
+        - OAuth2: []
+    put:
+      description: >-
+        Update alias address information such as \`forward\_email\` and
+        \`metadata\`. No other fields can be updated. The ID is defined as a
+        path parameter and should be of ULID format.
+      operationId: updateAlias
+      tags:
+        - Aliases
+      parameters:
+        - in: path
+          name: alias_id
+          description: ''
+          schema:
+            type: string
+          required: true
+      requestBody:
+        $ref: '#/components/requestBodies/updateAliasRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/updateAliasResponse'
+        '400':
+          $ref: '#/components/responses/errorResponse'
+        '404':
+          $ref: '#/components/responses/errorResponse'
+      summary: Update Alias
+      security:
+        - OAuth2: []
+    parameters:
+      - in: path
+        name: alias_id
+        description: ''
+        schema: &ref_1
+          type: string
+        required: true
+  /api/v1/users:
+    get:
+      description: >-
+        Retrieve a list of users accessible for the currently authenticated
+        user. In case if authenticated user is a regular one (i.e. not admin)
+        the only record in the list is the user information about itself.
+      operationId: getUsers
+      tags:
+        - Users
+      parameters: []
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          $ref: '#/components/responses/getUsersResponse'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - OAuth2: []
+      summary: Get all users
+    post:
+      description: >-
+        Create new user. Only users if type \`admin\` are authorized to submit
+        this request.
+      operationId: createUser
+      tags:
+        - Users
+      parameters: &ref_0 []
+      requestBody:
+        $ref: '#/components/requestBodies/createUserRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/createUserResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+      summary: Create user
+      security:
+        - OAuth2: []
+  /api/v1/users/{user_id}:
+    get:
+      description: >-
+        Retrieve deteiled information of a particular user by its ID. The ID is
+        defined as a path parameter and should be of ULID format.
+      operationId: getUserDetails
+      tags:
+        - Users
+      parameters: *ref_0
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          $ref: '#/components/responses/getUserDetailsResponse'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - OAuth2: []
+      summary: Get user details
+    put:
+      description: >-
+        Update user information such as \`first\_name\`, \`last\_name\` and
+        \`type\`. No other fields can be updated. The ID is defined as a path
+        parameter and should be of ULID format.
+      operationId: updateUser
+      tags:
+        - Users
+      parameters: *ref_0
+      requestBody:
+        $ref: '#/components/requestBodies/updateUserRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/updateUserResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      summary: Update user information
+      security:
+        - OAuth2: []
+    delete:
+      description: >-
+        Delete a particular user by its ID. The ID is defined as a path
+        parameter and should be of ULID format.
+      operationId: deleteUser
+      tags:
+        - Users
+      parameters: *ref_0
+      requestBody:
+        content: {}
+      responses:
+        '204':
+          description: ''
+          content: {}
+          headers: {}
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      summary: Delete user
+      security:
+        - OAuth2: []
+    parameters:
+      - in: path
+        name: user_id
+        description: ''
+        schema: *ref_1
+        required: true
+  /api/v1/praddrs:
+    get:
+      summary: Get protected addresses available for the authenticated user
+      description: >-
+        Retrieve a list of protected addresses belonging to the currently
+        authenticated user. Optional fields \`id\` and \`email\` can be used to
+        limit the search scope.
+      operationId: getPrAddrs
+      tags:
+        - Protected Addresses
+      parameters:
+        - in: query
+          name: id
+          description: ''
+          schema: &ref_2
+            type: string
+        - in: query
+          name: email
+          description: ''
+          schema: *ref_2
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          $ref: '#/components/responses/getPrAddrsResponse'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - OAuth2: []
+    post:
+      summary: >-
+        Create new protected address and make current authenticated user its
+        owner
+      description: >-
+        Create new protected address. Request is of the type
+        \`application/json\`.
+      operationId: createPrAddr
+      tags:
+        - Protected Addresses
+      parameters: *ref_0
+      requestBody:
+        $ref: '#/components/requestBodies/createProtectedAddressRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/createPrAddrResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+      security:
+        - OAuth2: []
+  /api/v1/praddrs/{praddr_id}:
+    get:
+      summary: Get details on a particular protected address
+      description: >-
+        Retrieve deteiled information of a particular protected address by its
+        ID. The ID is defined as a path parameter and should of ULID format.
+      operationId: getPrAddrDetails
+      tags:
+        - Protected Addresses
+      parameters:
+        - in: path
+          name: praddr_id
+          description: ''
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content: {}
+      responses:
+        '200':
+          $ref: '#/components/responses/getPrAddrDetailsResponse'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - OAuth2: []
+    put:
+      summary: Update defined protected address by its ID
+      description: >-
+        Update protected address information such as \`metadata\`. No other
+        fields can be updated. The ID is defined as a path parameter and should
+        be of ULID format.
+      operationId: updatePrAddr
+      tags:
+        - Protected Addresses
+      parameters:
+        - in: path
+          name: praddr_id
+          description: ''
+          schema: &ref_3
+            type: string
+          required: true
+      requestBody:
+        $ref: '#/components/requestBodies/updateProtectedAddressRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/updatePrAddrResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - OAuth2: []
+    delete:
+      summary: Delete defined protected address by its ID
+      description: >-
+        Delete a particular protected address by its ID. The ID is defined as a
+        path parameter and should be of ULID format.
+      operationId: deletePrAddr
+      tags:
+        - Protected Addresses
+      parameters:
+        - in: path
+          name: praddr_id
+          description: ''
+          schema: *ref_3
+          required: true
+      requestBody:
+        content: {}
+      responses:
+        '204':
+          description: ''
+          content: {}
+          headers: {}
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - OAuth2: []
+  /api/v1/chains:
+    post:
+      summary: Create new email chain
+      description: >-
+        Create new email address chain. the request if of \`application/json\`
+        type.
+      operationId: createChain
+      tags:
+        - Email chains
+      parameters: *ref_0
+      requestBody:
+        $ref: '#/components/requestBodies/createEmailChain'
+      responses:
+        '201':
+          $ref: '#/components/responses/createEmailChainResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+      security:
+        - ApiKey: []
+  /api/v1/chains/{hash}:
+    get:
+      summary: Get a particular email chain by its hash
+      description: >-
+        Retrieve deteiled information of a particular email address chain by its
+        hash. The \`hash\` is a path parameter and is of SHA2-512/256 format.
+      operationId: getChainByHash
+      tags:
+        - Email chains
+      parameters:
+        - in: path
+          name: hash
+          description: ''
+          schema: &ref_4
+            type: string
+          required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/getEmailChainDetailsResponse'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - ApiKey: []
+    delete:
+      summary: Delete a particular email chain by it hash
+      description: >-
+        Delete a particular email address chain by its hash. The \`hash\` is a
+        path parameter and is of SHA2-512/256 format.
+      operationId: deleteChainByHash
+      tags:
+        - Email chains
+      parameters:
+        - in: path
+          name: hash
+          description: ''
+          schema: *ref_4
+          required: true
+      responses:
+        '204':
+          description: ''
+          content: {}
+          headers: {}
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+      security:
+        - ApiKey: []
+components:
+  schemas:
+    aliasData:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Email of the Alias
+          format: email
+        owner:
+          $ref: '#/components/schemas/userData'
+        forward_email:
+          type: string
+          format: email
+          description: forward email for alias address
+        metadata:
+          $ref: '#/components/schemas/addressMetadata'
+        id:
+          type: string
+          description: alias address id
+      description: Address of type "alias" data structure
+      required:
+        - email
+        - owner
+        - forward_email
+        - metadata
+        - id
+    userData:
+      type: object
+      properties:
+        login:
+          type: string
+          description: user login
+          format: email
+        first_name:
+          type: string
+          description: user first name
+        last_name:
+          type: string
+          description: user last name
+        type:
+          type: string
+          description: user type
+        id:
+          type: string
+          description: user id
+      required:
+        - login
+        - first_name
+        - last_name
+        - type
+        - id
+    protectedAddressData:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        owner:
+          $ref: '#/components/schemas/userData'
+        metadata:
+          $ref: '#/components/schemas/addressMetadata'
+        id:
+          type: string
+      required:
+        - email
+        - owner
+        - metadata
+        - id
+    chainData:
+      type: object
+      properties:
+        hash:
+          type: string
+        from_email:
+          type: string
+        to_email:
+          type: string
+      required:
+        - hash
+        - from_email
+        - to_email
+    addressMetadata:
+      type: object
+      properties:
+        comment:
+          type: string
+        service_name:
+          type: string
+      required:
+        - comment
+        - service_name
+    error:
+      type: object
+      properties:
+        id:
+          type: number
+          description: error id
+        msg:
+          type: string
+          description: error description
+      required:
+        - id
+        - msg
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      scheme: basic
+      in: header
+      name: ovoo_api_key
+    OAuth2:
+      type: oauth2
+      scheme: basic
+      flows:
+        authorizationCode:
+          authorizationUrl: Todo
+          tokenUrl: Todo
+          scopes: {}
+        implicit:
+          authorizationUrl: Todo
+          refreshUrl: Todo
+  requestBodies:
+    createAliasRequest:
+      required: false
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              protected_address_id:
+                type: string
+              metadata:
+                $ref: '#/components/schemas/addressMetadata'
+            required:
+              - email
+              - protected_address_id
+              - metadata
+    updateAliasRequest:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              protected_address_id:
+                type: string
+              metadata:
+                $ref: '#/components/schemas/addressMetadata'
+    createUserRequest:
+      required: false
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              login:
+                type: string
+              first_name:
+                type: string
+              last_name:
+                type: string
+              type:
+                type: string
+            required:
+              - login
+              - first_name
+              - last_name
+              - type
+    updateUserRequest:
+      required: false
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              first_name:
+                type: string
+              last_name:
+                type: string
+              type:
+                type: string
+    createProtectedAddressRequest:
+      required: false
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+              metadata:
+                $ref: '#/components/schemas/addressMetadata'
+            required:
+              - email
+              - metadata
+    updateProtectedAddressRequest:
+      required: false
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              metadata:
+                $ref: '#/components/schemas/addressMetadata'
+    createEmailChain:
+      required: false
+      description: ''
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              from_email:
+                type: string
+                format: email
+              to_email:
+                type: string
+                format: email
+            required:
+              - from_email
+              - to_email
+  responses:
+    '400':
+      description: Bad or malformed request error response
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    '401':
+      headers: {}
+      description: Unauthorized error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    '403':
+      description: Forbidden error response
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    '404':
+      description: Not found error response
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    getAliasesResponse:
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/aliasData'
+      description: A list of aliases
+    getAliasDetailsResponse:
+      description: Response containing detailed alias address data
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/aliasData'
+    createAliasResponse:
+      description: Response containing detailes on the created alias
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/aliasData'
+    updateAliasResponse:
+      description: Response contains details on alias address after applied updates
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/aliasData'
+    errorResponse:
+      description: Response containing error information (id and message)
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: number
+              msg:
+                type: string
+            required:
+              - id
+              - msg
+    getUsersResponse:
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/userData'
+      description: A list of users
+    getUserDetailsResponse:
+      description: Response containing detailed user data
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userData'
+    createUserResponse:
+      description: Response containing detailes on the created user
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userData'
+    updateUserResponse:
+      description: Response contains details on user after applied updates
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/userData'
+    getPrAddrsResponse:
+      description: A list of protected addresses
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/protectedAddressData'
+    getPrAddrDetailsResponse:
+      description: Response containing detailed protected address data
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/protectedAddressData'
+    createPrAddrResponse:
+      description: Response containing detailes on the created protected address
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/protectedAddressData'
+    updatePrAddrResponse:
+      description: Response contains details on protected address after applied updates
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/protectedAddressData'
+    getEmailChainDetailsResponse:
+      description: ''
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/chainData'
+    createEmailChainResponse:
+      description: ''
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/chainData'
+security:
+  - OAuth2: []
+  - ApiKey: []
