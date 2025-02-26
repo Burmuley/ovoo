@@ -44,6 +44,11 @@ func (c *Controller) CreateChain(w http.ResponseWriter, r *http.Request) {
 		string(rb.ToEmail),
 	)
 
+	if err != nil {
+		c.errorLogNResponse(w, "creating chain", err)
+		return
+	}
+
 	resp := CreateEmailChainResponse(chainTChainData(chain))
 	c.successResponse(w, resp, http.StatusCreated)
 }

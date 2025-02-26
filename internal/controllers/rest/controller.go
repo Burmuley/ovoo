@@ -88,6 +88,6 @@ func (c *Controller) Start(ctx context.Context) error {
 	mux.HandleFunc("DELETE /api/v1/chains/{hash}", c.DeleteChain)
 
 	handler := withLogging(ctx, mux, c.logger)
-	c.logger.Info("starting Ovoo API server", "addr", c.listenAddr)
+	c.logger.Info("Started Ovoo API server", "addr", c.listenAddr)
 	return http.ListenAndServe(c.listenAddr, handler)
 }

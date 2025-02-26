@@ -25,7 +25,7 @@ func NewUserGORMRepo(db *gorm.DB) (repositories.UsersReadWriter, error) {
 
 // Create adds a new user to the database.
 func (u *UserGORMRepo) Create(ctx context.Context, user entities.User) error {
-	gorm_user := UserFEntity(user)
+	gorm_user := UserFromEntity(user)
 	if err := u.db.WithContext(ctx).Model(&User{}).Create(&gorm_user).Error; err != nil {
 		return wrapGormError(err)
 	}
@@ -35,7 +35,7 @@ func (u *UserGORMRepo) Create(ctx context.Context, user entities.User) error {
 
 // Update modifies an existing user in the database.
 func (u *UserGORMRepo) Update(ctx context.Context, user entities.User) error {
-	gorm_user := UserFEntity(user)
+	gorm_user := UserFromEntity(user)
 	if err := u.db.WithContext(ctx).Model(&User{}).Select("*").Updates(&gorm_user).Error; err != nil {
 		return wrapGormError(err)
 	}
@@ -60,7 +60,7 @@ func (u *UserGORMRepo) GetById(ctx context.Context, id entities.Id) (entities.Us
 		return entities.User{}, wrapGormError(err)
 	}
 
-	return UserTEntity(user), nil
+	return UserToEntity(user), nil
 }
 
 // GetByLogin retrieves a user from the database by login (email).
@@ -70,7 +70,7 @@ func (u *UserGORMRepo) GetByLogin(ctx context.Context, login entities.Email) (en
 		return entities.User{}, wrapGormError(err)
 	}
 
-	return UserTEntity(user), nil
+	return UserToEntity(user), nil
 }
 
 // GetAll retrieves all users from the database.
@@ -82,7 +82,7 @@ func (u *UserGORMRepo) GetAll(ctx context.Context) ([]entities.User, error) {
 
 	users := make([]entities.User, 0, len(gorm_users))
 	for _, user := range gorm_users {
-		users = append(users, UserTEntity(user))
+		users = append(users, UserToEntity(user))
 	}
 
 	return users, nil
