@@ -17,6 +17,7 @@ func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Controlle
 	ctrl := &Controller{
 		listenAddr: listenAddr,
 		ovooCli:    ovooCli,
+		logger:     logger,
 	}
 
 	return ctrl, nil

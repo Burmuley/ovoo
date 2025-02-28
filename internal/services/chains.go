@@ -110,10 +110,7 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string) (enti
 		return entities.Chain{}, fmt.Errorf("creating chain: storing new reply alias: %w", err)
 	}
 
-	// 5. Calculate Hash(AliasAddress.Email, FromAddress) (HashReply)
-	replyHash := entities.NewHash(string(destAddr.ForwardAddress.Email), string(replyAlias.Email))
-
-	// Create forward chain
+	// forward chain
 	fwdChain := entities.Chain{
 		Hash:        fwdHash,
 		FromAddress: replyAlias,
@@ -121,12 +118,8 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string) (enti
 		CreatedAt:   time.Now().UTC(),
 	}
 
-	// If chain creation failed = return error
-	if err := cuc.repoFactory.Chain.Create(ctx, fwdChain); err != nil {
-		return entities.Chain{}, fmt.Errorf("creating forward chain: %w", err)
-	}
-
-	// Create reply chain
+	// reply chain
+	replyHash := entities.NewHash(string(destAddr.ForwardAddress.Email), string(replyAlias.Email))
 	replyChain := entities.Chain{
 		Hash:        replyHash,
 		FromAddress: destAddr,
@@ -134,10 +127,9 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string) (enti
 		CreatedAt:   time.Now().UTC(),
 	}
 
-	// If chain creation failed = delete forward chain and then return error
-	if err := cuc.repoFactory.Chain.Create(ctx, replyChain); err != nil {
-		cuc.repoFactory.Chain.Delete(ctx, fwdHash)
-		return entities.Chain{}, fmt.Errorf("creating reply chain: %w", err)
+	// create chains
+	if err := cuc.repoFactory.Chain.BatchCreate(ctx, []entities.Chain{fwdChain, replyChain}); err != nil {
+		return entities.Chain{}, fmt.Errorf("creating chains: %w", err)
 	}
 
 	return fwdChain, nil
