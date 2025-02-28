@@ -33,6 +33,15 @@ func (u *UserGORMRepo) Create(ctx context.Context, user entities.User) error {
 	return nil
 }
 
+func (u *UserGORMRepo) BatchCreate(ctx context.Context, users []entities.User) error {
+	gorm_users := UserFromEntityList(users)
+	if err := u.db.WithContext(ctx).Model(&User{}).Create(&gorm_users).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
+}
+
 // Update modifies an existing user in the database.
 func (u *UserGORMRepo) Update(ctx context.Context, user entities.User) error {
 	gorm_user := UserFromEntity(user)

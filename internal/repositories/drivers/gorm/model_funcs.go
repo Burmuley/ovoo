@@ -12,6 +12,15 @@ func UserFromEntity(e entities.User) User {
 	return u
 }
 
+func UserFromEntityList(eusers []entities.User) []User {
+	gusers := make([]User, 0, len(eusers))
+	for _, euser := range eusers {
+		gusers = append(gusers, UserFromEntity(euser))
+	}
+
+	return gusers
+}
+
 // UserToEntity converts a User to an entities.User
 func UserToEntity(u User) entities.User {
 	return entities.User{
@@ -41,6 +50,16 @@ func AddressFromEntity(e entities.Address) Address {
 	}
 
 	return addr
+}
+
+// AddressFromEntityList converts a list of entities.Address to list of Address
+func AddressFromEntityList(eaddrs []entities.Address) []Address {
+	gaddrs := make([]Address, 0, len(eaddrs))
+	for _, eaddr := range eaddrs {
+		gaddrs = append(gaddrs, AddressFromEntity(eaddr))
+	}
+
+	return gaddrs
 }
 
 // AddressToEntity converts an Address to an entities.Address
@@ -75,6 +94,15 @@ func ChainFromEntity(e entities.Chain) Chain {
 	}
 }
 
+// ChainFromEntity converts an entities.Chain to a Chain
+func ChainFromEntityList(echains []entities.Chain) []Chain {
+	gchains := make([]Chain, 0, len(echains))
+	for _, chain := range echains {
+		gchains = append(gchains, ChainFromEntity(chain))
+	}
+	return gchains
+}
+
 // ChainToEntity converts a Chain to an entities.Chain
 func ChainToEntity(e Chain) entities.Chain {
 	return entities.Chain{
@@ -94,6 +122,15 @@ func ApiTokenFromEntity(e entities.ApiToken) ApiToken {
 		Owner:       UserFromEntity(e.Owner),
 		Expiration:  e.Expiration,
 	}
+}
+
+func ApiTokenFromEntityList(etokens []entities.ApiToken) []ApiToken {
+	gtokens := make([]ApiToken, 0, len(etokens))
+	for _, etoken := range etokens {
+		gtokens = append(gtokens, ApiTokenFromEntity(etoken))
+	}
+
+	return gtokens
 }
 
 // ApiTokenToEntity converts an ApiToken to an entities.ApiToken

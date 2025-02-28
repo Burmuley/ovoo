@@ -26,12 +26,17 @@ func NewApiTokenGORMRepo(db *gorm.DB) (repositories.TokensReadWriter, error) {
 
 // Create adds a new API token to the database.
 func (t *TokenGORMRepo) Create(ctx context.Context, token entities.ApiToken) error {
-	// if err := token.Validate(); err != nil {
-	// 	return fmt.Errorf("%w: %w", entities.ErrValidation, err)
-	// }
-
 	gorm_token := ApiTokenFromEntity(token)
 	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Create(&gorm_token).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
+}
+
+func (t *TokenGORMRepo) BatchCreate(ctx context.Context, tokens []entities.ApiToken) error {
+	gorm_tokens := ApiTokenFromEntityList(tokens)
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Create(&gorm_tokens).Error; err != nil {
 		return wrapGormError(err)
 	}
 

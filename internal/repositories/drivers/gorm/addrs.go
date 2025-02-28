@@ -33,6 +33,15 @@ func (a *AddressGORMRepo) Create(ctx context.Context, address entities.Address) 
 	return nil
 }
 
+func (a *AddressGORMRepo) BatchCreate(ctx context.Context, addresses []entities.Address) error {
+	gorm_addrs := AddressFromEntityList(addresses)
+	if err := a.db.WithContext(ctx).Model(&Address{}).Create(&gorm_addrs).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
+}
+
 // Update modifies an existing address in the database.
 func (a *AddressGORMRepo) Update(ctx context.Context, address entities.Address) error {
 	gorm_addr := AddressFromEntity(address)

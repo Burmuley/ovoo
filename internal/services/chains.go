@@ -122,7 +122,7 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string) (enti
 	}
 
 	// If chain creation failed = return error
-	if _, err := cuc.repoFactory.Chain.Create(ctx, fwdChain); err != nil {
+	if err := cuc.repoFactory.Chain.Create(ctx, fwdChain); err != nil {
 		return entities.Chain{}, fmt.Errorf("creating forward chain: %w", err)
 	}
 
@@ -135,7 +135,7 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string) (enti
 	}
 
 	// If chain creation failed = delete forward chain and then return error
-	if _, err := cuc.repoFactory.Chain.Create(ctx, replyChain); err != nil {
+	if err := cuc.repoFactory.Chain.Create(ctx, replyChain); err != nil {
 		cuc.repoFactory.Chain.Delete(ctx, fwdHash)
 		return entities.Chain{}, fmt.Errorf("creating reply chain: %w", err)
 	}

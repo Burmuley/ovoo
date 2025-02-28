@@ -93,7 +93,7 @@ func (o OvooClient) parseError(resp *http.Response) error {
 		return err
 	}
 
-	return fmt.Errorf("ovoo api error: id=%f0 message=%s", ovooError.Id, ovooError.Msg)
+	return fmt.Errorf("ovoo api error: id=%d message=%s", int(ovooError.Id), ovooError.Msg)
 }
 
 func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) (*OvooChainData, error) {

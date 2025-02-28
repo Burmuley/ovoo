@@ -38,13 +38,22 @@ func (c *ChainsGORMRepo) GetByHash(ctx context.Context, hash entities.Hash) (ent
 
 // Create adds a new Chain entity to the repository.
 // It returns an error if the creation process fails.
-func (c *ChainsGORMRepo) Create(ctx context.Context, chain entities.Chain) (entities.Chain, error) {
+func (c *ChainsGORMRepo) Create(ctx context.Context, chain entities.Chain) error {
 	gorm_chain := ChainFromEntity(chain)
 	if err := c.db.WithContext(ctx).Model(&Chain{}).Create(&gorm_chain).Error; err != nil {
-		return entities.Chain{}, wrapGormError(err)
+		return wrapGormError(err)
 	}
 
-	return ChainToEntity(gorm_chain), nil
+	return nil
+}
+
+func (c *ChainsGORMRepo) BatchCreate(ctx context.Context, chains []entities.Chain) error {
+	gorm_chains := ChainFromEntityList(chains)
+	if err := c.db.WithContext(ctx).Model(&Chain{}).Create(&gorm_chains).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
 }
 
 // Delete removes a Chain entity from the repository based on its hash.
