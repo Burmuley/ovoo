@@ -251,7 +251,6 @@ abundant
 abundantly
 abusers
 abusing
-abusive
 abusively
 abusiveness
 abutment
@@ -20216,9 +20215,6 @@ faddists
 faeries
 faffing
 fagging
-faggoting
-faggots
-fagoting
 faience
 failing
 failings

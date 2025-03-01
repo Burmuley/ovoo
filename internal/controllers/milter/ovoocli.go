@@ -107,7 +107,15 @@ func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) 
 	}
 
 	headers := map[string]string{"Content-Type": "application/json"}
-	req, err := o.createRequest(ctx, o.server, "/api/v1/chains", http.MethodPost, bytes.NewReader(bodyBytes), headers, nil)
+	req, err := o.createRequest(
+		ctx,
+		o.server,
+		"/api/v1/chains",
+		http.MethodPost,
+		bytes.NewReader(bodyBytes),
+		headers,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

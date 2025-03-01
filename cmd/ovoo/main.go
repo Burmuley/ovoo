@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// load configuration
-	cfg, err := config.NewParser(*cfgName)
+	cfg, err := config.NewParser(*cfgName, "api")
 	if err != nil {
 		fmt.Printf("error parsing configuration: %s", err.Error())
 		os.Exit(1)
@@ -42,7 +42,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(
 		os.Stdout,
 		&slog.HandlerOptions{
-			Level: getSLogLevel(cfg.String("log.level")),
+			Level: config.GetSLogLevel(cfg.String("log.level")),
 		},
 	))
 	slog.SetDefault(logger)
@@ -55,8 +55,8 @@ func main() {
 	}
 
 	// database configuration
-	db_drv := cfg.String("api.database.type")
-	db_config := cfg.StringMap("api.database.config")
+	db_drv := cfg.String("database.type")
+	db_config := cfg.StringMap("database.config")
 
 	// initialize repo fabric
 	repoFactory, err := factory.New(db_drv, db_config)
@@ -76,7 +76,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	defaultAdminCfg := cfg.StringMap("api.default_admin")
+	defaultAdminCfg := cfg.StringMap("default_admin")
 	if len(defaultAdminCfg) > 0 {
 		if err := makeDefaultAdmin(svcGw, defaultAdminCfg); err != nil {
 			slog.Error("error creating default admin", "err", err.Error())
@@ -85,7 +85,7 @@ func main() {
 	}
 
 	// initialize REST controller
-	listen_addr := cfg.String("api.listen_addr")
+	listen_addr := cfg.String("listen_addr")
 	if len(listen_addr) == 0 {
 		listen_addr = rest.DefaultListenAddr
 	}

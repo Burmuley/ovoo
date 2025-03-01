@@ -7,6 +7,8 @@ import (
 	"github.com/d--j/go-milter/mailfilter"
 )
 
+const DefaultListenAddr string = "127.0.0.1:6785"
+
 type Controller struct {
 	listenAddr string
 	ovooCli    OvooClient
@@ -26,7 +28,7 @@ func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Controlle
 func (m *Controller) Start(ctx context.Context) error {
 	server, err := mailfilter.New(
 		"tcp",
-		"127.0.0.1:6785",
+		m.listenAddr,
 		AddressRewriter(m.ovooCli),
 		mailfilter.WithDecisionAt(mailfilter.DecisionAtEndOfHeaders),
 		mailfilter.WithoutBody(), mailfilter.WithErrorHandling(mailfilter.RejectWhenError),
@@ -36,7 +38,7 @@ func (m *Controller) Start(ctx context.Context) error {
 		return err
 	}
 
-	m.logger.Info("Started Ovoo milter on %s:%s", server.Addr().Network(), server.Addr().String())
+	m.logger.Info("started Ovoo Milter on %s:%s", server.Addr().Network(), server.Addr().String())
 
 	// quit when milter quits
 	server.Wait()
