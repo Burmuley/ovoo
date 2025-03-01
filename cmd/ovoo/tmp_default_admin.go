@@ -14,6 +14,8 @@ func makeDefaultAdmin(svcGw *services.ServiceGateway, admin map[string]string) e
 		FirstName: admin["firstName"],
 		LastName:  admin["lastName"],
 		Login:     admin["login"],
+		ID:        entities.NewId(),
+		Type:      entities.AdminUser,
 	}
 	if _, err := svcGw.Users.Create(context.Background(), adminUser); err != nil {
 		if errors.Is(err, entities.ErrDuplicateEntry) {

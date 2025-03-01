@@ -2,8 +2,8 @@ package gorm
 
 import "github.com/Burmuley/ovoo/internal/entities"
 
-// UserFEntity converts an entities.User to a User
-func UserFEntity(e entities.User) User {
+// UserFromEntity converts an entities.User to a User
+func UserFromEntity(e entities.User) User {
 	u := User{}
 	u.ID = e.ID.String()
 	u.FirstName = e.FirstName
@@ -12,8 +12,17 @@ func UserFEntity(e entities.User) User {
 	return u
 }
 
-// UserTEntity converts a User to an entities.User
-func UserTEntity(u User) entities.User {
+func UserFromEntityList(eusers []entities.User) []User {
+	gusers := make([]User, 0, len(eusers))
+	for _, euser := range eusers {
+		gusers = append(gusers, UserFromEntity(euser))
+	}
+
+	return gusers
+}
+
+// UserToEntity converts a User to an entities.User
+func UserToEntity(u User) entities.User {
 	return entities.User{
 		ID:        entities.Id(u.ID),
 		FirstName: u.FirstName,
@@ -22,13 +31,13 @@ func UserTEntity(u User) entities.User {
 	}
 }
 
-// AddressFEntity converts an entities.Address to an Address
-func AddressFEntity(e entities.Address) Address {
+// AddressFromEntity converts an entities.Address to an Address
+func AddressFromEntity(e entities.Address) Address {
 	addr := Address{
 		Model:          Model{ID: string(e.ID)},
 		Email:          e.Email.String(),
 		ForwardAddress: nil,
-		Owner:          UserFEntity(e.Owner),
+		Owner:          UserFromEntity(e.Owner),
 		Type:           int(e.Type),
 		Metadata: AddressMetadata{
 			Comment:     e.Metadata.Comment,
@@ -36,21 +45,31 @@ func AddressFEntity(e entities.Address) Address {
 		},
 	}
 	if e.ForwardAddress != nil {
-		fa := AddressFEntity(*e.ForwardAddress)
+		fa := AddressFromEntity(*e.ForwardAddress)
 		addr.ForwardAddress = &fa
 	}
 
 	return addr
 }
 
-// AddressTEntity converts an Address to an entities.Address
-func AddressTEntity(a Address) entities.Address {
+// AddressFromEntityList converts a list of entities.Address to list of Address
+func AddressFromEntityList(eaddrs []entities.Address) []Address {
+	gaddrs := make([]Address, 0, len(eaddrs))
+	for _, eaddr := range eaddrs {
+		gaddrs = append(gaddrs, AddressFromEntity(eaddr))
+	}
+
+	return gaddrs
+}
+
+// AddressToEntity converts an Address to an entities.Address
+func AddressToEntity(a Address) entities.Address {
 	addr := entities.Address{
 		ID:             entities.Id(a.ID),
 		Type:           entities.AddressType(a.Type),
 		Email:          entities.Email(a.Email),
 		ForwardAddress: nil,
-		Owner:          UserTEntity(a.Owner),
+		Owner:          UserToEntity(a.Owner),
 		Metadata: entities.AddressMetadata{
 			Comment:     a.Metadata.Comment,
 			ServiceName: a.Metadata.ServiceName,
@@ -58,50 +77,68 @@ func AddressTEntity(a Address) entities.Address {
 	}
 
 	if a.ForwardAddress != nil {
-		fa := AddressTEntity(*a.ForwardAddress)
+		fa := AddressToEntity(*a.ForwardAddress)
 		addr.ForwardAddress = &fa
 	}
 
 	return addr
 }
 
-// ChainFEntity converts an entities.Chain to a Chain
-func ChainFEntity(e entities.Chain) Chain {
+// ChainFromEntity converts an entities.Chain to a Chain
+func ChainFromEntity(e entities.Chain) Chain {
 	return Chain{
 		Hash:        string(e.Hash),
 		CreatedAt:   e.CreatedAt,
-		FromAddress: AddressFEntity(e.FromAddress),
-		ToAddress:   AddressFEntity(e.FromAddress),
+		FromAddress: AddressFromEntity(e.FromAddress),
+		ToAddress:   AddressFromEntity(e.ToAddress),
 	}
 }
 
-// ChainTEntity converts a Chain to an entities.Chain
-func ChainTEntity(e Chain) entities.Chain {
+// ChainFromEntity converts an entities.Chain to a Chain
+func ChainFromEntityList(echains []entities.Chain) []Chain {
+	gchains := make([]Chain, 0, len(echains))
+	for _, chain := range echains {
+		gchains = append(gchains, ChainFromEntity(chain))
+	}
+	return gchains
+}
+
+// ChainToEntity converts a Chain to an entities.Chain
+func ChainToEntity(e Chain) entities.Chain {
 	return entities.Chain{
 		Hash:        entities.Hash(e.Hash),
-		FromAddress: AddressTEntity(e.FromAddress),
-		ToAddress:   AddressTEntity(e.ToAddress),
+		FromAddress: AddressToEntity(e.FromAddress),
+		ToAddress:   AddressToEntity(e.ToAddress),
 		CreatedAt:   e.CreatedAt,
 	}
 }
 
-// ApiTokenFEntity converts an entities.ApiToken to an ApiToken
-func ApiTokenFEntity(e entities.ApiToken) ApiToken {
+// ApiTokenFromEntity converts an entities.ApiToken to an ApiToken
+func ApiTokenFromEntity(e entities.ApiToken) ApiToken {
 	return ApiToken{
 		Model:       Model{ID: e.ID.String()},
 		Token:       e.Token,
 		Description: e.Description,
-		Owner:       UserFEntity(e.Owner),
+		Owner:       UserFromEntity(e.Owner),
 		Expiration:  e.Expiration,
 	}
 }
 
-// ApiTokenTEntity converts an ApiToken to an entities.ApiToken
-func ApiTokenTEntity(t ApiToken) entities.ApiToken {
+func ApiTokenFromEntityList(etokens []entities.ApiToken) []ApiToken {
+	gtokens := make([]ApiToken, 0, len(etokens))
+	for _, etoken := range etokens {
+		gtokens = append(gtokens, ApiTokenFromEntity(etoken))
+	}
+
+	return gtokens
+}
+
+// ApiTokenToEntity converts an ApiToken to an entities.ApiToken
+func ApiTokenToEntity(t ApiToken) entities.ApiToken {
 	return entities.ApiToken{
 		ID:          entities.Id(t.ID),
 		Description: t.Description,
-		Owner:       UserTEntity(t.Owner),
+		Owner:       UserToEntity(t.Owner),
 		Expiration:  t.Expiration,
 	}
 }

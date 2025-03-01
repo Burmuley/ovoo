@@ -26,12 +26,17 @@ func NewApiTokenGORMRepo(db *gorm.DB) (repositories.TokensReadWriter, error) {
 
 // Create adds a new API token to the database.
 func (t *TokenGORMRepo) Create(ctx context.Context, token entities.ApiToken) error {
-	// if err := token.Validate(); err != nil {
-	// 	return fmt.Errorf("%w: %w", entities.ErrValidation, err)
-	// }
-
-	gorm_token := ApiTokenFEntity(token)
+	gorm_token := ApiTokenFromEntity(token)
 	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Create(&gorm_token).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
+}
+
+func (t *TokenGORMRepo) BatchCreate(ctx context.Context, tokens []entities.ApiToken) error {
+	gorm_tokens := ApiTokenFromEntityList(tokens)
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Create(&gorm_tokens).Error; err != nil {
 		return wrapGormError(err)
 	}
 
@@ -55,7 +60,7 @@ func (t *TokenGORMRepo) GetById(ctx context.Context, token_id entities.Id) (enti
 		return entities.ApiToken{}, wrapGormError(err)
 	}
 
-	return ApiTokenTEntity(token), nil
+	return ApiTokenToEntity(token), nil
 }
 
 // GetAllForUser retrieves all API tokens associated with a given user.
@@ -68,7 +73,7 @@ func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, user entities.User) (
 
 	tokens := make([]entities.ApiToken, 0, len(gorm_tokens))
 	for _, token := range gorm_tokens {
-		tokens = append(tokens, ApiTokenTEntity(token))
+		tokens = append(tokens, ApiTokenToEntity(token))
 	}
 
 	return tokens, nil

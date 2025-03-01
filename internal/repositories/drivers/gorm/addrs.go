@@ -25,8 +25,17 @@ func NewAddressGORMRepo(db *gorm.DB) (repositories.AddressReadWriter, error) {
 
 // Create adds a new address to the database.
 func (a *AddressGORMRepo) Create(ctx context.Context, address entities.Address) error {
-	gorm_addr := AddressFEntity(address)
+	gorm_addr := AddressFromEntity(address)
 	if err := a.db.WithContext(ctx).Model(&Address{}).Create(&gorm_addr).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
+}
+
+func (a *AddressGORMRepo) BatchCreate(ctx context.Context, addresses []entities.Address) error {
+	gorm_addrs := AddressFromEntityList(addresses)
+	if err := a.db.WithContext(ctx).Model(&Address{}).Create(&gorm_addrs).Error; err != nil {
 		return wrapGormError(err)
 	}
 
@@ -35,7 +44,7 @@ func (a *AddressGORMRepo) Create(ctx context.Context, address entities.Address) 
 
 // Update modifies an existing address in the database.
 func (a *AddressGORMRepo) Update(ctx context.Context, address entities.Address) error {
-	gorm_addr := AddressFEntity(address)
+	gorm_addr := AddressFromEntity(address)
 	if err := a.db.WithContext(ctx).Model(&Address{}).Select("*").Updates(&gorm_addr).Error; err != nil {
 		return wrapGormError(err)
 	}
@@ -70,7 +79,7 @@ func (a *AddressGORMRepo) GetById(ctx context.Context, id entities.Id) (entities
 		return entities.Address{}, wrapGormError(err)
 	}
 
-	return AddressTEntity(addr), nil
+	return AddressToEntity(addr), nil
 }
 
 // GetByEmail retrieves an address from the database by its email.
@@ -81,7 +90,7 @@ func (a *AddressGORMRepo) GetByEmail(ctx context.Context, email entities.Email) 
 		return entities.Address{}, wrapGormError(err)
 	}
 
-	return AddressTEntity(addr), nil
+	return AddressToEntity(addr), nil
 }
 
 // GetAll retrieves all addresses from the database, with optional filters.
@@ -124,7 +133,7 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filters map[string][]strin
 
 	addrs := make([]entities.Address, 0, len(gorm_addrs))
 	for _, addr := range gorm_addrs {
-		addrs = append(addrs, AddressTEntity(addr))
+		addrs = append(addrs, AddressToEntity(addr))
 	}
 
 	return addrs, nil

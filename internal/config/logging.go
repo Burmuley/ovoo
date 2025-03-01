@@ -1,4 +1,4 @@
-package main
+package config
 
 import "log/slog"
 
@@ -9,7 +9,7 @@ var slogLevels = map[string]slog.Level{
 	"error":   slog.LevelError,
 }
 
-func getSLogLevel(s string) slog.Level {
+func GetSLogLevel(s string) slog.Level {
 	level, ok := slogLevels[s]
 	if !ok {
 		return slog.LevelInfo
