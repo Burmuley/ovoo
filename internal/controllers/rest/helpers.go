@@ -1,18 +1,19 @@
 package rest
 
-import "github.com/Burmuley/ovoo/internal/entities"
+import (
+	"encoding/json"
+	"io"
+)
 
-// UserTypeFStr converts a string representation of user type to its corresponding integer value.
-// It returns -1 if the provided user type is not recognized.
-func UserTypeFStr(utype string) int {
-	switch utype {
-	case "regular":
-		return int(entities.RegularUser)
-	case "admin":
-		return int(entities.AdminUser)
-	case "milter":
-		return int(entities.MilterUser)
-	default:
-		return -1
+func readBody(body io.ReadCloser, data any) error {
+	rawBody, err := io.ReadAll(body)
+	if err != nil {
+		return err
 	}
+
+	if err := json.Unmarshal(rawBody, data); err != nil {
+		return err
+	}
+
+	return nil
 }

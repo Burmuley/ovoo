@@ -34,7 +34,7 @@ func (rw *loggingResponseWriter) WriteHeader(s int) {
 // It logs information about each HTTP request, including method, URI, status code, response size, and duration.
 // The log level is set to Error for non-successful responses (status < 200 or > 399), and Info otherwise.
 func withLogging(ctx context.Context, h http.Handler, logger *slog.Logger) http.Handler {
-	loggingFn := func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lrw := loggingResponseWriter{ResponseWriter: w, status: http.StatusOK, size: 0}
 		h.ServeHTTP(&lrw, r)
@@ -50,7 +50,5 @@ func withLogging(ctx context.Context, h http.Handler, logger *slog.Logger) http.
 			"size", lrw.size,
 			"duration", duration,
 		)
-	}
-
-	return http.HandlerFunc(loggingFn)
+	})
 }

@@ -1,8 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
@@ -72,14 +70,8 @@ func (c *Controller) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 	// TODO: get real owner when authentication is enabled
 	owner := c.getFirstUser()
 
-	rraw, err := io.ReadAll(r.Body)
-	if err != nil {
-		c.errorLogNResponse(w, "reading protected address create request", err)
-		return
-	}
-
 	rb := CreateProtectedAddressRequest{}
-	if err := json.Unmarshal(rraw, &rb); err != nil {
+	if err := readBody(r.Body, &rb); err != nil {
 		c.errorLogNResponse(w, "parsing protected address create request", err)
 		return
 	}
@@ -113,14 +105,8 @@ func (c *Controller) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rraw, err := io.ReadAll(r.Body)
-	if err != nil {
-		c.errorLogNResponse(w, "reading protected address update request", err)
-		return
-	}
-
 	rb := UpdateProtectedAddressRequest{}
-	if err := json.Unmarshal(rraw, &rb); err != nil {
+	if err := readBody(r.Body, &rb); err != nil {
 		c.errorLogNResponse(w, "parsing protected address update request", err)
 		return
 	}

@@ -83,7 +83,7 @@ func (c *Controller) Start(ctx context.Context) error {
 	mux.HandleFunc("DELETE /api/v1/praddrs/{id}", c.DeletePrAddr)
 
 	// chains routes
-	mux.HandleFunc("GET /api/v1/chains/{hash}", c.GetChainByHash)
+	mux.HandleFunc("GET /api/v1/chains/{hash}", c.getChainByHash)
 	mux.HandleFunc("POST /api/v1/chains", c.CreateChain)
 	mux.HandleFunc("DELETE /api/v1/chains/{hash}", c.DeleteChain)
 

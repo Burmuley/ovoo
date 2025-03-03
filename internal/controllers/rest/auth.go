@@ -9,7 +9,7 @@ package rest
 // 		}
 
 // 		authType := strings.Split(authHeader, " ")[0]
-// 		if
+// 		// if
 
 // 	}
 // }
