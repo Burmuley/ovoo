@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -26,7 +27,7 @@ type UserContextKey string
 //
 // Returns:
 //   - An Adapter function that wraps an http.Handler with authentication logic
-func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
+func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *slog.Logger) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if slices.Contains(skipUris, r.RequestURI) {
@@ -44,12 +45,14 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 			if strings.HasPrefix(authHeader, "Basic") {
 				login, password, ok := r.BasicAuth()
 				if !ok {
+					logger.Error("invalid basic authentication token", "src", r.RemoteAddr)
 					http.Error(w, "invalid basic auth token", http.StatusUnauthorized)
 					return
 				}
 
 				user, err := basicAuthenticator(r.Context(), login, password, svcGw)
 				if err != nil {
+					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr)
 					http.Error(w, "invalid credentials provided", http.StatusUnauthorized)
 					return
 				}
@@ -62,6 +65,21 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 	}
 }
 
+// basicAuthenticator validates a user's login credentials against the database.
+//
+// It attempts to retrieve a user with the provided login (email) and then validates
+// the provided password against the stored password hash. If either the user lookup
+// fails or the password doesn't match, an error is returned.
+//
+// Parameters:
+//   - ctx: The context for the authentication request
+//   - login: The user's email address used as login
+//   - password: The plaintext password to verify
+//   - svcGw: Service gateway providing access to user services
+//
+// Returns:
+//   - entities.User: The authenticated user if successful
+//   - error: An error if authentication fails (user not found or invalid password)
 func basicAuthenticator(ctx context.Context, login, password string, svcGw *services.ServiceGateway) (entities.User, error) {
 	user, err := svcGw.Users.GetByLogin(ctx, entities.Email(login))
 	if err != nil {
