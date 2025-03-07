@@ -108,7 +108,7 @@ func (c *Controller) Start(ctx context.Context) error {
 
 	handler := middleware.Adapt(mux,
 		middleware.Logging(c.logger),
-		middleware.Authentication([]string{"/api/v1/users/login"}, c.svcGw),
+		middleware.Authentication([]string{"/api/v1/users/login"}, c.svcGw, c.logger),
 	)
 	c.logger.Info("started Ovoo API server", "addr", c.listenAddr)
 	return http.ListenAndServeTLS(c.listenAddr, c.tls_cert, c.tls_key, handler)
