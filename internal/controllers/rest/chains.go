@@ -1,14 +1,12 @@
 package rest
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 
-func (c *Controller) GetChainByHash(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) getChainByHash(w http.ResponseWriter, r *http.Request) {
 	chainHash := entities.Hash(r.PathValue("hash"))
 	if err := chainHash.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting chain by hash: parsing hash", err)
@@ -26,14 +24,8 @@ func (c *Controller) GetChainByHash(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) CreateChain(w http.ResponseWriter, r *http.Request) {
-	rraw, err := io.ReadAll(r.Body)
-	if err != nil {
-		c.errorLogNResponse(w, "reading chain create request", err)
-		return
-	}
-
 	rb := CreateEmailChain{}
-	if err := json.Unmarshal(rraw, &rb); err != nil {
+	if err := readBody(r.Body, &rb); err != nil {
 		c.errorLogNResponse(w, "parsing chain create request", err)
 		return
 	}

@@ -3,6 +3,7 @@ package entities
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 type UserType int8
@@ -15,12 +16,14 @@ const (
 
 // User represents a user in the system with various attributes.
 type User struct {
-	Type         UserType
-	ID           Id
-	Login        string
-	FirstName    string
-	LastName     string
-	PasswordHash string
+	Type           UserType
+	ID             Id
+	Login          string
+	FirstName      string
+	LastName       string
+	PasswordHash   string
+	FailedAttempts int
+	LockoutUntil   time.Time
 }
 
 // Validate checks if the User object is valid and returns an error if not.

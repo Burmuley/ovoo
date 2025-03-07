@@ -1,9 +1,7 @@
 package rest
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
@@ -40,24 +38,25 @@ func (c *Controller) GetUserById(w http.ResponseWriter, r *http.Request) {
 
 // CreateUser creates a new user based on the provided request and returns the created user details.
 func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
-	req_bytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		c.errorLogNResponse(w, "reading user create request", err)
-		return
-	}
-
 	req_body := CreateUserRequest{}
-	if err := json.Unmarshal(req_bytes, &req_body); err != nil {
+	if err := readBody(r.Body, &req_body); err != nil {
 		c.errorLogNResponse(w, "parsing user create request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
 		return
 	}
 
+	var password string = ""
+	if req_body.Password != nil {
+		password = *req_body.Password
+	}
+
 	user, err := c.svcGw.Users.Create(c.context, entities.User{
-		Login:     req_body.Login,
-		FirstName: req_body.FirstName,
-		LastName:  req_body.LastName,
-		Type:      entities.UserType(UserTypeFStr(req_body.Type)),
+		Login:        req_body.Login,
+		FirstName:    req_body.FirstName,
+		LastName:     req_body.LastName,
+		Type:         entities.UserType(userTypeFStr(req_body.Type)),
+		PasswordHash: password,
 	})
+
 	if err != nil {
 		c.errorLogNResponse(w, "creating user", err)
 		return
@@ -76,14 +75,8 @@ func (c *Controller) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req_bytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		c.errorLogNResponse(w, "reading user update request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
-		return
-	}
-
 	req_body := UpdateUserRequest{}
-	if err := json.Unmarshal(req_bytes, &req_body); err != nil {
+	if err := readBody(r.Body, &req_body); err != nil {
 		c.errorLogNResponse(w, "parsing user update request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
 		return
 	}

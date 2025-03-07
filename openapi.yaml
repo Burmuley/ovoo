@@ -4,14 +4,14 @@ info:
   description: >-
     Ovoo - privacy email gateway to manage aliases hiding real (protected)
     emails from senders.
-  termsOfService: ''
+  termsOfService: ""
   contact:
     email: burmuley@gmail.com
     name: Konstantin Vasilev
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: '1.0'
+  version: "1.0"
 externalDocs:
   description: Ovoo service source code
   url: https://github.com/Burmuley/ovoo
@@ -25,25 +25,30 @@ tags:
       API endpoint provides basic operations to manage alias emails for regular
       users and admins
     externalDocs:
-      description: ''
-      url: ''
+      description: ""
+      url: ""
   - name: Protected Addresses
     description: >-
       API endpoint provides operations on protected addresses for regular users
       and admins
     externalDocs:
-      description: ''
-      url: ''
+      description: ""
+      url: ""
   - name: Users
-    description: ''
+    description: ""
     externalDocs:
-      description: ''
-      url: ''
+      description: ""
+      url: ""
   - name: Email chains
-    description: ''
+    description: ""
     externalDocs:
-      description: ''
-      url: ''
+      description: ""
+      url: ""
+  - name: Authentication
+    description: Endpoints to support users authentication
+    externalDocs:
+      description: ""
+      url: ""
 paths:
   /api/v1/aliases:
     get:
@@ -57,16 +62,17 @@ paths:
       requestBody:
         content: {}
       responses:
-        '200':
-          $ref: '#/components/responses/getAliasesResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
+        "200":
+          $ref: "#/components/responses/getAliasesResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
       security:
         - OAuth2: []
+        - BasicAuthentication: []
       parameters:
         - in: query
           name: owner
@@ -80,19 +86,20 @@ paths:
       tags:
         - Aliases
       requestBody:
-        $ref: '#/components/requestBodies/createAliasRequest'
+        $ref: "#/components/requestBodies/createAliasRequest"
       responses:
-        '201':
-          $ref: '#/components/responses/createAliasResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
+        "201":
+          $ref: "#/components/responses/createAliasResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
       summary: Create new Alias
       security:
         - OAuth2: []
+        - BasicAuthentication: []
   /api/v1/aliases/{alias_id}:
     get:
       description: >-
@@ -104,24 +111,25 @@ paths:
       parameters:
         - in: path
           name: alias_id
-          description: ''
+          description: ""
           schema:
             type: string
           required: true
       responses:
-        '200':
-          $ref: '#/components/responses/getAliasDetailsResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/getAliasDetailsResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       summary: Get details of a particular Alias
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     delete:
       description: >-
         Delete a particular alias address by its ID. The ID is defined as a path
@@ -132,24 +140,25 @@ paths:
       parameters:
         - in: path
           name: alias_id
-          description: ''
+          description: ""
           schema:
             type: string
           required: true
       responses:
-        '204':
-          description: ''
+        "204":
+          description: ""
           content: {}
           headers: {}
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       summary: Delete Alias by ID
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     put:
       description: >-
         Update alias address information such as \`forward\_email\` and
@@ -161,26 +170,27 @@ paths:
       parameters:
         - in: path
           name: alias_id
-          description: ''
+          description: ""
           schema:
             type: string
           required: true
       requestBody:
-        $ref: '#/components/requestBodies/updateAliasRequest'
+        $ref: "#/components/requestBodies/updateAliasRequest"
       responses:
-        '200':
-          $ref: '#/components/responses/updateAliasResponse'
-        '400':
-          $ref: '#/components/responses/errorResponse'
-        '404':
-          $ref: '#/components/responses/errorResponse'
+        "200":
+          $ref: "#/components/responses/updateAliasResponse"
+        "400":
+          $ref: "#/components/responses/errorResponse"
+        "404":
+          $ref: "#/components/responses/errorResponse"
       summary: Update Alias
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     parameters:
       - in: path
         name: alias_id
-        description: ''
+        description: ""
         schema: &ref_1
           type: string
         required: true
@@ -197,16 +207,17 @@ paths:
       requestBody:
         content: {}
       responses:
-        '200':
-          $ref: '#/components/responses/getUsersResponse'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/getUsersResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - OAuth2: []
+        - BasicAuthentication: []
       summary: Get all users
     post:
       description: >-
@@ -217,19 +228,20 @@ paths:
         - Users
       parameters: &ref_0 []
       requestBody:
-        $ref: '#/components/requestBodies/createUserRequest'
+        $ref: "#/components/requestBodies/createUserRequest"
       responses:
-        '201':
-          $ref: '#/components/responses/createUserResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
+        "201":
+          $ref: "#/components/responses/createUserResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
       summary: Create user
       security:
         - OAuth2: []
+        - BasicAuthentication: []
   /api/v1/users/{user_id}:
     get:
       description: >-
@@ -242,16 +254,17 @@ paths:
       requestBody:
         content: {}
       responses:
-        '200':
-          $ref: '#/components/responses/getUserDetailsResponse'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/getUserDetailsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - OAuth2: []
+        - BasicAuthentication: []
       summary: Get user details
     put:
       description: >-
@@ -263,21 +276,22 @@ paths:
         - Users
       parameters: *ref_0
       requestBody:
-        $ref: '#/components/requestBodies/updateUserRequest'
+        $ref: "#/components/requestBodies/updateUserRequest"
       responses:
-        '200':
-          $ref: '#/components/responses/updateUserResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/updateUserResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       summary: Update user information
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     delete:
       description: >-
         Delete a particular user by its ID. The ID is defined as a path
@@ -289,23 +303,24 @@ paths:
       requestBody:
         content: {}
       responses:
-        '204':
-          description: ''
+        "204":
+          description: ""
           content: {}
           headers: {}
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       summary: Delete user
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     parameters:
       - in: path
         name: user_id
-        description: ''
+        description: ""
         schema: *ref_1
         required: true
   /api/v1/praddrs:
@@ -321,26 +336,27 @@ paths:
       parameters:
         - in: query
           name: id
-          description: ''
+          description: ""
           schema: &ref_2
             type: string
         - in: query
           name: email
-          description: ''
+          description: ""
           schema: *ref_2
       requestBody:
         content: {}
       responses:
-        '200':
-          $ref: '#/components/responses/getPrAddrsResponse'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/getPrAddrsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     post:
       summary: >-
         Create new protected address and make current authenticated user its
@@ -353,18 +369,19 @@ paths:
         - Protected Addresses
       parameters: *ref_0
       requestBody:
-        $ref: '#/components/requestBodies/createProtectedAddressRequest'
+        $ref: "#/components/requestBodies/createProtectedAddressRequest"
       responses:
-        '200':
-          $ref: '#/components/responses/createPrAddrResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
+        "200":
+          $ref: "#/components/responses/createPrAddrResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
       security:
         - OAuth2: []
+        - BasicAuthentication: []
   /api/v1/praddrs/{praddr_id}:
     get:
       summary: Get details on a particular protected address
@@ -377,23 +394,24 @@ paths:
       parameters:
         - in: path
           name: praddr_id
-          description: ''
+          description: ""
           schema:
             type: string
           required: true
       requestBody:
         content: {}
       responses:
-        '200':
-          $ref: '#/components/responses/getPrAddrDetailsResponse'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/getPrAddrDetailsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     put:
       summary: Update defined protected address by its ID
       description: >-
@@ -406,25 +424,26 @@ paths:
       parameters:
         - in: path
           name: praddr_id
-          description: ''
+          description: ""
           schema: &ref_3
             type: string
           required: true
       requestBody:
-        $ref: '#/components/requestBodies/updateProtectedAddressRequest'
+        $ref: "#/components/requestBodies/updateProtectedAddressRequest"
       responses:
-        '200':
-          $ref: '#/components/responses/updatePrAddrResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/updatePrAddrResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - OAuth2: []
+        - BasicAuthentication: []
     delete:
       summary: Delete defined protected address by its ID
       description: >-
@@ -436,25 +455,26 @@ paths:
       parameters:
         - in: path
           name: praddr_id
-          description: ''
+          description: ""
           schema: *ref_3
           required: true
       requestBody:
         content: {}
       responses:
-        '204':
-          description: ''
+        "204":
+          description: ""
           content: {}
           headers: {}
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - OAuth2: []
-  /api/v1/chains:
+        - BasicAuthentication: []
+  /private/api/v1/chains:
     post:
       summary: Create new email chain
       description: >-
@@ -465,19 +485,19 @@ paths:
         - Email chains
       parameters: *ref_0
       requestBody:
-        $ref: '#/components/requestBodies/createEmailChain'
+        $ref: "#/components/requestBodies/createEmailChain"
       responses:
-        '201':
-          $ref: '#/components/responses/createEmailChainResponse'
-        '400':
-          $ref: '#/components/responses/400'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
+        "201":
+          $ref: "#/components/responses/createEmailChainResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
       security:
         - ApiKey: []
-  /api/v1/chains/{hash}:
+  /private/api/v1/chains/{hash}:
     get:
       summary: Get a particular email chain by its hash
       description: >-
@@ -489,19 +509,19 @@ paths:
       parameters:
         - in: path
           name: hash
-          description: ''
+          description: ""
           schema: &ref_4
             type: string
           required: true
       responses:
-        '200':
-          $ref: '#/components/responses/getEmailChainDetailsResponse'
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "200":
+          $ref: "#/components/responses/getEmailChainDetailsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - ApiKey: []
     delete:
@@ -515,22 +535,57 @@ paths:
       parameters:
         - in: path
           name: hash
-          description: ''
+          description: ""
           schema: *ref_4
           required: true
       responses:
-        '204':
-          description: ''
+        "204":
+          description: ""
           content: {}
           headers: {}
-        '401':
-          $ref: '#/components/responses/401'
-        '403':
-          $ref: '#/components/responses/403'
-        '404':
-          $ref: '#/components/responses/404'
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
       security:
         - ApiKey: []
+  /auth/login:
+    get:
+      summary: retrieve authentication form / process OAuth2 requests
+      description: retrieve authentication form / process OAuth2 requests
+      operationId: getAuthForm
+      tags:
+        - Authentication
+      parameters:
+        - in: query
+          name: provider
+          description: ""
+          schema: &ref_5
+            type: string
+          required: false
+        - in: query
+          name: code
+          description: ""
+          schema: *ref_5
+      responses:
+        "200":
+          $ref: "#/components/responses/authForm"
+    post:
+      summary: submit authentication form (basic authentication)
+      description: submit authentication form (basic authentication)
+      operationId: postAuthForm
+      tags:
+        - Authentication
+      parameters: []
+      responses:
+        "200":
+          $ref: "#/components/responses/basicAuthenticationTokenResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+      requestBody:
+        $ref: "#/components/requestBodies/basicAuthentication"
 components:
   schemas:
     aliasData:
@@ -541,13 +596,13 @@ components:
           description: Email of the Alias
           format: email
         owner:
-          $ref: '#/components/schemas/userData'
+          $ref: "#/components/schemas/userData"
         forward_email:
           type: string
           format: email
           description: forward email for alias address
         metadata:
-          $ref: '#/components/schemas/addressMetadata'
+          $ref: "#/components/schemas/addressMetadata"
         id:
           type: string
           description: alias address id
@@ -577,6 +632,12 @@ components:
         id:
           type: string
           description: user id
+        failed_attempts:
+          type: number
+          description: number of failed authentication attempts
+        lockout_until:
+          type: string
+          description: date/time the user account was lockout until
       required:
         - login
         - first_name
@@ -590,9 +651,9 @@ components:
           type: string
           format: email
         owner:
-          $ref: '#/components/schemas/userData'
+          $ref: "#/components/schemas/userData"
         metadata:
-          $ref: '#/components/schemas/addressMetadata'
+          $ref: "#/components/schemas/addressMetadata"
         id:
           type: string
       required:
@@ -635,15 +696,24 @@ components:
       required:
         - id
         - msg
+    basicAuthForm:
+      type: object
+      properties:
+        user:
+          type: string
+          description: user name
+        password:
+          type: string
+      required:
+        - user
+        - password
   securitySchemes:
     ApiKey:
       type: apiKey
-      scheme: basic
       in: header
       name: ovoo_api_key
     OAuth2:
       type: oauth2
-      scheme: basic
       flows:
         authorizationCode:
           authorizationUrl: Todo
@@ -652,10 +722,17 @@ components:
         implicit:
           authorizationUrl: Todo
           refreshUrl: Todo
+          scopes:
+            user: regular user
+            admin: admin user
+            milter: milter user
+    BasicAuthentication:
+      type: http
+      scheme: basic
   requestBodies:
     createAliasRequest:
       required: false
-      description: ''
+      description: ""
       content:
         application/json:
           schema:
@@ -664,7 +741,7 @@ components:
               protected_address_id:
                 type: string
               metadata:
-                $ref: '#/components/schemas/addressMetadata'
+                $ref: "#/components/schemas/addressMetadata"
             required:
               - email
               - protected_address_id
@@ -678,10 +755,10 @@ components:
               protected_address_id:
                 type: string
               metadata:
-                $ref: '#/components/schemas/addressMetadata'
+                $ref: "#/components/schemas/addressMetadata"
     createUserRequest:
       required: false
-      description: ''
+      description: ""
       content:
         application/json:
           schema:
@@ -695,6 +772,8 @@ components:
                 type: string
               type:
                 type: string
+              password:
+                type: string
             required:
               - login
               - first_name
@@ -702,7 +781,7 @@ components:
               - type
     updateUserRequest:
       required: false
-      description: ''
+      description: ""
       content:
         application/json:
           schema:
@@ -716,7 +795,7 @@ components:
                 type: string
     createProtectedAddressRequest:
       required: false
-      description: ''
+      description: ""
       content:
         application/json:
           schema:
@@ -725,23 +804,23 @@ components:
               email:
                 type: string
               metadata:
-                $ref: '#/components/schemas/addressMetadata'
+                $ref: "#/components/schemas/addressMetadata"
             required:
               - email
               - metadata
     updateProtectedAddressRequest:
       required: false
-      description: ''
+      description: ""
       content:
         application/json:
           schema:
             type: object
             properties:
               metadata:
-                $ref: '#/components/schemas/addressMetadata'
+                $ref: "#/components/schemas/addressMetadata"
     createEmailChain:
       required: false
-      description: ''
+      description: ""
       content:
         application/json:
           schema:
@@ -756,35 +835,45 @@ components:
             required:
               - from_email
               - to_email
+    basicAuthentication:
+      content:
+        others:
+          schema:
+            type: object
+            properties:
+              login:
+                type: string
+              password:
+                type: string
   responses:
-    '400':
-      description: Bad or malformed request error response
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/error'
-    '401':
-      headers: {}
-      description: Unauthorized error response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/error'
-    '403':
+    HTTP403:
       description: Forbidden error response
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error'
-    '404':
+            $ref: "#/components/schemas/error"
+    HTTP404:
       description: Not found error response
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error'
+            $ref: "#/components/schemas/error"
+    HTTP401:
+      headers: {}
+      description: Unauthorized error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
+    HTTP400:
+      description: Bad or malformed request error response
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error"
     getAliasesResponse:
       headers: {}
       content:
@@ -792,7 +881,7 @@ components:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/aliasData'
+              $ref: "#/components/schemas/aliasData"
       description: A list of aliases
     getAliasDetailsResponse:
       description: Response containing detailed alias address data
@@ -800,21 +889,21 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/aliasData'
+            $ref: "#/components/schemas/aliasData"
     createAliasResponse:
       description: Response containing detailes on the created alias
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/aliasData'
+            $ref: "#/components/schemas/aliasData"
     updateAliasResponse:
       description: Response contains details on alias address after applied updates
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/aliasData'
+            $ref: "#/components/schemas/aliasData"
     errorResponse:
       description: Response containing error information (id and message)
       headers: {}
@@ -837,7 +926,7 @@ components:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/userData'
+              $ref: "#/components/schemas/userData"
       description: A list of users
     getUserDetailsResponse:
       description: Response containing detailed user data
@@ -845,21 +934,21 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/userData'
+            $ref: "#/components/schemas/userData"
     createUserResponse:
       description: Response containing detailes on the created user
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/userData'
+            $ref: "#/components/schemas/userData"
     updateUserResponse:
       description: Response contains details on user after applied updates
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/userData'
+            $ref: "#/components/schemas/userData"
     getPrAddrsResponse:
       description: A list of protected addresses
       headers: {}
@@ -868,42 +957,67 @@ components:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/protectedAddressData'
+              $ref: "#/components/schemas/protectedAddressData"
     getPrAddrDetailsResponse:
       description: Response containing detailed protected address data
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/protectedAddressData'
+            $ref: "#/components/schemas/protectedAddressData"
     createPrAddrResponse:
       description: Response containing detailes on the created protected address
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/protectedAddressData'
+            $ref: "#/components/schemas/protectedAddressData"
     updatePrAddrResponse:
       description: Response contains details on protected address after applied updates
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/protectedAddressData'
+            $ref: "#/components/schemas/protectedAddressData"
     getEmailChainDetailsResponse:
-      description: ''
+      description: ""
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/chainData'
+            $ref: "#/components/schemas/chainData"
     createEmailChainResponse:
-      description: ''
+      description: ""
       headers: {}
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/chainData'
+            $ref: "#/components/schemas/chainData"
+    basicAuthenticationTokenResponse:
+      description: ""
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+                description: signed JWT token for stateless authentication
+              expiry:
+                type: string
+                description: time of token expiration
+            required:
+              - token
+              - expiry
+    authForm:
+      description: ""
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/basicAuthForm"
 security:
   - OAuth2: []
   - ApiKey: []
+  - BasicAuthentication: []

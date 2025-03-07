@@ -90,7 +90,7 @@ func main() {
 		listen_addr = rest.DefaultListenAddr
 	}
 
-	restApi, err := rest.New(listen_addr, logger, svcGw)
+	restApi, err := rest.New(listen_addr, logger, svcGw, cfg.String("tls.key"), cfg.String("tls.cert"))
 	if err != nil {
 		slog.Error("error initializing rest api", "err", err.Error())
 		os.Exit(1)

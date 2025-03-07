@@ -27,6 +27,14 @@ func (u *UsersService) Create(ctx context.Context, user entities.User) (entities
 		return entities.User{}, fmt.Errorf("creating user: %w", err)
 	}
 
+	{
+		var err error
+		user.PasswordHash, err = entities.NewPasswordHash(user.PasswordHash)
+		if err != nil {
+			return entities.User{}, fmt.Errorf("hashing user password: %w", err)
+		}
+	}
+
 	user.ID = entities.NewId()
 	err := u.repoFactory.Users.Create(ctx, user)
 	if err != nil {

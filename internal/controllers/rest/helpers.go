@@ -1,18 +1,33 @@
 package rest
 
-import "github.com/Burmuley/ovoo/internal/entities"
+import (
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
 
-// UserTypeFStr converts a string representation of user type to its corresponding integer value.
-// It returns -1 if the provided user type is not recognized.
-func UserTypeFStr(utype string) int {
-	switch utype {
-	case "regular":
-		return int(entities.RegularUser)
-	case "admin":
-		return int(entities.AdminUser)
-	case "milter":
-		return int(entities.MilterUser)
-	default:
-		return -1
+	"github.com/Burmuley/ovoo/internal/controllers/rest/middleware"
+	"github.com/Burmuley/ovoo/internal/entities"
+)
+
+func readBody(body io.ReadCloser, data any) error {
+	rawBody, err := io.ReadAll(body)
+	if err != nil {
+		return err
 	}
+
+	if err := json.Unmarshal(rawBody, data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getUserFromContext(r *http.Request) (entities.User, error) {
+	userraw := r.Context().Value(middleware.UserContextKey("user"))
+	if userraw == nil {
+		return entities.User{}, errors.New("unable to get user")
+	}
+
+	return userraw.(entities.User), nil
 }

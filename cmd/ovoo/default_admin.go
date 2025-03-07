@@ -11,11 +11,12 @@ import (
 
 func makeDefaultAdmin(svcGw *services.ServiceGateway, admin map[string]string) error {
 	adminUser := entities.User{
-		FirstName: admin["firstName"],
-		LastName:  admin["lastName"],
-		Login:     admin["login"],
-		ID:        entities.NewId(),
-		Type:      entities.AdminUser,
+		FirstName:    admin["firstName"],
+		LastName:     admin["lastName"],
+		Login:        admin["login"],
+		ID:           entities.NewId(),
+		Type:         entities.AdminUser,
+		PasswordHash: admin["password"],
 	}
 	if _, err := svcGw.Users.Create(context.Background(), adminUser); err != nil {
 		if errors.Is(err, entities.ErrDuplicateEntry) {
