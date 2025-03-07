@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -11,7 +10,6 @@ import (
 // and writes the response with the specified HTTP status code.
 func (c *Controller) successResponse(w http.ResponseWriter, data any, status int) {
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Println(data)
 	dataJson, err := json.Marshal(data)
 	if err != nil {
 		c.logger.Error("rendering response", "error", err.Error())

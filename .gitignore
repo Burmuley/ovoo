@@ -31,3 +31,7 @@ config*.json
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# TLS data not added by default
+*.pem
+*.p12

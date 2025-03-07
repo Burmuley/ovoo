@@ -33,13 +33,13 @@ func (c *ChainsGORMRepo) GetByHash(ctx context.Context, hash entities.Hash) (ent
 		return entities.Chain{}, wrapGormError(err)
 	}
 
-	return ChainToEntity(chain), nil
+	return chainToEntity(chain), nil
 }
 
 // Create adds a new Chain entity to the repository.
 // It returns an error if the creation process fails.
 func (c *ChainsGORMRepo) Create(ctx context.Context, chain entities.Chain) error {
-	gorm_chain := ChainFromEntity(chain)
+	gorm_chain := chainFromEntity(chain)
 	if err := c.db.WithContext(ctx).Model(&Chain{}).Create(&gorm_chain).Error; err != nil {
 		return wrapGormError(err)
 	}
@@ -48,7 +48,7 @@ func (c *ChainsGORMRepo) Create(ctx context.Context, chain entities.Chain) error
 }
 
 func (c *ChainsGORMRepo) BatchCreate(ctx context.Context, chains []entities.Chain) error {
-	gorm_chains := ChainFromEntityList(chains)
+	gorm_chains := chainFromEntityList(chains)
 	if err := c.db.WithContext(ctx).Model(&Chain{}).Create(&gorm_chains).Error; err != nil {
 		return wrapGormError(err)
 	}

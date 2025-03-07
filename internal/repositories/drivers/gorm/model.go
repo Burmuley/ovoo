@@ -17,9 +17,13 @@ type Model struct {
 // User represents a user in the system
 type User struct {
 	Model
-	FirstName string `gorm:"column:first_name"`
-	LastName  string `gorm:"column:last_name"`
-	Login     string `gorm:"column:login;uniqueIndex"`
+	FirstName      string    `gorm:"column:first_name"`
+	LastName       string    `gorm:"column:last_name"`
+	Login          string    `gorm:"column:login;uniqueIndex"`
+	Type           int       `gorm:"column:type"`
+	PwdHash        string    `gorm:"column:pwd_hash"`
+	FailedAttempts int       `gorm:"column:failed_attempts"`
+	LockoutUntil   time.Time `gorm:"column:lockout_until"`
 }
 
 // TableName specifies the table name for User

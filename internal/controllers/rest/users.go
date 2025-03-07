@@ -44,12 +44,19 @@ func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var password string = ""
+	if req_body.Password != nil {
+		password = *req_body.Password
+	}
+
 	user, err := c.svcGw.Users.Create(c.context, entities.User{
-		Login:     req_body.Login,
-		FirstName: req_body.FirstName,
-		LastName:  req_body.LastName,
-		Type:      entities.UserType(userTypeFStr(req_body.Type)),
+		Login:        req_body.Login,
+		FirstName:    req_body.FirstName,
+		LastName:     req_body.LastName,
+		Type:         entities.UserType(userTypeFStr(req_body.Type)),
+		PasswordHash: password,
 	})
+
 	if err != nil {
 		c.errorLogNResponse(w, "creating user", err)
 		return

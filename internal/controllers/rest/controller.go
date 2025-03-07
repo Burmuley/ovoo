@@ -3,34 +3,44 @@ package rest
 import (
 	"cmp"
 	"context"
+	"embed"
 	"errors"
 	"log/slog"
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/controllers"
+	"github.com/Burmuley/ovoo/internal/controllers/rest/middleware"
 	"github.com/Burmuley/ovoo/internal/services"
 )
 
 const DefaultListenAddr string = "127.0.0.1:8808"
 
+//go:embed data/login/index.html
+var loginStatic embed.FS
+
 // Controller represents the main structure for handling REST API requests.
 // It contains references to various use cases, a listen address, context, and logger.
 type Controller struct {
-	svcGw      *services.ServiceGateway
-	listenAddr string
-	context    context.Context
-	logger     *slog.Logger
+	svcGw        *services.ServiceGateway
+	listenAddr   string
+	context      context.Context
+	logger       *slog.Logger
+	authSkipURIs []string
+	tls_cert     string
+	tls_key      string
 }
 
 // New creates and returns a new Controller instance.
 // It initializes the controller with the provided listen address, logger, and use cases.
 // If the listen address is empty, it uses the default address.
 // It returns an error if any of the required use cases or the logger is nil.
-func New(listenAddr string, logger *slog.Logger, svcGw *services.ServiceGateway) (controllers.Controller, error) {
+func New(listenAddr string, logger *slog.Logger, svcGw *services.ServiceGateway, tls_key, tls_cert string) (controllers.Controller, error) {
 	ctrl := &Controller{
 		svcGw:      svcGw,
 		listenAddr: listenAddr,
 		logger:     logger,
+		tls_key:    tls_key,
+		tls_cert:   tls_cert,
 	}
 
 	if len(listenAddr) < 1 {
@@ -49,6 +59,10 @@ func New(listenAddr string, logger *slog.Logger, svcGw *services.ServiceGateway)
 
 	if ctrl.logger == nil {
 		return nil, errors.New("logger must be set")
+	}
+
+	ctrl.authSkipURIs = []string{
+		"/api/v1/users/login",
 	}
 
 	return ctrl, nil
@@ -87,7 +101,15 @@ func (c *Controller) Start(ctx context.Context) error {
 	mux.HandleFunc("POST /api/v1/chains", c.CreateChain)
 	mux.HandleFunc("DELETE /api/v1/chains/{hash}", c.DeleteChain)
 
-	handler := withLogging(ctx, mux, c.logger)
+	// authentication endpoints
+	mux.HandleFunc("GET /api/v1/users/login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, loginStatic, "data/login/index.html")
+	}))
+
+	handler := middleware.Adapt(mux,
+		middleware.Logging(c.logger),
+		middleware.Authentication([]string{"/api/v1/users/login"}, c.svcGw),
+	)
 	c.logger.Info("started Ovoo API server", "addr", c.listenAddr)
-	return http.ListenAndServe(c.listenAddr, handler)
+	return http.ListenAndServeTLS(c.listenAddr, c.tls_cert, c.tls_key, handler)
 }
