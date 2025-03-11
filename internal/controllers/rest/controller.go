@@ -107,6 +107,7 @@ func (c *Controller) Start(ctx context.Context) error {
 	}))
 
 	handler := middleware.Adapt(mux,
+		middleware.SecurityHeaders(),
 		middleware.Logging(c.logger),
 		middleware.Authentication([]string{"/api/v1/users/login"}, c.svcGw, c.logger),
 	)
