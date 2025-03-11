@@ -12,6 +12,7 @@ func SecurityHeaders() Adapter {
 			w.Header().Add("X-Content-Type-Options", "nosniff")
 			w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
 			w.Header().Add("Referrer-Policy", "no-referrer")
+			w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
 			h.ServeHTTP(w, r)
 		})
