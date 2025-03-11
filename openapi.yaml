@@ -16,7 +16,7 @@ externalDocs:
   description: Ovoo service source code
   url: https://github.com/Burmuley/ovoo
 servers:
-  - url: http://localhost:8808
+  - url: https://ovoolocal.burmuley.com:8808
     description: Local testing server
     variables: {}
 tags:
