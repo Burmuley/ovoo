@@ -10,7 +10,10 @@ import (
 // Supports filtering by ID and email through query parameters.
 func (c *Controller) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 	// TODO: get real user when authentication is enabled
-	user := c.getFirstUser()
+	user, err := userFromContext(r)
+	if err != nil {
+		c.errorLogNResponse(w, "getting aliases: identifying user", err)
+	}
 	filters := map[string][]string{"owner": []string{user.ID.String()}}
 	if ids, ok := r.URL.Query()["id"]; ok {
 		filters["id"] = ids
@@ -67,8 +70,10 @@ func (c *Controller) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
 
 // CreatePrAddr creates a new protected address for the current user.
 func (c *Controller) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
-	// TODO: get real owner when authentication is enabled
-	owner := c.getFirstUser()
+	user, err := userFromContext(r)
+	if err != nil {
+		c.errorLogNResponse(w, "getting aliases: identifying user", err)
+	}
 
 	rb := CreateProtectedAddressRequest{}
 	if err := readBody(r.Body, &rb); err != nil {
@@ -77,10 +82,7 @@ func (c *Controller) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	praddr, err := c.svcGw.PrAddrs.Create(
-		c.context,
-		entities.Email(rb.Email),
-		entities.AddressMetadata(rb.Metadata),
-		owner,
+		c.context, entities.Email(rb.Email), entities.AddressMetadata(rb.Metadata), user,
 	)
 	if err != nil {
 		c.errorLogNResponse(w, "creating protected address", err)

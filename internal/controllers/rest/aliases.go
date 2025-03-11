@@ -12,8 +12,11 @@ import (
 // It validates any provided IDs, fetches the aliases for the current user, and returns them
 // in the HTTP response. Currently uses a temporary owner until authentication is implemented.
 func (c *Controller) GetAliases(w http.ResponseWriter, r *http.Request) {
-	// TODO: get real user when authentication is enabled
-	user := c.getFirstUser()
+	user, err := userFromContext(r)
+	if err != nil {
+		c.errorLogNResponse(w, "getting aliases: identifying user", err)
+	}
+
 	filters := map[string][]string{"owner": []string{user.ID.String()}}
 	if ids, ok := r.URL.Query()["id"]; ok {
 		filters["id"] = ids
@@ -67,15 +70,9 @@ func (c *Controller) GetAliaseById(w http.ResponseWriter, r *http.Request) {
 // the current user (temporarily using first user until authentication is implemented), and returns
 // the created alias details in the response.
 func (c *Controller) CreateAlias(w http.ResponseWriter, r *http.Request) {
-	rraw, err := io.ReadAll(r.Body)
-	if err != nil {
-		c.errorLogNResponse(w, "reading alias create request", err)
-		return
-	}
-
 	rb := CreateAliasRequest{}
-	if err := json.Unmarshal(rraw, &rb); err != nil {
-		c.errorLogNResponse(w, "parsing alias create request", err)
+	if err := readBody(r.Body, &rb); err != nil {
+		c.errorLogNResponse(w, "parsing chain create request", err)
 		return
 	}
 
@@ -85,13 +82,18 @@ func (c *Controller) CreateAlias(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, err := userFromContext(r)
+	if err != nil {
+		c.errorLogNResponse(w, "getting aliases: identifying user", err)
+	}
+
 	// TODO: get real user from auth info
 	alias, err := c.svcGw.Aliases.Create(c.context, prot_addr,
 		entities.AddressMetadata{
 			Comment:     rb.Metadata.Comment,
 			ServiceName: rb.Metadata.ServiceName,
 		},
-		c.getFirstUser(),
+		user,
 	)
 
 	if err != nil {

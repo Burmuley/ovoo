@@ -57,7 +57,7 @@ func (cuc *ChainsService) DeleteByHash(ctx context.Context, hash entities.Hash) 
 	return chain, nil
 }
 
-func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string) (entities.Chain, error) {
+func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string, owner entities.User) (entities.Chain, error) {
 	// 1. Calculate Hash(FromAddress, ToAddress) (HashForward)
 	fwdHash := entities.NewHash(faddr, taddr)
 

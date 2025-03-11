@@ -26,12 +26,12 @@ func readBody(body io.ReadCloser, data any) error {
 	return nil
 }
 
-// getUserFromContext extracts the User entity from the HTTP request context.
+// userFromContext extracts the User entity from the HTTP request context.
 // This function is designed to work with the middleware.UserContextKey to retrieve
 // the authenticated user information that was previously stored in the request context.
 // Returns the user entity and nil if successful, or an empty user and error if the user
 // cannot be found in the context.
-func getUserFromContext(r *http.Request) (entities.User, error) {
+func userFromContext(r *http.Request) (entities.User, error) {
 	userraw := r.Context().Value(middleware.UserContextKey("user"))
 	if userraw == nil {
 		return entities.User{}, errors.New("unable to get user")

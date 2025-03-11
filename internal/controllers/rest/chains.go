@@ -30,10 +30,16 @@ func (c *Controller) CreateChain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, err := userFromContext(r)
+	if err != nil {
+		c.errorLogNResponse(w, "getting aliases: identifying user", err)
+	}
+
 	chain, err := c.svcGw.Chains.Create(
 		c.context,
 		string(rb.FromEmail),
 		string(rb.ToEmail),
+		user,
 	)
 
 	if err != nil {

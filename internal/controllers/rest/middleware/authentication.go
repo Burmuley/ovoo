@@ -50,7 +50,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 					return
 				}
 
-				user, err := basicAuthenticator(r.Context(), login, password, svcGw)
+				user, err := basicAuthentication(r.Context(), login, password, svcGw)
 				if err != nil {
 					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr)
 					http.Error(w, "invalid credentials provided", http.StatusUnauthorized)
@@ -65,7 +65,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 	}
 }
 
-// basicAuthenticator validates a user's login credentials against the database.
+// basicAuthentication validates a user's login credentials against the database.
 //
 // It attempts to retrieve a user with the provided login (email) and then validates
 // the provided password against the stored password hash. If either the user lookup
@@ -80,7 +80,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 // Returns:
 //   - entities.User: The authenticated user if successful
 //   - error: An error if authentication fails (user not found or invalid password)
-func basicAuthenticator(ctx context.Context, login, password string, svcGw *services.ServiceGateway) (entities.User, error) {
+func basicAuthentication(ctx context.Context, login, password string, svcGw *services.ServiceGateway) (entities.User, error) {
 	user, err := svcGw.Users.GetByLogin(ctx, entities.Email(login))
 	if err != nil {
 		return entities.User{}, err
