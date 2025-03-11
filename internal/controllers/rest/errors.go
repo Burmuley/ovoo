@@ -74,6 +74,7 @@ func statusFErr(err error) int {
 //  4. Marshals the ErrorResponse to JSON.
 //  5. Writes the HTTP status code and JSON error response to the ResponseWriter.
 func (c *Controller) errorLogNResponse(w http.ResponseWriter, operation string, opErr error) {
+	w.Header().Set("Content-Type", "application/json")
 	c.logger.Error(operation, "error", opErr.Error())
 	st_code := statusFErr(opErr)
 	err_response := ErrorResponse{
