@@ -2,13 +2,11 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
 
-	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/services"
 )
 
@@ -42,7 +40,20 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 				return
 			}
 
-			if strings.HasPrefix(authHeader, "Basic") {
+			tokenParts := strings.Split(authHeader, " ")
+			if len(tokenParts) != 2 {
+				logger.Error("invalid authentication token", "src", r.RemoteAddr)
+				http.Error(w, "invalid authentication token", http.StatusUnauthorized)
+			}
+			tokenType, token := tokenParts[0], tokenParts[1]
+
+			if !slices.Contains([]string{"Basic", "Bearer"}, tokenType) {
+				logger.Error("invalid authentication token", "src", r.RemoteAddr)
+				http.Error(w, "invalid authentication token", http.StatusUnauthorized)
+				return
+			}
+
+			if tokenType == "Basic" {
 				login, password, ok := r.BasicAuth()
 				if !ok {
 					logger.Error("invalid basic authentication token", "src", r.RemoteAddr)
@@ -50,10 +61,21 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 					return
 				}
 
-				user, err := basicAuthentication(r.Context(), login, password, svcGw)
+				user, err := validateBasicAuth(r.Context(), login, password, svcGw)
 				if err != nil {
-					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr)
+					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr, "msg", err.Error())
 					http.Error(w, "invalid credentials provided", http.StatusUnauthorized)
+					return
+				}
+
+				r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
+			}
+
+			if tokenType == "Bearer" {
+				user, err := validateOAuth2Token(r.Context(), token, svcGw)
+				if err != nil {
+					logger.Error("invalid oauth2 credentials", "src", r.RemoteAddr, "msg", err.Error())
+					http.Error(w, "invalid oauth2 credentials provided", http.StatusUnauthorized)
 					return
 				}
 
@@ -63,32 +85,4 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 			h.ServeHTTP(w, r)
 		})
 	}
-}
-
-// basicAuthentication validates a user's login credentials against the database.
-//
-// It attempts to retrieve a user with the provided login (email) and then validates
-// the provided password against the stored password hash. If either the user lookup
-// fails or the password doesn't match, an error is returned.
-//
-// Parameters:
-//   - ctx: The context for the authentication request
-//   - login: The user's email address used as login
-//   - password: The plaintext password to verify
-//   - svcGw: Service gateway providing access to user services
-//
-// Returns:
-//   - entities.User: The authenticated user if successful
-//   - error: An error if authentication fails (user not found or invalid password)
-func basicAuthentication(ctx context.Context, login, password string, svcGw *services.ServiceGateway) (entities.User, error) {
-	user, err := svcGw.Users.GetByLogin(ctx, entities.Email(login))
-	if err != nil {
-		return entities.User{}, err
-	}
-
-	if !entities.ValidPassword(password, user.PasswordHash) {
-		return entities.User{}, fmt.Errorf("invalid password")
-	}
-
-	return user, nil
 }

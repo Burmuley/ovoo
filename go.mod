@@ -5,6 +5,7 @@ go 1.23
 require (
 	github.com/d--j/go-milter v0.8.5
 	github.com/glebarez/sqlite v1.10.0
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/knadh/koanf v1.5.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/oklog/ulid/v2 v2.1.0
