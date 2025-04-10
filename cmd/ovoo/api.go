@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/Burmuley/ovoo/internal/applications/rest"
 	"github.com/Burmuley/ovoo/internal/config"
-	"github.com/Burmuley/ovoo/internal/controllers/rest"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 	"github.com/Burmuley/ovoo/internal/services"
@@ -78,7 +78,7 @@ func startApi(cfgPath string) error {
 	// load words dictionary
 	dict, err := loadDict()
 	if err != nil {
-		slog.Error("error loading dictionary", "err", err.Error())
+		slog.Error("error loading dictionary", "error", err)
 		os.Exit(1)
 	}
 
@@ -89,7 +89,7 @@ func startApi(cfgPath string) error {
 	// initialize repo fabric
 	repoFactory, err := factory.New(db_drv, db_config)
 	if err != nil {
-		return fmt.Errorf("error initializing repository", "err", err.Error())
+		return fmt.Errorf("error initializing repository: %w", err)
 	}
 
 	// global context
@@ -99,13 +99,13 @@ func startApi(cfgPath string) error {
 	domain := "alias-test.local"
 	svcGw, err := makeServices(repoFactory, domain, dict)
 	if err != nil {
-		return fmt.Errorf("error initializing services gateway", "err", err.Error())
+		return fmt.Errorf("error initializing services gateway: %w", err)
 	}
 
 	defaultAdminCfg := cfg.StringMap("default_admin")
 	if len(defaultAdminCfg) > 0 {
 		if err := makeDefaultAdmin(svcGw, defaultAdminCfg); err != nil {
-			return fmt.Errorf("error creating default admin", "err", err.Error())
+			return fmt.Errorf("error creating default admin: %w", err)
 		}
 	}
 
@@ -115,9 +115,11 @@ func startApi(cfgPath string) error {
 		listen_addr = rest.DefaultListenAddr
 	}
 
-	restApi, err := rest.New(listen_addr, logger, svcGw, cfg.String("tls.key"), cfg.String("tls.cert"))
+	restApi, err := rest.New(
+		listen_addr, logger, svcGw, cfg.String("tls.key"), cfg.String("tls.cert"), cfg.MapAt("oidc_config"),
+	)
 	if err != nil {
-		return fmt.Errorf("error initializing rest api", "err", err.Error())
+		return fmt.Errorf("error initializing rest api: %w", err)
 	}
 
 	return restApi.Start(ctx)

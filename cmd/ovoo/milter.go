@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/Burmuley/ovoo/internal/config"
-	"github.com/Burmuley/ovoo/internal/controllers/milter"
+	"github.com/Burmuley/ovoo/internal/applications/milter"
 )
 
 func startMilter(cfgPath string) error {

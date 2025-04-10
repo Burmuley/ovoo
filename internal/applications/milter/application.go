@@ -9,14 +9,14 @@ import (
 
 const DefaultListenAddr string = "127.0.0.1:6785"
 
-type Controller struct {
+type Application struct {
 	listenAddr string
 	ovooCli    OvooClient
 	logger     *slog.Logger
 }
 
-func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Controller, error) {
-	ctrl := &Controller{
+func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Application, error) {
+	ctrl := &Application{
 		listenAddr: listenAddr,
 		ovooCli:    ovooCli,
 		logger:     logger,
@@ -25,7 +25,7 @@ func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Controlle
 	return ctrl, nil
 }
 
-func (m *Controller) Start(ctx context.Context) error {
+func (m *Application) Start(ctx context.Context) error {
 	server, err := mailfilter.New(
 		"tcp",
 		m.listenAddr,

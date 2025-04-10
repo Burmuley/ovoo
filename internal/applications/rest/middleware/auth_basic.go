@@ -1,8 +1,9 @@
 package middleware
 
 import (
-	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/services"
@@ -23,8 +24,13 @@ import (
 // Returns:
 //   - entities.User: The authenticated user if successful
 //   - error: An error if authentication fails (user not found or invalid password)
-func validateBasicAuth(ctx context.Context, login, password string, svcGw *services.ServiceGateway) (entities.User, error) {
-	user, err := svcGw.Users.GetByLogin(ctx, entities.Email(login))
+func validateBasicAuth(req *http.Request, svcGw *services.ServiceGateway) (entities.User, error) {
+	login, password, ok := req.BasicAuth()
+	if !ok {
+		return entities.User{}, errors.New("invalid authentication token")
+	}
+
+	user, err := svcGw.Users.GetByLogin(req.Context(), entities.Email(login))
 	if err != nil {
 		return entities.User{}, err
 	}

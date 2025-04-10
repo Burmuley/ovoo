@@ -8,7 +8,7 @@ import (
 
 // GetAllPrAddrs retrieves all protected addresses for the current user.
 // Supports filtering by ID and email through query parameters.
-func (c *Controller) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
+func (c *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 	// TODO: get real user when authentication is enabled
 	user, err := userFromContext(r)
 	if err != nil {
@@ -51,7 +51,7 @@ func (c *Controller) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetPrAddrById retrieves a single protected address by its ID.
-func (c *Controller) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
+func (c *Application) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
 	prAddrId := entities.Id(r.PathValue("id"))
 	if err := prAddrId.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting protected address by id: parsing id", err)
@@ -69,7 +69,7 @@ func (c *Controller) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreatePrAddr creates a new protected address for the current user.
-func (c *Controller) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
+func (c *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
 		c.errorLogNResponse(w, "getting aliases: identifying user", err)
@@ -94,7 +94,7 @@ func (c *Controller) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdatePrAddr updates an existing protected address by its ID.
-func (c *Controller) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
+func (c *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 	prAddrId := entities.Id(r.PathValue("id"))
 	if err := prAddrId.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting protected address by id: parsing id", err)
@@ -128,7 +128,7 @@ func (c *Controller) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeletePrAddr deletes a protected address by its ID.
-func (c *Controller) DeletePrAddr(w http.ResponseWriter, r *http.Request) {
+func (c *Application) DeletePrAddr(w http.ResponseWriter, r *http.Request) {
 	prAddrId := entities.Id(r.PathValue("id"))
 	if err := prAddrId.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting protected address by id: parsing id", err)

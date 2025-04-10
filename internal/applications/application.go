@@ -1,7 +1,7 @@
-package controllers
+package applications
 
 import "context"
 
-type Controller interface {
+type Application interface {
 	Start(ctx context.Context) error
 }

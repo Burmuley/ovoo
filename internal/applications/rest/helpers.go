@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Burmuley/ovoo/internal/controllers/rest/middleware"
+	"github.com/Burmuley/ovoo/internal/applications/rest/middleware"
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 

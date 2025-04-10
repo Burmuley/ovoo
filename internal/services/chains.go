@@ -81,7 +81,7 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string, owner
 		return entities.Chain{}, fmt.Errorf("%w: creating chain: destination address is not of type 'Alias'", entities.ErrValidation)
 	}
 
-	srcAddr, err := checkCreateSrcAddr(ctx, *cuc.repoFactory, faddr)
+	srcAddr, err := checkCreateSrcAddr(ctx, *cuc.repoFactory, faddr, owner)
 	if err != nil {
 		return entities.Chain{}, fmt.Errorf("creating chain: creating source address: %w", err)
 	}
@@ -102,7 +102,7 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string, owner
 		ID:             entities.NewId(),
 		Email:          replyAliasEmail,
 		ForwardAddress: &srcAddr,
-		Owner:          getFirstUser(ctx, *cuc.repoFactory),
+		Owner:          owner,
 		Metadata:       entities.AddressMetadata{},
 	}
 
@@ -136,7 +136,7 @@ func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string, owner
 
 }
 
-func checkCreateSrcAddr(ctx context.Context, repoFactory factory.RepoFactory, faddr string) (entities.Address, error) {
+func checkCreateSrcAddr(ctx context.Context, repoFactory factory.RepoFactory, faddr string, owner entities.User) (entities.Address, error) {
 	var srcAddr entities.Address
 	var err error
 	srcAddr, err = repoFactory.Address.GetByEmail(ctx, entities.Email(faddr))
@@ -147,7 +147,7 @@ func checkCreateSrcAddr(ctx context.Context, repoFactory factory.RepoFactory, fa
 				Type:  entities.ExternalAddress,
 				ID:    entities.NewId(),
 				Email: entities.Email(faddr),
-				Owner: getFirstUser(ctx, repoFactory),
+				Owner: owner,
 			}
 			err = repoFactory.Address.Create(ctx, srcAddr)
 			if err != nil {
