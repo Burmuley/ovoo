@@ -11,7 +11,7 @@ import (
 // GetAliases retrieves a list of aliases based on optional filters for id and service name.
 // It validates any provided IDs, fetches the aliases for the current user, and returns them
 // in the HTTP response. Currently uses a temporary owner until authentication is implemented.
-func (c *Controller) GetAliases(w http.ResponseWriter, r *http.Request) {
+func (c *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
 		c.errorLogNResponse(w, "getting aliases: identifying user", err)
@@ -48,7 +48,7 @@ func (c *Controller) GetAliases(w http.ResponseWriter, r *http.Request) {
 // GetAliaseById retrieves an alias by its ID from the system. It validates the provided ID,
 // fetches the corresponding alias details, and returns them in the HTTP response. If the alias
 // is not found or there's an error, it returns an appropriate error response.
-func (c *Controller) GetAliaseById(w http.ResponseWriter, r *http.Request) {
+func (c *Application) GetAliaseById(w http.ResponseWriter, r *http.Request) {
 	aliasId := entities.Id(r.PathValue("id"))
 	if err := aliasId.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting alias by id: parsing id", err)
@@ -69,7 +69,7 @@ func (c *Controller) GetAliaseById(w http.ResponseWriter, r *http.Request) {
 // request containing the protected address ID and metadata, creates a new alias associated with
 // the current user (temporarily using first user until authentication is implemented), and returns
 // the created alias details in the response.
-func (c *Controller) CreateAlias(w http.ResponseWriter, r *http.Request) {
+func (c *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
 	rb := CreateAliasRequest{}
 	if err := readBody(r.Body, &rb); err != nil {
 		c.errorLogNResponse(w, "parsing chain create request", err)
@@ -109,7 +109,7 @@ func (c *Controller) CreateAlias(w http.ResponseWriter, r *http.Request) {
 // It can update the protected address ID and metadata of the alias.
 // The function validates the alias ID, retrieves the current alias,
 // applies the requested changes, and returns the updated alias in the response.
-func (c *Controller) UpdateAlias(w http.ResponseWriter, r *http.Request) {
+func (c *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 	aliasId := entities.Id(r.PathValue("id"))
 	if err := aliasId.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting alias by id: parsing id", err)
@@ -159,7 +159,7 @@ func (c *Controller) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 
 // DeleteAlias deletes an alias by its ID.
 // It validates the alias ID, performs the deletion, and returns a no-content response on success.
-func (c *Controller) DeleteAlias(w http.ResponseWriter, r *http.Request) {
+func (c *Application) DeleteAlias(w http.ResponseWriter, r *http.Request) {
 	aliasId := entities.Id(r.PathValue("id"))
 	if err := aliasId.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting alias by id: parsing id", err)

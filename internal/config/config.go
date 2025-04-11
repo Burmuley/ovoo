@@ -8,10 +8,23 @@ import (
 )
 
 type Configurator interface {
+	// String returns the string value of the given key from the config.
+	// If the key doesn't exist or is not a string, it returns an empty string.
 	String(name string) string
+	// StringMap returns a map[string]string from a map node in the config.
+	// If the node doesn't exist or is not a map, it returns an empty map.
 	StringMap(name string) map[string]string
+	// StringList returns a slice of strings from an array node in the config.
+	// If the node doesn't exist or is not an array, it returns an empty slice.
 	StringList(name string) []string
+	// MapAt returns a map[string]any representation of a sub-tree at the given key path.
+	// If the key doesn't exist, it returns an empty map.
+	MapAt(name string) map[string]any
+	// Unmarshal unmarshals a given key path into the given struct.
+	// If the key doesn't exist or the unmarshalling fails, it returns an error.
 	Unmarshal(name string, i any) error
+	// Bool returns the boolean value of the given key from the config.
+	// If the key doesn't exist or is not a boolean, it returns false.
 	Bool(name string) bool
 	Load(file string) error
 }
@@ -60,4 +73,8 @@ func (p *Parser) Unmarshal(name string, i any) error {
 
 func (p *Parser) StringList(name string) []string {
 	return p.koanf.Strings(name)
+}
+
+func (p *Parser) MapAt(name string) map[string]any {
+	return p.koanf.Cut(name).Raw()
 }

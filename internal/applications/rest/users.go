@@ -8,7 +8,7 @@ import (
 )
 
 // GetUsers retrieves all users and returns them as a response.
-func (c *Controller) GetUsers(w http.ResponseWriter, r *http.Request) {
+func (c *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := c.svcGw.Users.GetAll(c.context)
 	if err != nil {
 		c.errorLogNResponse(w, "gettings users", err)
@@ -24,7 +24,7 @@ func (c *Controller) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUserById retrieves a user by their ID and returns the user details.
-func (c *Controller) GetUserById(w http.ResponseWriter, r *http.Request) {
+func (c *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 	userId := r.PathValue("id")
 	user, err := c.svcGw.Users.GetById(c.context, entities.Id(userId))
 	if err != nil {
@@ -37,7 +37,7 @@ func (c *Controller) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateUser creates a new user based on the provided request and returns the created user details.
-func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (c *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 	req_body := CreateUserRequest{}
 	if err := readBody(r.Body, &req_body); err != nil {
 		c.errorLogNResponse(w, "parsing user create request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
@@ -67,7 +67,7 @@ func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateUser updates an existing user's information and returns the updated user details.
-func (c *Controller) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (c *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userId := r.PathValue("id")
 	user, err := c.svcGw.Users.GetById(c.context, entities.Id(userId))
 	if err != nil {
@@ -95,7 +95,7 @@ func (c *Controller) UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteUser deletes a user by their ID and returns the deleted user's details.
-func (c *Controller) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (c *Application) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	userId := r.PathValue("id")
 	user, err := c.svcGw.Users.GetById(c.context, entities.Id(userId))
 	if err != nil {

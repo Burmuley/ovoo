@@ -6,7 +6,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 
-func (c *Controller) getChainByHash(w http.ResponseWriter, r *http.Request) {
+func (c *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
 	chainHash := entities.Hash(r.PathValue("hash"))
 	if err := chainHash.Validate(); err != nil {
 		c.errorLogNResponse(w, "getting chain by hash: parsing hash", err)
@@ -23,7 +23,7 @@ func (c *Controller) getChainByHash(w http.ResponseWriter, r *http.Request) {
 	c.successResponse(w, resp, http.StatusOK)
 }
 
-func (c *Controller) CreateChain(w http.ResponseWriter, r *http.Request) {
+func (c *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
 	rb := CreateEmailChain{}
 	if err := readBody(r.Body, &rb); err != nil {
 		c.errorLogNResponse(w, "parsing chain create request", err)
@@ -51,6 +51,6 @@ func (c *Controller) CreateChain(w http.ResponseWriter, r *http.Request) {
 	c.successResponse(w, resp, http.StatusCreated)
 }
 
-func (c *Controller) DeleteChain(w http.ResponseWriter, r *http.Request) {
+func (c *Application) DeleteChain(w http.ResponseWriter, r *http.Request) {
 	panic("implement me!")
 }

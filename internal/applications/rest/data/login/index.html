@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Form</title>
+</head>
+<body>
+{{if eq .Login ""}}
+    <h2>Login</h2>
+    <form action="/auth/oidc" method="get">
+        <input type="hidden" name="return_url" value="/">
+        <button type="submit">OIDC Login</button>
+    </form>
+{{else}}
+    <h2>Logged in</h2>
+    <p>Username: {{.Login}}</p>
+    <p>First name: {{.FirstName}}</p>
+    <p>Last name: {{.LastName}}</p>
+{{end}}
+</body>
+</html>

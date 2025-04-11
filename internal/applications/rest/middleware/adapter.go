@@ -16,8 +16,11 @@ type Adapter func(http.Handler) http.Handler
 //	adaptedHandler := Adapt(handler, LoggingAdapter, AuthAdapter)
 //	http.Handle("/path", adaptedHandler)
 func Adapt(handler http.Handler, adapters ...Adapter) http.Handler {
-	for _, adapter := range adapters {
-		handler = adapter(handler)
+	for i := len(adapters) - 1; i >= 0; i-- {
+		handler = adapters[i](handler)
 	}
+	// for _, adapter := range adapters {
+	// 	handler = adapter(handler)
+	// }
 	return handler
 }
