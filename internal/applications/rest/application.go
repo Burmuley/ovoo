@@ -141,14 +141,11 @@ func (a *Application) Start(ctx context.Context) error {
 
 func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
 	// http.ServeFileFS(w, r, loginStatic, "data/login/index.html")
-	user, err := userFromContext(r)
-	if err != nil {
-		a.errorLogNResponse(w, "root page: identifying user", err)
-	}
-
+	user, _ := userFromContext(r)
 	tmpl, err := template.New("index").ParseFS(loginStatic, "data/login/index.html")
 	if err != nil {
 		a.errorLogNResponse(w, "root page: parsing template", err)
+		return
 	}
 
 	if err := tmpl.ExecuteTemplate(w, "index.html", user); err != nil {

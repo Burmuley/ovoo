@@ -92,7 +92,13 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 				return
 			}
 
+			if r.URL.Path == OIDCLoginPageUri {
+				h.ServeHTTP(w, r)
+				return
+			}
+
 			http.Error(w, "missing correct authentication data", http.StatusUnauthorized)
+
 		})
 	}
 }

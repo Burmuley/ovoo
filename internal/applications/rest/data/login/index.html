@@ -4,7 +4,7 @@
     <title>Login Form</title>
 </head>
 <body>
-{{if not .}}
+{{if eq .Login ""}}
     <h2>Login</h2>
     <form action="/auth/oidc" method="get">
         <input type="hidden" name="return_url" value="/">
