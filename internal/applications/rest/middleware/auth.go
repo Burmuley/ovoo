@@ -98,7 +98,6 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 			}
 
 			http.Error(w, "missing correct authentication data", http.StatusUnauthorized)
-
 		})
 	}
 }
