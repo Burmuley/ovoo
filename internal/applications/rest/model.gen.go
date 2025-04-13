@@ -4,6 +4,8 @@
 package rest
 
 import (
+	"time"
+
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -31,6 +33,39 @@ type AliasData struct {
 	Id       string          `json:"id"`
 	Metadata AddressMetadata `json:"metadata"`
 	Owner    UserData        `json:"owner"`
+}
+
+// ApiKeyData defines model for apiKeyData.
+type ApiKeyData struct {
+	// Active Indicates whether the API key is active and can be used
+	Active *bool `json:"active,omitempty"`
+
+	// Description Optional details about the API key
+	Description *string `json:"description,omitempty"`
+
+	// Expiration Time of expiration of the API key
+	Expiration *time.Time `json:"expiration,omitempty"`
+
+	// Name Name of the API key
+	Name *string `json:"name,omitempty"`
+}
+
+// ApiKeyDataOnCreate defines model for apiKeyDataOnCreate.
+type ApiKeyDataOnCreate struct {
+	// Active Indicates whether the API key is active and can be used
+	Active *bool `json:"active,omitempty"`
+
+	// ApiKey Clear text API key value; only returned when API key created first time
+	ApiKey *string `json:"api_key,omitempty"`
+
+	// Description Optional details about the API key
+	Description *string `json:"description,omitempty"`
+
+	// Expiration Time of expiration of the API key
+	Expiration *time.Time `json:"expiration,omitempty"`
+
+	// Name Name of the API key
+	Name *string `json:"name,omitempty"`
 }
 
 // BasicAuthForm defines model for basicAuthForm.
@@ -116,6 +151,9 @@ type BasicAuthenticationTokenResponse struct {
 // CreateAliasResponse Address of type "alias" data structure
 type CreateAliasResponse = AliasData
 
+// CreateApiKeyResponse defines model for createApiKeyResponse.
+type CreateApiKeyResponse = ApiKeyDataOnCreate
+
 // CreateEmailChainResponse defines model for createEmailChainResponse.
 type CreateEmailChainResponse = ChainData
 
@@ -124,6 +162,9 @@ type CreatePrAddrResponse = ProtectedAddressData
 
 // CreateUserResponse defines model for createUserResponse.
 type CreateUserResponse = UserData
+
+// DeleteApiKeyResponse defines model for deleteApiKeyResponse.
+type DeleteApiKeyResponse = ApiKeyData
 
 // ErrorResponse defines model for errorResponse.
 type ErrorResponse struct {
@@ -136,6 +177,12 @@ type GetAliasDetailsResponse = AliasData
 
 // GetAliasesResponse defines model for getAliasesResponse.
 type GetAliasesResponse = []AliasData
+
+// GetApiKeyDetailsResponse defines model for getApiKeyDetailsResponse.
+type GetApiKeyDetailsResponse = ApiKeyData
+
+// GetApiKeysResponse defines model for getApiKeysResponse.
+type GetApiKeysResponse = []ApiKeyData
 
 // GetEmailChainDetailsResponse defines model for getEmailChainDetailsResponse.
 type GetEmailChainDetailsResponse = ChainData
@@ -155,6 +202,9 @@ type GetUsersResponse = []UserData
 // UpdateAliasResponse Address of type "alias" data structure
 type UpdateAliasResponse = AliasData
 
+// UpdateApiKeyResponse defines model for updateApiKeyResponse.
+type UpdateApiKeyResponse = ApiKeyData
+
 // UpdatePrAddrResponse defines model for updatePrAddrResponse.
 type UpdatePrAddrResponse = ProtectedAddressData
 
@@ -165,6 +215,12 @@ type UpdateUserResponse = UserData
 type CreateAliasRequest struct {
 	Metadata           AddressMetadata `json:"metadata"`
 	ProtectedAddressId string          `json:"protected_address_id"`
+}
+
+// CreateApiKey defines model for createApiKey.
+type CreateApiKey struct {
+	Description *string `json:"description,omitempty"`
+	Name        *string `json:"name,omitempty"`
 }
 
 // CreateEmailChain defines model for createEmailChain.
@@ -192,6 +248,13 @@ type CreateUserRequest struct {
 type UpdateAliasRequest struct {
 	Metadata           *AddressMetadata `json:"metadata,omitempty"`
 	ProtectedAddressId *string          `json:"protected_address_id,omitempty"`
+}
+
+// UpdateApiKey defines model for updateApiKey.
+type UpdateApiKey struct {
+	Active      *bool   `json:"active,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Name        *string `json:"name,omitempty"`
 }
 
 // UpdateProtectedAddressRequest defines model for updateProtectedAddressRequest.

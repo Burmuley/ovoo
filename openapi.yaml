@@ -1,10 +1,9 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Ovoo API
   description: >-
     Ovoo - privacy email gateway to manage aliases hiding real (protected)
     emails from senders.
-  termsOfService: ""
   contact:
     email: burmuley@gmail.com
     name: Konstantin Vasilev
@@ -16,7 +15,7 @@ externalDocs:
   description: Ovoo service source code
   url: https://github.com/Burmuley/ovoo
 servers:
-  - url: https://ovoolocal.burmuley.com:8808
+  - url: http://localhost:8808
     description: Local testing server
     variables: {}
 tags:
@@ -24,31 +23,18 @@ tags:
     description: >-
       API endpoint provides basic operations to manage alias emails for regular
       users and admins
-    externalDocs:
-      description: ""
-      url: ""
   - name: Protected Addresses
     description: >-
       API endpoint provides operations on protected addresses for regular users
       and admins
-    externalDocs:
-      description: ""
-      url: ""
   - name: Users
     description: ""
-    externalDocs:
-      description: ""
-      url: ""
   - name: Email chains
     description: ""
-    externalDocs:
-      description: ""
-      url: ""
   - name: Authentication
     description: Endpoints to support users authentication
-    externalDocs:
-      description: ""
-      url: ""
+  - name: ApiKeys
+    description: API Keys
 paths:
   /api/v1/aliases:
     get:
@@ -59,8 +45,6 @@ paths:
       operationId: getAliases
       tags:
         - Aliases
-      requestBody:
-        content: {}
       responses:
         "200":
           $ref: "#/components/responses/getAliasesResponse"
@@ -191,7 +175,7 @@ paths:
       - in: path
         name: alias_id
         description: ""
-        schema: &ref_1
+        schema:
           type: string
         required: true
   /api/v1/users:
@@ -204,8 +188,6 @@ paths:
       tags:
         - Users
       parameters: []
-      requestBody:
-        content: {}
       responses:
         "200":
           $ref: "#/components/responses/getUsersResponse"
@@ -226,7 +208,7 @@ paths:
       operationId: createUser
       tags:
         - Users
-      parameters: &ref_0 []
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/createUserRequest"
       responses:
@@ -250,9 +232,7 @@ paths:
       operationId: getUserDetails
       tags:
         - Users
-      parameters: *ref_0
-      requestBody:
-        content: {}
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getUserDetailsResponse"
@@ -274,7 +254,7 @@ paths:
       operationId: updateUser
       tags:
         - Users
-      parameters: *ref_0
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/updateUserRequest"
       responses:
@@ -299,9 +279,7 @@ paths:
       operationId: deleteUser
       tags:
         - Users
-      parameters: *ref_0
-      requestBody:
-        content: {}
+      parameters: []
       responses:
         "204":
           description: ""
@@ -321,8 +299,141 @@ paths:
       - in: path
         name: user_id
         description: ""
-        schema: *ref_1
+        schema:
+          type: string
         required: true
+  /api/v1/users/{user_id}/apikeys:
+    get:
+      summary: Get user's API Keys
+      description: "Retrieve list of API keys for the current user"
+      operationId: getApiKeys
+      tags:
+        - ApiKeys
+      parameters:
+        - in: path
+          name: user_id
+          description: ""
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/getApiKeysResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+    post:
+      summary: Create new API Key
+      description: ""
+      operationId: createApiKey
+      tags:
+        - ApiKeys
+      parameters:
+        - in: path
+          name: user_id
+          description: ""
+          schema:
+            type: string
+          required: true
+      responses:
+        "201":
+          $ref: "#/components/responses/createApiKeyResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+  /api/v1/users/{user_id}/apikeys/{key_id}:
+    get:
+      summary: Get API Key detailed information
+      description: "Get existing API key detailed information"
+      operationId: getApiKeyDetails
+      tags:
+        - ApiKeys
+      parameters:
+        - in: path
+          name: user_id
+          description: ""
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: key_id
+          description: ""
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/getApiKeyDetailsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+    delete:
+      summary: Delete API Key
+      description: "Delete existing API key"
+      operationId: deleteApiKey
+      tags:
+        - ApiKeys
+      parameters:
+        - in: path
+          name: user_id
+          description: ""
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: key_id
+          description: ""
+          schema:
+            type: string
+          required: true
+      responses:
+        "204":
+          $ref: "#/components/responses/deleteApiKeyResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+    put:
+      summary: Update API Key attributes
+      description: "Update existing API key metadata attributes"
+      operationId: updateApiKey
+      tags:
+        - ApiKeys
+      parameters:
+        - in: path
+          name: user_id
+          description: ""
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: key_id
+          description: ""
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/updateApiKeyResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
   /api/v1/praddrs:
     get:
       summary: Get protected addresses available for the authenticated user
@@ -337,14 +448,13 @@ paths:
         - in: query
           name: id
           description: ""
-          schema: &ref_2
+          schema:
             type: string
         - in: query
           name: email
           description: ""
-          schema: *ref_2
-      requestBody:
-        content: {}
+          schema:
+            type: string
       responses:
         "200":
           $ref: "#/components/responses/getPrAddrsResponse"
@@ -367,7 +477,7 @@ paths:
       operationId: createPrAddr
       tags:
         - Protected Addresses
-      parameters: *ref_0
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/createProtectedAddressRequest"
       responses:
@@ -398,8 +508,6 @@ paths:
           schema:
             type: string
           required: true
-      requestBody:
-        content: {}
       responses:
         "200":
           $ref: "#/components/responses/getPrAddrDetailsResponse"
@@ -425,7 +533,7 @@ paths:
         - in: path
           name: praddr_id
           description: ""
-          schema: &ref_3
+          schema:
             type: string
           required: true
       requestBody:
@@ -456,10 +564,9 @@ paths:
         - in: path
           name: praddr_id
           description: ""
-          schema: *ref_3
+          schema:
+            type: string
           required: true
-      requestBody:
-        content: {}
       responses:
         "204":
           description: ""
@@ -483,7 +590,7 @@ paths:
       operationId: createChain
       tags:
         - Email chains
-      parameters: *ref_0
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/createEmailChain"
       responses:
@@ -510,7 +617,7 @@ paths:
         - in: path
           name: hash
           description: ""
-          schema: &ref_4
+          schema:
             type: string
           required: true
       responses:
@@ -536,7 +643,8 @@ paths:
         - in: path
           name: hash
           description: ""
-          schema: *ref_4
+          schema:
+            type: string
           required: true
       responses:
         "204":
@@ -562,13 +670,14 @@ paths:
         - in: query
           name: provider
           description: ""
-          schema: &ref_5
+          schema:
             type: string
           required: false
         - in: query
           name: code
           description: ""
-          schema: *ref_5
+          schema:
+            type: string
       responses:
         "200":
           $ref: "#/components/responses/authForm"
@@ -644,6 +753,31 @@ components:
         - last_name
         - type
         - id
+    apiKeyData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the API key
+        description:
+          type: string
+          description: Optional details about the API key
+        expiration:
+          type: string
+          format: date-time
+          description: Time of expiration of the API key
+        active:
+          type: boolean
+          description: Indicates whether the API key is active and can be used
+    apiKeyDataOnCreate:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/apiKeyData"
+        - type: object
+          properties:
+            api_key:
+              type: string
+              description: Clear text API key value; only returned when API key created first time
     protectedAddressData:
       type: object
       properties:
@@ -716,16 +850,9 @@ components:
       type: oauth2
       flows:
         authorizationCode:
-          authorizationUrl: Todo
-          tokenUrl: Todo
+          authorizationUrl: https://localhost.com/authorize
+          tokenUrl: https://localhost.com/token
           scopes: {}
-        implicit:
-          authorizationUrl: Todo
-          refreshUrl: Todo
-          scopes:
-            user: regular user
-            admin: admin user
-            milter: milter user
     BasicAuthentication:
       type: http
       scheme: basic
@@ -835,6 +962,32 @@ components:
             required:
               - from_email
               - to_email
+    createApiKey:
+      required: false
+      description: Request to create API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+    updateApiKey:
+      required: false
+      description: Request to update API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              active:
+                type: boolean
     basicAuthentication:
       content:
         others:
@@ -874,6 +1027,21 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/error"
+    errorResponse:
+      description: Response containing error information (id and message)
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: number
+              msg:
+                type: string
+            required:
+              - id
+              - msg
     getAliasesResponse:
       headers: {}
       content:
@@ -904,21 +1072,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/aliasData"
-    errorResponse:
-      description: Response containing error information (id and message)
-      headers: {}
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              id:
-                type: number
-              msg:
-                type: string
-            required:
-              - id
-              - msg
     getUsersResponse:
       headers: {}
       content:
@@ -993,6 +1146,39 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/chainData"
+    createApiKeyResponse:
+      description: Response containing information about newly created API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiKeyDataOnCreate"
+    updateApiKeyResponse:
+      description: Response containing updated information of the API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiKeyData"
+    getApiKeyDetailsResponse:
+      description: Response containing information about existing API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiKeyData"
+    deleteApiKeyResponse:
+      description: Response containing information about just deleted API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiKeyData"
+    getApiKeysResponse:
+      description: Response with a list of API keys for the current user
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/apiKeyData"
     basicAuthenticationTokenResponse:
       description: ""
       headers: {}
