@@ -2,13 +2,16 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net/http"
 	"slices"
-	"strings"
 
+	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/services"
+)
+
+const (
+	authorizationHeader = "Authorization"
 )
 
 type UserContextKey string
@@ -35,42 +38,13 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 				return
 			}
 
-			// First try to authenticate using cookies (for browser sessions)
-			authCookieValue, _ := r.Cookie(authCookie)
-			if authCookieValue != nil {
-				cookieToken := authCookieValue.Value
-				user, err := validateOIDCToken(r.Context(), cookieToken, svcGw)
-				if err != nil && r.URL.Path != OIDCLoginPageUri {
-					logger.Error("invalid oauth2 credentials", "src", r.RemoteAddr, "error", err.Error())
-					http.Error(w, "invalid oauth2 credentials provided", http.StatusUnauthorized)
-					return
-				} else if err == nil {
-					r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
-					h.ServeHTTP(w, r)
-					return
-				}
-			}
-
-			// Then check for Authorization header
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" && r.URL.Path != OIDCLoginPageUri {
-				http.Redirect(w, r, OIDCLoginUri, http.StatusFound)
-				return
-			}
-
-			// Parse and validate the Authorization header
-			tokenType, token, err := validateAuthHeader(authHeader)
-			if err != nil && r.URL.Path != OIDCLoginPageUri {
-				logger.Error(err.Error(), "src", r.RemoteAddr)
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-			}
-
 			// Process Basic authentication (username/password)
-			if tokenType == "Basic" {
-				user, err := validateBasicAuth(r, svcGw)
+			username, password, ok := r.BasicAuth()
+			if ok {
+				user, err := validateBasicAuth(r.Context(), username, password, svcGw)
 				if err != nil {
 					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr, "msg", err.Error())
-					http.Error(w, "invalid credentials", http.StatusUnauthorized)
+					http.Error(w, "invalid basic credentials", http.StatusUnauthorized)
 				}
 
 				r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
@@ -79,11 +53,19 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 			}
 
 			// Process Bearer token authentication (OIDC/OAuth2)
-			if tokenType == "Bearer" {
-				user, err := validateOIDCToken(r.Context(), token, svcGw)
+			oidcToken := getOIDCToken(r)
+			if oidcToken != "" {
+				userEmail, err := validateOIDCToken(r.Context(), oidcToken)
 				if err != nil && r.URL.Path != OIDCLoginPageUri {
-					logger.Error("invalid oauth2 credentials", "src", r.RemoteAddr, "error", err.Error())
-					http.Error(w, "invalid oauth2 credentials provided", http.StatusUnauthorized)
+					logger.Error("invalid OAuth2 credentials", "src", r.RemoteAddr, "error", err.Error())
+					http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)
+					return
+				}
+
+				user, err := svcGw.Users.GetByLogin(r.Context(), entities.Email(userEmail))
+				if err != nil {
+					logger.Error("user from OAuth2 token not found in database", "src", r.RemoteAddr, "error", err.Error())
+					http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)
 					return
 				}
 
@@ -92,6 +74,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 				return
 			}
 
+			// if authentication info not found still pass to the login webpage
 			if r.URL.Path == OIDCLoginPageUri {
 				h.ServeHTTP(w, r)
 				return
@@ -100,17 +83,4 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 			http.Error(w, "missing correct authentication data", http.StatusUnauthorized)
 		})
 	}
-}
-
-func validateAuthHeader(header string) (string, string, error) {
-	tokenParts := strings.Split(header, " ")
-	if len(tokenParts) != 2 {
-		return "", "", errors.New("invalid authentication token")
-	}
-	tokenType, token := tokenParts[0], tokenParts[1]
-	if !slices.Contains([]string{"Basic", "Bearer"}, tokenType) {
-		return "", "", errors.New("invalid authentication token")
-	}
-
-	return tokenType, token, nil
 }
