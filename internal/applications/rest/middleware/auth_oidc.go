@@ -20,21 +20,10 @@ type OIDCProvider struct {
 	Issuer       string
 }
 
-const (
-	OIDCLoginUri     = "/auth/oidc"
-	OIDCCallbackUri  = "/auth/callback"
-	OIDCLoginPageUri = "/"
-
-	stateCookieName = "ovoo_state"
-	nonceCookieName = "ovoo_nonce"
-	authCookieName  = "ovoo_auth"
-)
-
 var providerConfig *OIDCProvider
 
 func SetOIDCProvider(provider *OIDCProvider) {
 	providerConfig = provider
-	// fmt.Println(*providerConfig)
 }
 
 // validateOIDCToken validates an OIDC token and extracts the user's email from its claims.
@@ -170,15 +159,26 @@ func HandleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 // It checks for a Bearer token in the Authorization header first,
 // and then falls back to checking for an authentication cookie.
 //
+// The function performs the following steps:
+// 1. Extracts the Authorization header from the request
+// 2. If the header contains a Bearer token, trims the prefix
+// 3. Validates that the token is not an API token (by checking prefix)
+// 4. If no valid Bearer token is found, attempts to retrieve the token from a cookie
+//
 // Parameters:
-//   - r: the HTTP request to extract the token from
+//   - r: The HTTP request to extract the token from
 //
 // Returns:
-//   - string: the extracted OIDC token, or an empty string if no token is found
+//   - string: The extracted OIDC token, or an empty string if no valid token is found
 func getOIDCToken(r *http.Request) string {
 	authHeader := r.Header.Get(authorizationHeader)
-	if strings.HasPrefix(authHeader, "Bearer") {
-		return strings.TrimPrefix(authHeader, "Bearer")
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if !strings.HasPrefix(token, apiTokenPrefix) {
+			return token
+		}
+
+		return ""
 	}
 
 	if authCookie, err := r.Cookie(authCookieName); err == nil && authCookie != nil {

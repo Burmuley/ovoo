@@ -126,7 +126,9 @@ func chainToEntity(e Chain) entities.Chain {
 func apiTokenFromEntity(e entities.ApiToken) ApiToken {
 	return ApiToken{
 		Model:       Model{ID: e.ID.String()},
-		Token:       e.Token,
+		Name:        e.Name,
+		TokenHash:   e.TokenHash,
+		Salt:        e.Salt,
 		Description: e.Description,
 		Owner:       userFromEntity(e.Owner),
 		Expiration:  e.Expiration,
@@ -146,6 +148,9 @@ func apiTokenFromEntityList(etokens []entities.ApiToken) []ApiToken {
 func apiTokenToEntity(t ApiToken) entities.ApiToken {
 	return entities.ApiToken{
 		ID:          entities.Id(t.ID),
+		Name:        t.Name,
+		TokenHash:   t.TokenHash,
+		Salt:        t.Salt,
 		Description: t.Description,
 		Owner:       userToEntity(t.Owner),
 		Expiration:  t.Expiration,

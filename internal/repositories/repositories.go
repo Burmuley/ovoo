@@ -74,15 +74,15 @@ type UsersReadWriter interface {
 
 // TokensReader defines methods for reading token data.
 type TokensReader interface {
-	GetById(ctx context.Context, token_id entities.Id) (entities.ApiToken, error)
-	GetAllForUser(ctx context.Context, user entities.User) ([]entities.ApiToken, error)
+	GetById(ctx context.Context, tokenId entities.Id) (entities.ApiToken, error)
+	GetAllForUser(ctx context.Context, userId entities.Id) ([]entities.ApiToken, error)
 }
 
 // TokensWriter defines methods for writing token data.
 type TokensWriter interface {
 	Create(ctx context.Context, token entities.ApiToken) error
 	BatchCreate(ctx context.Context, tokens []entities.ApiToken) error
-	Delete(ctx context.Context, token_id entities.Id) error
+	Delete(ctx context.Context, tokenId entities.Id) error
 }
 
 // TokensReadWriter combines TokensReader and TokensWriter interfaces.

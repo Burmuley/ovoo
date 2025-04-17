@@ -90,8 +90,9 @@ func New(
 }
 
 // Start initializes and starts the HTTP server for the Ovoo API.
-// It sets up routes for users, aliases, and protected addresses,
-// applies logging middleware, and begins listening for incoming requests.
+// It sets up routes for users, aliases, protected addresses, chains, and API tokens,
+// registers authentication endpoints, applies middleware for security, logging, and authentication,
+// and begins listening for incoming HTTPS requests with TLS.
 // The server runs until the provided context is cancelled or an error occurs.
 func (a *Application) Start(ctx context.Context) error {
 	a.context = ctx
@@ -106,6 +107,13 @@ func (a *Application) Start(ctx context.Context) error {
 	mux.HandleFunc("POST /api/v1/users", a.CreateUser)
 	mux.HandleFunc("PUT /api/v1/users/{id}", a.UpdateUser)
 	mux.HandleFunc("DELETE /api/v1/users", a.DeleteUser)
+
+	// api tokens routes
+	mux.HandleFunc("GET /api/v1/users/apitokens", a.GetApiTokens)
+	mux.HandleFunc("GET /api/v1/users/apitokens/{token_id}", a.GetApiTokenById)
+	mux.HandleFunc("POST /api/v1/users/apitokens", a.CreateApiToken)
+	mux.HandleFunc("PUT /api/v1/users/apitokens/{token_id}", a.UpdateApiToken)
+	mux.HandleFunc("DELETE /api/v1/users/apitokens/{token_id}", a.DeleteApiToken)
 
 	// aliases routes
 	mux.HandleFunc("GET /api/v1/aliases", a.GetAliases)
@@ -139,8 +147,15 @@ func (a *Application) Start(ctx context.Context) error {
 	return http.ListenAndServeTLS(a.listenAddr, a.tls_cert, a.tls_key, handler)
 }
 
+// handleRoot serves the root page of the application.
+// It parses and renders the login template, injecting the current user information if available.
+// If there are any errors during template parsing or rendering, it will log the error
+// and return an appropriate error response to the client.
+//
+// Parameters:
+//   - w: The HTTP response writer to write the response to
+//   - r: The HTTP request that triggered this handler
 func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
-	// http.ServeFileFS(w, r, loginStatic, "data/login/index.html")
 	user, _ := userFromContext(r)
 	tmpl, err := template.New("index").ParseFS(loginStatic, "data/login/index.html")
 	if err != nil {

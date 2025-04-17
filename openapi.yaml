@@ -10,12 +10,12 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: "1.0"
+  version: "1.2"
 externalDocs:
   description: Ovoo service source code
   url: https://github.com/Burmuley/ovoo
 servers:
-  - url: http://localhost:8808
+  - url: https://ovoolocal.burmuley.com:8808
     description: Local testing server
     variables: {}
 tags:
@@ -33,8 +33,8 @@ tags:
     description: ""
   - name: Authentication
     description: Endpoints to support users authentication
-  - name: ApiKeys
-    description: API Keys
+  - name: ApiTokens
+    description: API tokens
 paths:
   /api/v1/aliases:
     get:
@@ -84,7 +84,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-  /api/v1/aliases/{alias_id}:
+  /api/v1/aliases/{id}:
     get:
       description: >-
         Retrieve deteiled information of a particular alias address by its ID.
@@ -92,13 +92,7 @@ paths:
       operationId: getAliasDetails
       tags:
         - Aliases
-      parameters:
-        - in: path
-          name: alias_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getAliasDetailsResponse"
@@ -121,13 +115,7 @@ paths:
       operationId: deleteAlias
       tags:
         - Aliases
-      parameters:
-        - in: path
-          name: alias_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "204":
           description: ""
@@ -151,13 +139,7 @@ paths:
       operationId: updateAlias
       tags:
         - Aliases
-      parameters:
-        - in: path
-          name: alias_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/updateAliasRequest"
       responses:
@@ -173,8 +155,8 @@ paths:
         - BasicAuthentication: []
     parameters:
       - in: path
-        name: alias_id
-        description: ""
+        name: id
+        description: "Email alias ID"
         schema:
           type: string
         required: true
@@ -224,7 +206,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-  /api/v1/users/{user_id}:
+  /api/v1/users/{id}:
     get:
       description: >-
         Retrieve deteiled information of a particular user by its ID. The ID is
@@ -297,28 +279,22 @@ paths:
         - BasicAuthentication: []
     parameters:
       - in: path
-        name: user_id
-        description: ""
+        name: id
+        description: "User ID"
         schema:
           type: string
         required: true
-  /api/v1/users/{user_id}/apikeys:
+  /api/v1/users/apitokens:
     get:
-      summary: Get user's API Keys
-      description: "Retrieve list of API keys for the current user"
-      operationId: getApiKeys
+      summary: Get user's API Tokens
+      description: "Retrieve list of API tokens for the current user"
+      operationId: getApiTokens
       tags:
-        - ApiKeys
-      parameters:
-        - in: path
-          name: user_id
-          description: ""
-          schema:
-            type: string
-          required: true
+        - ApiTokens
+      parameters: []
       responses:
         "200":
-          $ref: "#/components/responses/getApiKeysResponse"
+          $ref: "#/components/responses/getApiTokensResponse"
         "401":
           $ref: "#/components/responses/HTTP401"
         "403":
@@ -326,21 +302,17 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
     post:
-      summary: Create new API Key
+      summary: Create new API token
       description: ""
-      operationId: createApiKey
+      operationId: createApiToken
       tags:
-        - ApiKeys
-      parameters:
-        - in: path
-          name: user_id
-          description: ""
-          schema:
-            type: string
-          required: true
+        - ApiTokens
+      parameters: []
+      requestBody:
+        $ref: "#/components/requestBodies/createApiToken"
       responses:
         "201":
-          $ref: "#/components/responses/createApiKeyResponse"
+          $ref: "#/components/responses/createApiTokenResponse"
         "400":
           $ref: "#/components/responses/HTTP400"
         "401":
@@ -349,29 +321,17 @@ paths:
           $ref: "#/components/responses/HTTP403"
         "404":
           $ref: "#/components/responses/HTTP404"
-  /api/v1/users/{user_id}/apikeys/{key_id}:
+  /api/v1/users/apitokens/{id}:
     get:
-      summary: Get API Key detailed information
-      description: "Get existing API key detailed information"
-      operationId: getApiKeyDetails
+      summary: Get API token detailed information
+      description: "Get existing API token detailed information"
+      operationId: getApiTokenDetails
       tags:
-        - ApiKeys
-      parameters:
-        - in: path
-          name: user_id
-          description: ""
-          schema:
-            type: string
-          required: true
-        - in: path
-          name: key_id
-          description: ""
-          schema:
-            type: string
-          required: true
+        - ApiTokens
+      parameters: []
       responses:
         "200":
-          $ref: "#/components/responses/getApiKeyDetailsResponse"
+          $ref: "#/components/responses/getApiTokenDetailsResponse"
         "401":
           $ref: "#/components/responses/HTTP401"
         "403":
@@ -379,27 +339,15 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
     delete:
-      summary: Delete API Key
-      description: "Delete existing API key"
-      operationId: deleteApiKey
+      summary: Delete API token
+      description: "Delete existing API token"
+      operationId: deleteApiToken
       tags:
-        - ApiKeys
-      parameters:
-        - in: path
-          name: user_id
-          description: ""
-          schema:
-            type: string
-          required: true
-        - in: path
-          name: key_id
-          description: ""
-          schema:
-            type: string
-          required: true
+        - ApiTokens
+      parameters: []
       responses:
         "204":
-          $ref: "#/components/responses/deleteApiKeyResponse"
+          $ref: "#/components/responses/deleteApiTokenResponse"
         "401":
           $ref: "#/components/responses/HTTP401"
         "403":
@@ -407,33 +355,30 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
     put:
-      summary: Update API Key attributes
-      description: "Update existing API key metadata attributes"
-      operationId: updateApiKey
+      summary: Update API token attributes
+      description: "Update existing API token metadata attributes"
+      operationId: updateApiToken
       tags:
-        - ApiKeys
-      parameters:
-        - in: path
-          name: user_id
-          description: ""
-          schema:
-            type: string
-          required: true
-        - in: path
-          name: key_id
-          description: ""
-          schema:
-            type: string
-          required: true
+        - ApiTokens
+      parameters: []
+      requestBody:
+        $ref: "#/components/requestBodies/updateApiToken"
       responses:
         "200":
-          $ref: "#/components/responses/updateApiKeyResponse"
+          $ref: "#/components/responses/updateApiTokenResponse"
         "401":
           $ref: "#/components/responses/HTTP401"
         "403":
           $ref: "#/components/responses/HTTP403"
         "404":
           $ref: "#/components/responses/HTTP404"
+    parameters:
+      - in: path
+        name: id
+        description: "API token ID"
+        schema:
+          type: string
+        required: true
   /api/v1/praddrs:
     get:
       summary: Get protected addresses available for the authenticated user
@@ -492,7 +437,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-  /api/v1/praddrs/{praddr_id}:
+  /api/v1/praddrs/{id}:
     get:
       summary: Get details on a particular protected address
       description: >-
@@ -501,13 +446,7 @@ paths:
       operationId: getPrAddrDetails
       tags:
         - Protected Addresses
-      parameters:
-        - in: path
-          name: praddr_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getPrAddrDetailsResponse"
@@ -529,13 +468,7 @@ paths:
       operationId: updatePrAddr
       tags:
         - Protected Addresses
-      parameters:
-        - in: path
-          name: praddr_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/updateProtectedAddressRequest"
       responses:
@@ -560,13 +493,7 @@ paths:
       operationId: deletePrAddr
       tags:
         - Protected Addresses
-      parameters:
-        - in: path
-          name: praddr_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "204":
           description: ""
@@ -581,6 +508,13 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
+    parameters:
+      - in: path
+        name: id
+        description: "Protected Address ID"
+        schema:
+          type: string
+        required: true
   /private/api/v1/chains:
     post:
       summary: Create new email chain
@@ -603,7 +537,7 @@ paths:
         "403":
           $ref: "#/components/responses/HTTP403"
       security:
-        - ApiKey: []
+        - ApiToken: []
   /private/api/v1/chains/{hash}:
     get:
       summary: Get a particular email chain by its hash
@@ -613,13 +547,7 @@ paths:
       operationId: getChainByHash
       tags:
         - Email chains
-      parameters:
-        - in: path
-          name: hash
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getEmailChainDetailsResponse"
@@ -630,7 +558,7 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
       security:
-        - ApiKey: []
+        - ApiToken: []
     delete:
       summary: Delete a particular email chain by it hash
       description: >-
@@ -639,13 +567,7 @@ paths:
       operationId: deleteChainByHash
       tags:
         - Email chains
-      parameters:
-        - in: path
-          name: hash
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "204":
           description: ""
@@ -658,43 +580,14 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
       security:
-        - ApiKey: []
-  /auth/login:
-    get:
-      summary: retrieve authentication form / process OAuth2 requests
-      description: retrieve authentication form / process OAuth2 requests
-      operationId: getAuthForm
-      tags:
-        - Authentication
-      parameters:
-        - in: query
-          name: provider
-          description: ""
-          schema:
-            type: string
-          required: false
-        - in: query
-          name: code
-          description: ""
-          schema:
-            type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/authForm"
-    post:
-      summary: submit authentication form (basic authentication)
-      description: submit authentication form (basic authentication)
-      operationId: postAuthForm
-      tags:
-        - Authentication
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/basicAuthenticationTokenResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-      requestBody:
-        $ref: "#/components/requestBodies/basicAuthentication"
+        - ApiToken: []
+    parameters:
+      - in: path
+        name: hash
+        description: "Email thread chain hash"
+        schema:
+          type: string
+        required: true
 components:
   schemas:
     aliasData:
@@ -753,31 +646,38 @@ components:
         - last_name
         - type
         - id
-    apiKeyData:
+    apiTokenData:
       type: object
       properties:
         name:
           type: string
-          description: Name of the API key
+          description: Name of the API token
         description:
           type: string
-          description: Optional details about the API key
+          description: Optional details about the API token
         expiration:
           type: string
           format: date-time
-          description: Time of expiration of the API key
+          description: Time of expiration of the API token
         active:
           type: boolean
-          description: Indicates whether the API key is active and can be used
-    apiKeyDataOnCreate:
+          description: Indicates whether the API token is active and can be used
+      required:
+        - name
+        - description
+        - expiration
+        - active
+    apiTokenDataOnCreate:
       type: object
       allOf:
-        - $ref: "#/components/schemas/apiKeyData"
+        - $ref: "#/components/schemas/apiTokenData"
         - type: object
           properties:
-            api_key:
+            api_token:
               type: string
-              description: Clear text API key value; only returned when API key created first time
+              description: Clear text API token value; only returned when API token created first time
+          required:
+            - api_token
     protectedAddressData:
       type: object
       properties:
@@ -842,10 +742,10 @@ components:
         - user
         - password
   securitySchemes:
-    ApiKey:
+    ApiToken:
       type: apiKey
       in: header
-      name: ovoo_api_key
+      name: X-OVOO-KEY
     OAuth2:
       type: oauth2
       flows:
@@ -962,9 +862,9 @@ components:
             required:
               - from_email
               - to_email
-    createApiKey:
+    createApiToken:
       required: false
-      description: Request to create API key
+      description: Request to create API token
       content:
         application/json:
           schema:
@@ -974,9 +874,14 @@ components:
                 type: string
               description:
                 type: string
-    updateApiKey:
+              expire_in:
+                type: number
+            required:
+              - name
+              - expire_in
+    updateApiToken:
       required: false
-      description: Request to update API key
+      description: Request to update API token
       content:
         application/json:
           schema:
@@ -1146,39 +1051,39 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/chainData"
-    createApiKeyResponse:
-      description: Response containing information about newly created API key
+    createApiTokenResponse:
+      description: Response containing information about newly created API token
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/apiKeyDataOnCreate"
-    updateApiKeyResponse:
-      description: Response containing updated information of the API key
+            $ref: "#/components/schemas/apiTokenDataOnCreate"
+    updateApiTokenResponse:
+      description: Response containing updated information of the API token
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/apiKeyData"
-    getApiKeyDetailsResponse:
-      description: Response containing information about existing API key
+            $ref: "#/components/schemas/apiTokenData"
+    getApiTokenDetailsResponse:
+      description: Response containing information about existing API token
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/apiKeyData"
-    deleteApiKeyResponse:
-      description: Response containing information about just deleted API key
+            $ref: "#/components/schemas/apiTokenData"
+    deleteApiTokenResponse:
+      description: Response containing information about just deleted API token
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/apiKeyData"
-    getApiKeysResponse:
-      description: Response with a list of API keys for the current user
+            $ref: "#/components/schemas/apiTokenData"
+    getApiTokensResponse:
+      description: Response with a list of API tokens for the current user
       headers: {}
       content:
         application/json:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/apiKeyData"
+              $ref: "#/components/schemas/apiTokenData"
     basicAuthenticationTokenResponse:
       description: ""
       headers: {}
@@ -1205,5 +1110,5 @@ components:
             $ref: "#/components/schemas/basicAuthForm"
 security:
   - OAuth2: []
-  - ApiKey: []
+  - ApiToken: []
   - BasicAuthentication: []

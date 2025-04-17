@@ -74,7 +74,9 @@ func (c Chain) TableName() string {
 // ApiToken represents an API token for authentication
 type ApiToken struct {
 	Model
-	Token       string    `gorm:"column:token"`
+	Name        string    `gorm:"column:name"`
+	TokenHash   string    `gorm:"column:token_hash"`
+	Salt        string    `gorm:"column:salt"`
 	Description string    `gorm:"column:description"`
 	OwnerID     string    `gorm:"column:owner_id"`
 	Owner       User      `gorm:"foreignKey:OwnerID"`
