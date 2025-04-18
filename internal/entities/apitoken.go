@@ -43,7 +43,7 @@ func NewToken(expiration time.Time, name, description string, owner User) (*ApiT
 		Expiration:  expiration,
 		Active:      true,
 		TokenHash:   hash,
-		Token:       strings.Join([]string{ApiTokenPrefix, string(id), rawToken}, "_"),
+		Token:       strings.Join([]string{ApiTokenPrefix, Base62Encode([]byte(id)), rawToken}, "_"),
 		Salt:        salt,
 	}
 

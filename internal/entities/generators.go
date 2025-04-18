@@ -2,9 +2,7 @@ package entities
 
 import (
 	"crypto/rand"
-	"encoding/base64"
 	"fmt"
-	"io"
 	"math/big"
 	"regexp"
 	"strings"
@@ -68,21 +66,4 @@ func maskEmail(email string) string {
 	email = strings.ReplaceAll(email, "@", "_at_")
 	email = strings.Join(r.FindAllString(email, -1), "_")
 	return email
-}
-
-// RandString generates a cryptographically secure random string of specified byte length.
-// It uses crypto/rand to generate random bytes which are then encoded using base64 URL-safe encoding.
-//
-// Parameters:
-//   - nByte: the number of random bytes to generate.
-//
-// Returns:
-//   - string: the base64 URL-safe encoded random string.
-//   - error: an error if random byte generation fails.
-func RandString(nByte int) (string, error) {
-	b := make([]byte, nByte)
-	if _, err := io.ReadFull(rand.Reader, b); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
 }

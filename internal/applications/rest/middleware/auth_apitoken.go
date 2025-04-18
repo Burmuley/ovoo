@@ -45,8 +45,14 @@ func getApiToken(r *http.Request) string {
 //   - error: An error if the token is invalid, expired, or not found
 func validateApiToken(ctx context.Context, svcGw *services.ServiceGateway, apiToken string) (entities.User, error) {
 	tokenParts := strings.SplitN(apiToken, "_", 2)
-	tokenId, tokenBody := tokenParts[0], tokenParts[1]
-
+	if len(tokenParts) < 2 {
+		return entities.User{}, errors.New("error parsing token body")
+	}
+	tokenId, err := entities.Base62Decode(tokenParts[0])
+	if err != nil {
+		return entities.User{}, err
+	}
+	tokenBody := tokenParts[1]
 	token, err := svcGw.Tokens.GetByIdNoValidation(ctx, entities.Id(tokenId))
 	if err != nil {
 		return entities.User{}, err
