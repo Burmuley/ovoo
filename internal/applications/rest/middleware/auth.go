@@ -23,7 +23,6 @@ const (
 	authCookieName  = "ovoo_auth"
 
 	// ApiKey constants
-	apiTokenPrefix     = "ovtk_"
 	apiTokenCookieName = "ovoo_key"
 )
 
