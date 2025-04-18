@@ -53,7 +53,7 @@ func validateApiToken(ctx context.Context, svcGw *services.ServiceGateway, apiTo
 		return entities.User{}, err
 	}
 	tokenBody := tokenParts[1]
-	token, err := svcGw.Tokens.GetByIdNoValidation(ctx, entities.Id(tokenId))
+	token, err := svcGw.Tokens.GetById(ctx, entities.Id(tokenId))
 	if err != nil {
 		return entities.User{}, err
 	}

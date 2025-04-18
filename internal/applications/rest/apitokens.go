@@ -44,7 +44,7 @@ func (a *Application) GetApiTokenById(w http.ResponseWriter, r *http.Request) {
 		a.errorLogNResponse(w, "getting api token by id: identifying user", err)
 	}
 
-	token, err := a.svcGw.Tokens.GetById(r.Context(), entities.Id(r.PathValue("id")), user.ID)
+	token, err := a.svcGw.Tokens.GetByIdValidOwner(r.Context(), entities.Id(r.PathValue("id")), user.ID)
 	if err != nil {
 		a.errorLogNResponse(w, "getting aliases: parsing id", err)
 		return

@@ -23,39 +23,31 @@ func NewApiTokensService(repoFabric *factory.RepoFactory) (*ApiTokensService, er
 	return &ApiTokensService{repoFactory: repoFabric}, nil
 }
 
-// GetById retrieves an API token by ID and validates ownership against the provided owner ID.
-// Returns an error if token validation fails or if the token doesn't belong to the owner.
-func (t *ApiTokensService) GetById(ctx context.Context, tokenId, ownerId entities.Id) (entities.ApiToken, error) {
+// GetById retrieves an API token by ID without validating ownership.
+// This should only be used in trusted contexts.
+func (t *ApiTokensService) GetById(ctx context.Context, tokenId entities.Id) (entities.ApiToken, error) {
 	if err := tokenId.Validate(); err != nil {
 		return entities.ApiToken{}, fmt.Errorf("getting api token by id: %w", err)
 	}
 
-	if err := ownerId.Validate(); err != nil {
-		return entities.ApiToken{}, fmt.Errorf("getting api token by id: %w", err)
+	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
+	if err != nil {
+		return entities.ApiToken{}, err
 	}
 
-	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
+	return token, nil
+}
+
+// GetByIdValidOwner retrieves an API token by ID and validates ownership against the provided owner ID.
+// Returns an error if token validation fails or if the token doesn't belong to the owner.
+func (t *ApiTokensService) GetByIdValidOwner(ctx context.Context, tokenId, ownerId entities.Id) (entities.ApiToken, error) {
+	token, err := t.GetById(ctx, tokenId)
 	if err != nil {
 		return entities.ApiToken{}, err
 	}
 
 	if token.Owner.ID != ownerId {
 		return entities.ApiToken{}, errors.New("token does not belong to the current user")
-	}
-
-	return token, nil
-}
-
-// GetByIdNoValidation retrieves an API token by ID without validating ownership.
-// This should only be used in trusted contexts.
-func (t *ApiTokensService) GetByIdNoValidation(ctx context.Context, tokenId entities.Id) (entities.ApiToken, error) {
-	if err := tokenId.Validate(); err != nil {
-		return entities.ApiToken{}, fmt.Errorf("getting api token by id: %w", err)
-	}
-
-	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
-	if err != nil {
-		return entities.ApiToken{}, err
 	}
 
 	return token, nil

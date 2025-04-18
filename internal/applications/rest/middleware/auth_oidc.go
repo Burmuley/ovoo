@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 )
@@ -174,7 +175,7 @@ func getOIDCToken(r *http.Request) string {
 	authHeader := r.Header.Get(authorizationHeader)
 	if strings.HasPrefix(authHeader, "Bearer ") {
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		if !strings.HasPrefix(token, apiTokenPrefix) {
+		if !strings.HasPrefix(token, entities.ApiTokenPrefix) {
 			return token
 		}
 
