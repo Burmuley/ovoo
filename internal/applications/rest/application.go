@@ -110,10 +110,10 @@ func (a *Application) Start(ctx context.Context) error {
 
 	// api tokens routes
 	mux.HandleFunc("GET /api/v1/users/apitokens", a.GetApiTokens)
-	mux.HandleFunc("GET /api/v1/users/apitokens/{token_id}", a.GetApiTokenById)
+	mux.HandleFunc("GET /api/v1/users/apitokens/{id}", a.GetApiTokenById)
 	mux.HandleFunc("POST /api/v1/users/apitokens", a.CreateApiToken)
-	mux.HandleFunc("PUT /api/v1/users/apitokens/{token_id}", a.UpdateApiToken)
-	mux.HandleFunc("DELETE /api/v1/users/apitokens/{token_id}", a.DeleteApiToken)
+	mux.HandleFunc("PUT /api/v1/users/apitokens/{id}", a.UpdateApiToken)
+	mux.HandleFunc("DELETE /api/v1/users/apitokens/{id}", a.DeleteApiToken)
 
 	// aliases routes
 	mux.HandleFunc("GET /api/v1/aliases", a.GetAliases)

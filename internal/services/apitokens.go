@@ -90,7 +90,7 @@ func (t *ApiTokensService) Create(ctx context.Context, owner entities.User, name
 
 // Update modifies an existing API token with the provided details.
 // Not implemented yet.
-func (t *ApiTokensService) Update(ctx context.Context, tokenId, name, description string, active bool) (entities.ApiToken, error) {
+func (t *ApiTokensService) Update(ctx context.Context, tokenId entities.Id, name, description string, active bool) (entities.ApiToken, error) {
 	panic("implement me!")
 }
 
