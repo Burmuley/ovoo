@@ -25,6 +25,9 @@ func NewApiTokenGORMRepo(db *gorm.DB) (repositories.TokensReadWriter, error) {
 }
 
 // Create adds a new API token to the database.
+// It takes a context and an API token entity, converts it to a GORM model,
+// and persists it to the database.
+// Returns an error if the database operation fails.
 func (t *TokenGORMRepo) Create(ctx context.Context, token entities.ApiToken) error {
 	gorm_token := apiTokenFromEntity(token)
 	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Create(&gorm_token).Error; err != nil {
@@ -34,6 +37,10 @@ func (t *TokenGORMRepo) Create(ctx context.Context, token entities.ApiToken) err
 	return nil
 }
 
+// BatchCreate adds multiple API tokens to the database in a single operation.
+// It takes a context and a slice of API token entities, converts them to GORM models,
+// and persists them to the database.
+// Returns an error if the database operation fails.
 func (t *TokenGORMRepo) BatchCreate(ctx context.Context, tokens []entities.ApiToken) error {
 	gorm_tokens := apiTokenFromEntityList(tokens)
 	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Create(&gorm_tokens).Error; err != nil {
@@ -44,6 +51,9 @@ func (t *TokenGORMRepo) BatchCreate(ctx context.Context, tokens []entities.ApiTo
 }
 
 // Delete removes an API token from the database based on its ID.
+// It first checks if the token exists by calling GetById.
+// If the token exists, it performs a hard delete (unscoped) from the database.
+// Returns an error if the token doesn't exist or if the delete operation fails.
 func (t *TokenGORMRepo) Delete(ctx context.Context, token_id entities.Id) error {
 	if _, err := t.GetById(ctx, token_id); err != nil {
 		return wrapGormError(err)
@@ -54,9 +64,11 @@ func (t *TokenGORMRepo) Delete(ctx context.Context, token_id entities.Id) error 
 }
 
 // GetById retrieves an API token from the database based on its ID.
+// It also preloads the Owner relation for the token.
+// Returns the token as an entity and an error if the token doesn't exist or if the query fails.
 func (t *TokenGORMRepo) GetById(ctx context.Context, token_id entities.Id) (entities.ApiToken, error) {
 	token := ApiToken{}
-	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Preload("Owner").Where("id = ?", token_id).First(&token).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("id = ?", token_id).Preload("Owner").First(&token).Error; err != nil {
 		return entities.ApiToken{}, wrapGormError(err)
 	}
 
@@ -64,10 +76,13 @@ func (t *TokenGORMRepo) GetById(ctx context.Context, token_id entities.Id) (enti
 }
 
 // GetAllForUser retrieves all API tokens associated with a given user.
-func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, user entities.User) ([]entities.ApiToken, error) {
+// It takes a context and a user ID, finds all tokens associated with that user,
+// and preloads the Owner relation for each token.
+// Returns a slice of API token entities and an error if the query fails.
+func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, userId entities.Id) ([]entities.ApiToken, error) {
 	gorm_tokens := make([]ApiToken, 0)
 
-	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Preload("Owner").Where("owner_id = ?", user.ID).Find(&gorm_tokens).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id = ?", userId).Preload("Owner").Find(&gorm_tokens).Error; err != nil {
 		return nil, wrapGormError(err)
 	}
 
@@ -77,4 +92,13 @@ func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, user entities.User) (
 	}
 
 	return tokens, nil
+}
+
+func (t *TokenGORMRepo) Update(ctx context.Context, token entities.ApiToken) (entities.ApiToken, error) {
+	gorm_token := apiTokenFromEntity(token)
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Select("*").Updates(&gorm_token).Error; err != nil {
+		return entities.ApiToken{}, wrapGormError(err)
+	}
+
+	return apiTokenToEntity(gorm_token), nil
 }

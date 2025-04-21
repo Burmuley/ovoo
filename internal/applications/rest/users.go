@@ -8,10 +8,10 @@ import (
 )
 
 // GetUsers retrieves all users and returns them as a response.
-func (c *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := c.svcGw.Users.GetAll(c.context)
+func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := a.svcGw.Users.GetAll(a.context)
 	if err != nil {
-		c.errorLogNResponse(w, "gettings users", err)
+		a.errorLogNResponse(w, "gettings users", err)
 		return
 	}
 
@@ -20,7 +20,7 @@ func (c *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 		resp = append(resp, userTResponse(user))
 	}
 
-	c.successResponse(w, resp, http.StatusOK)
+	a.successResponse(w, resp, http.StatusOK)
 }
 
 // GetUserById retrieves a user by their ID and returns the user details.
@@ -37,10 +37,10 @@ func (c *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateUser creates a new user based on the provided request and returns the created user details.
-func (c *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (a *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 	req_body := CreateUserRequest{}
 	if err := readBody(r.Body, &req_body); err != nil {
-		c.errorLogNResponse(w, "parsing user create request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
+		a.errorLogNResponse(w, "parsing user create request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
 		return
 	}
 
@@ -49,7 +49,7 @@ func (c *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 		password = *req_body.Password
 	}
 
-	user, err := c.svcGw.Users.Create(c.context, entities.User{
+	user, err := a.svcGw.Users.Create(a.context, entities.User{
 		Login:        req_body.Login,
 		FirstName:    req_body.FirstName,
 		LastName:     req_body.LastName,
@@ -58,56 +58,56 @@ func (c *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		c.errorLogNResponse(w, "creating user", err)
+		a.errorLogNResponse(w, "creating user", err)
 		return
 	}
 
 	resp := userTResponse(user)
-	c.successResponse(w, resp, http.StatusCreated)
+	a.successResponse(w, resp, http.StatusCreated)
 }
 
 // UpdateUser updates an existing user's information and returns the updated user details.
-func (c *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userId := r.PathValue("id")
-	user, err := c.svcGw.Users.GetById(c.context, entities.Id(userId))
+	user, err := a.svcGw.Users.GetById(a.context, entities.Id(userId))
 	if err != nil {
-		c.errorLogNResponse(w, "updating user by id", err)
+		a.errorLogNResponse(w, "updating user by id", err)
 		return
 	}
 
 	req_body := UpdateUserRequest{}
 	if err := readBody(r.Body, &req_body); err != nil {
-		c.errorLogNResponse(w, "parsing user update request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
+		a.errorLogNResponse(w, "parsing user update request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
 		return
 	}
 
 	user.FirstName = *req_body.FirstName
 	user.LastName = *req_body.LastName
 	user.Type = userTypeFStr(*req_body.Type)
-	user, err = c.svcGw.Users.Update(c.context, user)
+	user, err = a.svcGw.Users.Update(a.context, user)
 	if err != nil {
-		c.errorLogNResponse(w, "updating user by id", fmt.Errorf("updating user: %w", err))
+		a.errorLogNResponse(w, "updating user by id", fmt.Errorf("updating user: %w", err))
 		return
 	}
 
 	resp := userTResponse(user)
-	c.successResponse(w, resp, http.StatusCreated)
+	a.successResponse(w, resp, http.StatusCreated)
 }
 
 // DeleteUser deletes a user by their ID and returns the deleted user's details.
-func (c *Application) DeleteUser(w http.ResponseWriter, r *http.Request) {
+func (a *Application) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	userId := r.PathValue("id")
-	user, err := c.svcGw.Users.GetById(c.context, entities.Id(userId))
+	user, err := a.svcGw.Users.GetById(a.context, entities.Id(userId))
 	if err != nil {
-		c.errorLogNResponse(w, "check if user to delete by id exists", err)
+		a.errorLogNResponse(w, "check if user to delete by id exists", err)
 		return
 	}
 
-	if err := c.svcGw.Users.Delete(c.context, entities.Id(userId)); err != nil {
-		c.errorLogNResponse(w, "deleting user by id", err)
+	if err := a.svcGw.Users.Delete(a.context, entities.Id(userId)); err != nil {
+		a.errorLogNResponse(w, "deleting user by id", err)
 		return
 	}
 
 	resp := userTResponse(user)
-	c.successResponse(w, resp, http.StatusCreated)
+	a.successResponse(w, resp, http.StatusCreated)
 }

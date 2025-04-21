@@ -1,17 +1,16 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Ovoo API
   description: >-
     Ovoo - privacy email gateway to manage aliases hiding real (protected)
     emails from senders.
-  termsOfService: ""
   contact:
     email: burmuley@gmail.com
     name: Konstantin Vasilev
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: "1.0"
+  version: "1.2"
 externalDocs:
   description: Ovoo service source code
   url: https://github.com/Burmuley/ovoo
@@ -24,31 +23,18 @@ tags:
     description: >-
       API endpoint provides basic operations to manage alias emails for regular
       users and admins
-    externalDocs:
-      description: ""
-      url: ""
   - name: Protected Addresses
     description: >-
       API endpoint provides operations on protected addresses for regular users
       and admins
-    externalDocs:
-      description: ""
-      url: ""
   - name: Users
     description: ""
-    externalDocs:
-      description: ""
-      url: ""
   - name: Email chains
     description: ""
-    externalDocs:
-      description: ""
-      url: ""
   - name: Authentication
     description: Endpoints to support users authentication
-    externalDocs:
-      description: ""
-      url: ""
+  - name: ApiTokens
+    description: API tokens
 paths:
   /api/v1/aliases:
     get:
@@ -59,8 +45,6 @@ paths:
       operationId: getAliases
       tags:
         - Aliases
-      requestBody:
-        content: {}
       responses:
         "200":
           $ref: "#/components/responses/getAliasesResponse"
@@ -100,7 +84,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-  /api/v1/aliases/{alias_id}:
+  /api/v1/aliases/{id}:
     get:
       description: >-
         Retrieve deteiled information of a particular alias address by its ID.
@@ -108,13 +92,7 @@ paths:
       operationId: getAliasDetails
       tags:
         - Aliases
-      parameters:
-        - in: path
-          name: alias_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getAliasDetailsResponse"
@@ -137,13 +115,7 @@ paths:
       operationId: deleteAlias
       tags:
         - Aliases
-      parameters:
-        - in: path
-          name: alias_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       responses:
         "204":
           description: ""
@@ -159,7 +131,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-    put:
+    patch:
       description: >-
         Update alias address information such as \`forward\_email\` and
         \`metadata\`. No other fields can be updated. The ID is defined as a
@@ -167,13 +139,7 @@ paths:
       operationId: updateAlias
       tags:
         - Aliases
-      parameters:
-        - in: path
-          name: alias_id
-          description: ""
-          schema:
-            type: string
-          required: true
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/updateAliasRequest"
       responses:
@@ -189,9 +155,9 @@ paths:
         - BasicAuthentication: []
     parameters:
       - in: path
-        name: alias_id
-        description: ""
-        schema: &ref_1
+        name: id
+        description: "Email alias ID"
+        schema:
           type: string
         required: true
   /api/v1/users:
@@ -204,8 +170,6 @@ paths:
       tags:
         - Users
       parameters: []
-      requestBody:
-        content: {}
       responses:
         "200":
           $ref: "#/components/responses/getUsersResponse"
@@ -226,7 +190,7 @@ paths:
       operationId: createUser
       tags:
         - Users
-      parameters: &ref_0 []
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/createUserRequest"
       responses:
@@ -242,7 +206,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-  /api/v1/users/{user_id}:
+  /api/v1/users/{id}:
     get:
       description: >-
         Retrieve deteiled information of a particular user by its ID. The ID is
@@ -250,9 +214,7 @@ paths:
       operationId: getUserDetails
       tags:
         - Users
-      parameters: *ref_0
-      requestBody:
-        content: {}
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getUserDetailsResponse"
@@ -266,7 +228,7 @@ paths:
         - OAuth2: []
         - BasicAuthentication: []
       summary: Get user details
-    put:
+    patch:
       description: >-
         Update user information such as \`first\_name\`, \`last\_name\` and
         \`type\`. No other fields can be updated. The ID is defined as a path
@@ -274,7 +236,7 @@ paths:
       operationId: updateUser
       tags:
         - Users
-      parameters: *ref_0
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/updateUserRequest"
       responses:
@@ -299,9 +261,7 @@ paths:
       operationId: deleteUser
       tags:
         - Users
-      parameters: *ref_0
-      requestBody:
-        content: {}
+      parameters: []
       responses:
         "204":
           description: ""
@@ -319,9 +279,105 @@ paths:
         - BasicAuthentication: []
     parameters:
       - in: path
-        name: user_id
-        description: ""
-        schema: *ref_1
+        name: id
+        description: "User ID"
+        schema:
+          type: string
+        required: true
+  /api/v1/users/apitokens:
+    get:
+      summary: Get user's API Tokens
+      description: "Retrieve list of API tokens for the current user"
+      operationId: getApiTokens
+      tags:
+        - ApiTokens
+      parameters: []
+      responses:
+        "200":
+          $ref: "#/components/responses/getApiTokensResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+    post:
+      summary: Create new API token
+      description: ""
+      operationId: createApiToken
+      tags:
+        - ApiTokens
+      parameters: []
+      requestBody:
+        $ref: "#/components/requestBodies/createApiToken"
+      responses:
+        "201":
+          $ref: "#/components/responses/createApiTokenResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+  /api/v1/users/apitokens/{id}:
+    get:
+      summary: Get API token detailed information
+      description: "Get existing API token detailed information"
+      operationId: getApiTokenDetails
+      tags:
+        - ApiTokens
+      parameters: []
+      responses:
+        "200":
+          $ref: "#/components/responses/getApiTokenDetailsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+    delete:
+      summary: Delete API token
+      description: "Delete existing API token"
+      operationId: deleteApiToken
+      tags:
+        - ApiTokens
+      parameters: []
+      responses:
+        "204":
+          $ref: "#/components/responses/deleteApiTokenResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+    patch:
+      summary: Update API token attributes
+      description: "Update existing API token metadata attributes"
+      operationId: updateApiToken
+      tags:
+        - ApiTokens
+      parameters: []
+      requestBody:
+        $ref: "#/components/requestBodies/updateApiToken"
+      responses:
+        "200":
+          $ref: "#/components/responses/updateApiTokenResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+    parameters:
+      - in: path
+        name: id
+        description: "API token ID"
+        schema:
+          type: string
         required: true
   /api/v1/praddrs:
     get:
@@ -337,14 +393,13 @@ paths:
         - in: query
           name: id
           description: ""
-          schema: &ref_2
+          schema:
             type: string
         - in: query
           name: email
           description: ""
-          schema: *ref_2
-      requestBody:
-        content: {}
+          schema:
+            type: string
       responses:
         "200":
           $ref: "#/components/responses/getPrAddrsResponse"
@@ -367,7 +422,7 @@ paths:
       operationId: createPrAddr
       tags:
         - Protected Addresses
-      parameters: *ref_0
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/createProtectedAddressRequest"
       responses:
@@ -382,7 +437,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-  /api/v1/praddrs/{praddr_id}:
+  /api/v1/praddrs/{id}:
     get:
       summary: Get details on a particular protected address
       description: >-
@@ -391,15 +446,7 @@ paths:
       operationId: getPrAddrDetails
       tags:
         - Protected Addresses
-      parameters:
-        - in: path
-          name: praddr_id
-          description: ""
-          schema:
-            type: string
-          required: true
-      requestBody:
-        content: {}
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getPrAddrDetailsResponse"
@@ -412,7 +459,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-    put:
+    patch:
       summary: Update defined protected address by its ID
       description: >-
         Update protected address information such as \`metadata\`. No other
@@ -421,13 +468,7 @@ paths:
       operationId: updatePrAddr
       tags:
         - Protected Addresses
-      parameters:
-        - in: path
-          name: praddr_id
-          description: ""
-          schema: &ref_3
-            type: string
-          required: true
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/updateProtectedAddressRequest"
       responses:
@@ -452,14 +493,7 @@ paths:
       operationId: deletePrAddr
       tags:
         - Protected Addresses
-      parameters:
-        - in: path
-          name: praddr_id
-          description: ""
-          schema: *ref_3
-          required: true
-      requestBody:
-        content: {}
+      parameters: []
       responses:
         "204":
           description: ""
@@ -474,6 +508,13 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
+    parameters:
+      - in: path
+        name: id
+        description: "Protected Address ID"
+        schema:
+          type: string
+        required: true
   /private/api/v1/chains:
     post:
       summary: Create new email chain
@@ -483,7 +524,7 @@ paths:
       operationId: createChain
       tags:
         - Email chains
-      parameters: *ref_0
+      parameters: []
       requestBody:
         $ref: "#/components/requestBodies/createEmailChain"
       responses:
@@ -496,7 +537,7 @@ paths:
         "403":
           $ref: "#/components/responses/HTTP403"
       security:
-        - ApiKey: []
+        - ApiToken: []
   /private/api/v1/chains/{hash}:
     get:
       summary: Get a particular email chain by its hash
@@ -506,13 +547,7 @@ paths:
       operationId: getChainByHash
       tags:
         - Email chains
-      parameters:
-        - in: path
-          name: hash
-          description: ""
-          schema: &ref_4
-            type: string
-          required: true
+      parameters: []
       responses:
         "200":
           $ref: "#/components/responses/getEmailChainDetailsResponse"
@@ -523,7 +558,7 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
       security:
-        - ApiKey: []
+        - ApiToken: []
     delete:
       summary: Delete a particular email chain by it hash
       description: >-
@@ -532,12 +567,7 @@ paths:
       operationId: deleteChainByHash
       tags:
         - Email chains
-      parameters:
-        - in: path
-          name: hash
-          description: ""
-          schema: *ref_4
-          required: true
+      parameters: []
       responses:
         "204":
           description: ""
@@ -550,42 +580,14 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
       security:
-        - ApiKey: []
-  /auth/login:
-    get:
-      summary: retrieve authentication form / process OAuth2 requests
-      description: retrieve authentication form / process OAuth2 requests
-      operationId: getAuthForm
-      tags:
-        - Authentication
-      parameters:
-        - in: query
-          name: provider
-          description: ""
-          schema: &ref_5
-            type: string
-          required: false
-        - in: query
-          name: code
-          description: ""
-          schema: *ref_5
-      responses:
-        "200":
-          $ref: "#/components/responses/authForm"
-    post:
-      summary: submit authentication form (basic authentication)
-      description: submit authentication form (basic authentication)
-      operationId: postAuthForm
-      tags:
-        - Authentication
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/basicAuthenticationTokenResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-      requestBody:
-        $ref: "#/components/requestBodies/basicAuthentication"
+        - ApiToken: []
+    parameters:
+      - in: path
+        name: hash
+        description: "Email thread chain hash"
+        schema:
+          type: string
+        required: true
 components:
   schemas:
     aliasData:
@@ -644,6 +646,38 @@ components:
         - last_name
         - type
         - id
+    apiTokenData:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the API token
+        description:
+          type: string
+          description: Optional details about the API token
+        expiration:
+          type: string
+          format: date-time
+          description: Time of expiration of the API token
+        active:
+          type: boolean
+          description: Indicates whether the API token is active and can be used
+      required:
+        - name
+        - description
+        - expiration
+        - active
+    apiTokenDataOnCreate:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/apiTokenData"
+        - type: object
+          properties:
+            api_token:
+              type: string
+              description: Clear text API token value; only returned when API token created first time
+          required:
+            - api_token
     protectedAddressData:
       type: object
       properties:
@@ -708,24 +742,17 @@ components:
         - user
         - password
   securitySchemes:
-    ApiKey:
+    ApiToken:
       type: apiKey
       in: header
-      name: ovoo_api_key
+      name: X-OVOO-KEY
     OAuth2:
       type: oauth2
       flows:
         authorizationCode:
-          authorizationUrl: Todo
-          tokenUrl: Todo
+          authorizationUrl: https://localhost.com/authorize
+          tokenUrl: https://localhost.com/token
           scopes: {}
-        implicit:
-          authorizationUrl: Todo
-          refreshUrl: Todo
-          scopes:
-            user: regular user
-            admin: admin user
-            milter: milter user
     BasicAuthentication:
       type: http
       scheme: basic
@@ -835,6 +862,37 @@ components:
             required:
               - from_email
               - to_email
+    createApiToken:
+      required: false
+      description: Request to create API token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              expire_in:
+                type: number
+            required:
+              - name
+              - expire_in
+    updateApiToken:
+      required: false
+      description: Request to update API token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              active:
+                type: boolean
     basicAuthentication:
       content:
         others:
@@ -874,6 +932,21 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/error"
+    errorResponse:
+      description: Response containing error information (id and message)
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: number
+              msg:
+                type: string
+            required:
+              - id
+              - msg
     getAliasesResponse:
       headers: {}
       content:
@@ -904,21 +977,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/aliasData"
-    errorResponse:
-      description: Response containing error information (id and message)
-      headers: {}
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              id:
-                type: number
-              msg:
-                type: string
-            required:
-              - id
-              - msg
     getUsersResponse:
       headers: {}
       content:
@@ -993,6 +1051,39 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/chainData"
+    createApiTokenResponse:
+      description: Response containing information about newly created API token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiTokenDataOnCreate"
+    updateApiTokenResponse:
+      description: Response containing updated information of the API token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiTokenData"
+    getApiTokenDetailsResponse:
+      description: Response containing information about existing API token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiTokenData"
+    deleteApiTokenResponse:
+      description: Response containing information about just deleted API token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiTokenData"
+    getApiTokensResponse:
+      description: Response with a list of API tokens for the current user
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/apiTokenData"
     basicAuthenticationTokenResponse:
       description: ""
       headers: {}
@@ -1019,5 +1110,5 @@ components:
             $ref: "#/components/schemas/basicAuthForm"
 security:
   - OAuth2: []
-  - ApiKey: []
+  - ApiToken: []
   - BasicAuthentication: []

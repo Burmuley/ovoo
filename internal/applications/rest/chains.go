@@ -6,49 +6,49 @@ import (
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 
-func (c *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
+func (a *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
 	chainHash := entities.Hash(r.PathValue("hash"))
 	if err := chainHash.Validate(); err != nil {
-		c.errorLogNResponse(w, "getting chain by hash: parsing hash", err)
+		a.errorLogNResponse(w, "getting chain by hash: parsing hash", err)
 		return
 	}
 
-	chain, err := c.svcGw.Chains.GetByHash(c.context, chainHash)
+	chain, err := a.svcGw.Chains.GetByHash(a.context, chainHash)
 	if err != nil {
-		c.errorLogNResponse(w, "getting chain by hash", err)
+		a.errorLogNResponse(w, "getting chain by hash", err)
 		return
 	}
 
 	resp := GetEmailChainDetailsResponse(chainTChainData(chain))
-	c.successResponse(w, resp, http.StatusOK)
+	a.successResponse(w, resp, http.StatusOK)
 }
 
-func (c *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
+func (a *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
 	rb := CreateEmailChain{}
 	if err := readBody(r.Body, &rb); err != nil {
-		c.errorLogNResponse(w, "parsing chain create request", err)
+		a.errorLogNResponse(w, "parsing chain create request", err)
 		return
 	}
 
 	user, err := userFromContext(r)
 	if err != nil {
-		c.errorLogNResponse(w, "getting aliases: identifying user", err)
+		a.errorLogNResponse(w, "getting aliases: identifying user", err)
 	}
 
-	chain, err := c.svcGw.Chains.Create(
-		c.context,
+	chain, err := a.svcGw.Chains.Create(
+		a.context,
 		string(rb.FromEmail),
 		string(rb.ToEmail),
 		user,
 	)
 
 	if err != nil {
-		c.errorLogNResponse(w, "creating chain", err)
+		a.errorLogNResponse(w, "creating chain", err)
 		return
 	}
 
 	resp := CreateEmailChainResponse(chainTChainData(chain))
-	c.successResponse(w, resp, http.StatusCreated)
+	a.successResponse(w, resp, http.StatusCreated)
 }
 
 func (c *Application) DeleteChain(w http.ResponseWriter, r *http.Request) {
