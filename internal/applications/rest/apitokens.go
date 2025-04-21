@@ -114,7 +114,7 @@ func (a *Application) UpdateApiToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updToken, err := a.svcGw.Tokens.Update(r.Context(), tokenId, *req.Name, *req.Description, *req.Active)
+	updToken, err := a.svcGw.Tokens.Update(r.Context(), tokenId, req.Name, req.Description, req.Active)
 	if err != nil {
 		a.errorLogNResponse(w, "updating token by id", err)
 		return
@@ -143,7 +143,7 @@ func (a *Application) DeleteApiToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := a.svcGw.Tokens.Delete(r.Context(), string(tokenId)); err != nil {
+	if err := a.svcGw.Tokens.Delete(r.Context(), tokenId); err != nil {
 		a.errorLogNResponse(w, "deleting token by id", err)
 		return
 	}

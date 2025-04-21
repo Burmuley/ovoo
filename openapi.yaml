@@ -131,7 +131,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-    put:
+    patch:
       description: >-
         Update alias address information such as \`forward\_email\` and
         \`metadata\`. No other fields can be updated. The ID is defined as a
@@ -228,7 +228,7 @@ paths:
         - OAuth2: []
         - BasicAuthentication: []
       summary: Get user details
-    put:
+    patch:
       description: >-
         Update user information such as \`first\_name\`, \`last\_name\` and
         \`type\`. No other fields can be updated. The ID is defined as a path
@@ -354,7 +354,7 @@ paths:
           $ref: "#/components/responses/HTTP403"
         "404":
           $ref: "#/components/responses/HTTP404"
-    put:
+    patch:
       summary: Update API token attributes
       description: "Update existing API token metadata attributes"
       operationId: updateApiToken
@@ -459,7 +459,7 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-    put:
+    patch:
       summary: Update defined protected address by its ID
       description: >-
         Update protected address information such as \`metadata\`. No other

@@ -105,28 +105,28 @@ func (a *Application) Start(ctx context.Context) error {
 	mux.HandleFunc("GET /api/v1/users", a.GetUsers)
 	mux.HandleFunc("GET /api/v1/users/{id}", a.GetUserById)
 	mux.HandleFunc("POST /api/v1/users", a.CreateUser)
-	mux.HandleFunc("PUT /api/v1/users/{id}", a.UpdateUser)
+	mux.HandleFunc("PATCH /api/v1/users/{id}", a.UpdateUser)
 	mux.HandleFunc("DELETE /api/v1/users", a.DeleteUser)
 
 	// api tokens routes
 	mux.HandleFunc("GET /api/v1/users/apitokens", a.GetApiTokens)
 	mux.HandleFunc("GET /api/v1/users/apitokens/{id}", a.GetApiTokenById)
 	mux.HandleFunc("POST /api/v1/users/apitokens", a.CreateApiToken)
-	mux.HandleFunc("PUT /api/v1/users/apitokens/{id}", a.UpdateApiToken)
+	mux.HandleFunc("PATCH /api/v1/users/apitokens/{id}", a.UpdateApiToken)
 	mux.HandleFunc("DELETE /api/v1/users/apitokens/{id}", a.DeleteApiToken)
 
 	// aliases routes
 	mux.HandleFunc("GET /api/v1/aliases", a.GetAliases)
 	mux.HandleFunc("GET /api/v1/aliases/{id}", a.GetAliaseById)
 	mux.HandleFunc("POST /api/v1/aliases", a.CreateAlias)
-	mux.HandleFunc("PUT /api/v1/alises/{id}", a.UpdateAlias)
+	mux.HandleFunc("PATCH /api/v1/alises/{id}", a.UpdateAlias)
 	mux.HandleFunc("DELETE /api/v1/alias/{id}", a.DeleteAlias)
 
 	// protected addresses routes
 	mux.HandleFunc("GET /api/v1/praddrs", a.GetAllPrAddrs)
 	mux.HandleFunc("GET /api/v1/praddrs/{id}", a.GetPrAddrById)
 	mux.HandleFunc("POST /api/v1/praddrs", a.CreatePrAddr)
-	mux.HandleFunc("PUT /api/v1/praddrs/{id}", a.UpdatePrAddr)
+	mux.HandleFunc("PATCH /api/v1/praddrs/{id}", a.UpdatePrAddr)
 	mux.HandleFunc("DELETE /api/v1/praddrs/{id}", a.DeletePrAddr)
 
 	// chains routes
