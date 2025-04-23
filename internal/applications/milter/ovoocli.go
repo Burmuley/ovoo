@@ -3,6 +3,7 @@ package milter
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -29,11 +30,16 @@ type OvooError struct {
 type OvooClient struct {
 	client *http.Client
 	server string
+	token  string
 }
 
-func NewOvooClient(server string) OvooClient {
-	client := &http.Client{}
-	return OvooClient{client: client, server: server}
+func NewOvooClient(server string, authToken string, tlsSkipVerify bool) OvooClient {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify},
+		},
+	}
+	return OvooClient{client: client, server: server, token: authToken}
 }
 
 func (o OvooClient) createRequest(ctx context.Context, server, path, method string, body io.Reader, headers map[string]string, queryParams map[string]string) (*http.Request, error) {
@@ -63,10 +69,6 @@ func (o OvooClient) createRequest(ctx context.Context, server, path, method stri
 	}
 
 	return req, nil
-}
-
-func (o OvooClient) sendRequest(req *http.Request) (*http.Response, error) {
-	return o.client.Do(req)
 }
 
 func (o OvooClient) parseChainData(resp *http.Response) (*OvooChainData, error) {
@@ -106,7 +108,10 @@ func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) 
 		return nil, err
 	}
 
-	headers := map[string]string{"Content-Type": "application/json"}
+	headers := map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": fmt.Sprintf("Bearer %s", o.token),
+	}
 	req, err := o.createRequest(
 		ctx,
 		o.server,
