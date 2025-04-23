@@ -22,7 +22,7 @@ const (
 	callbackURI              = "/auth/callback"
 )
 
-//go:embed data/login/index.html
+//go:embed data
 var loginStatic embed.FS
 
 // Application represents the main structure for handling REST API requests.

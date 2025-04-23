@@ -38,7 +38,7 @@ func (m *Application) Start(ctx context.Context) error {
 		return err
 	}
 
-	m.logger.Info("started Ovoo Milter on %s:%s", server.Addr().Network(), server.Addr().String())
+	m.logger.Info("started Ovoo Milter", server.Addr().Network(), server.Addr().String())
 
 	// quit when milter quits
 	server.Wait()

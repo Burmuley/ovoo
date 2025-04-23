@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 
-	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/applications/milter"
+	"github.com/Burmuley/ovoo/internal/config"
 )
 
 func startMilter(cfgPath string) error {
@@ -32,8 +33,12 @@ func startMilter(cfgPath string) error {
 		listen_addr = milter.DefaultListenAddr
 	}
 
-	ovooApiAddr := cfg.String("api_addr")
-	ovooClient := milter.NewOvooClient(ovooApiAddr)
+	ovooApiAddr := cfg.String("api.addr")
+	ovooApiToken := cfg.String("api.auth_token")
+	if ovooApiToken == "" {
+		return errors.New("missing 'auth_token' configuration parameter")
+	}
+	ovooClient := milter.NewOvooClient(ovooApiAddr, ovooApiToken, cfg.Bool("api.tls_skip_verify"))
 	ctrl, _ := milter.New(listen_addr, logger, ovooClient)
 	return ctrl.Start(context.Background())
 }
