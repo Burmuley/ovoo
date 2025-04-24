@@ -23,7 +23,7 @@ const (
 )
 
 //go:embed data
-var loginStatic embed.FS
+var staticData embed.FS
 
 // Application represents the main structure for handling REST API requests.
 // It contains references to various use cases, a listen address, context, and logger.
@@ -101,6 +101,10 @@ func (a *Application) Start(ctx context.Context) error {
 	// root
 	mux.HandleFunc("/", a.handleRoot)
 
+	// docs
+	mux.HandleFunc("/api/docs/openapi.yaml", a.handleOpenAPI)
+	mux.HandleFunc("/api/docs", a.handleDocs)
+
 	// users routes
 	mux.HandleFunc("GET /api/v1/users", a.GetUsers)
 	mux.HandleFunc("GET /api/v1/users/{id}", a.GetUserById)
@@ -157,7 +161,7 @@ func (a *Application) Start(ctx context.Context) error {
 //   - r: The HTTP request that triggered this handler
 func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
 	user, _ := userFromContext(r)
-	tmpl, err := template.New("index").ParseFS(loginStatic, "data/login/index.html")
+	tmpl, err := template.New("index").ParseFS(staticData, "data/login/index.html")
 	if err != nil {
 		a.errorLogNResponse(w, "root page: parsing template", err)
 		return
@@ -166,6 +170,14 @@ func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.ExecuteTemplate(w, "index.html", user); err != nil {
 		a.errorLogNResponse(w, "root page: rendering template", err)
 	}
+}
+
+func (a *Application) handleDocs(w http.ResponseWriter, r *http.Request) {
+	http.ServeFileFS(w, r, staticData, "data/docs/index.html")
+}
+
+func (a *Application) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
+	http.ServeFileFS(w, r, staticData, "data/openapi.yaml")
 }
 
 // parseProviderCfg converts a generic configuration map into an OAuth2Provider struct.
