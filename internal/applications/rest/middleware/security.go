@@ -17,18 +17,29 @@ import (
 func SecurityHeaders() Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			cspUrls := []string{}
+			// format and define Content Security Policy (CSP)
+			formActionUrls := []string{}
 			if providerConfig != nil {
-				cspUrls = append(cspUrls, providerConfig.OAuth2Config.Endpoint.AuthURL)
+				formActionUrls = append(formActionUrls, providerConfig.OAuth2Config.Endpoint.AuthURL)
 			}
 
-			w.Header().Add(
-				"Content-Security-Policy",
-				fmt.Sprintf(
-					"default-src 'none'; frame-ancestors 'none'; form-action 'self' %s",
-					strings.Join(cspUrls, " "),
-				),
-			)
+			scriptSrcUrls := []string{
+				"https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js",
+			}
+			cspElems := []string{
+				"default-src 'none'",
+				"frame-ancestors 'none'",
+				fmt.Sprintf("form-action 'self' %s", strings.Join(formActionUrls, " ")),
+				"style-src 'self' 'unsafe-inline'",
+				"connect-src 'self'",
+				fmt.Sprintf("script-src 'self' %s", strings.Join(scriptSrcUrls, " ")),
+				"worker-src 'self' blob:",
+				"img-src 'self' 'unsafe-inline' https://cdn.redoc.ly/redoc/logo-mini.svg",
+			}
+
+			w.Header().Add("Content-Security-Policy", strings.Join(cspElems, ";"))
+
+			// define other security headers
 			w.Header().Add("X-Frame-Options", "DENY")
 			w.Header().Add("X-Content-Type-Options", "nosniff")
 			w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")

@@ -5,7 +5,7 @@ import (
 	"github.com/oapi-codegen/runtime/types"
 )
 
-//go:generate go tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen -config oapi-codegen.yaml ../../../openapi.yaml
+//go:generate go tool github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen -config oapi-codegen.yaml data/openapi.yaml
 
 // userTypeFStr converts a string representation of user type to its corresponding UserType.
 // It returns 99 if the provided user type is not recognized.
