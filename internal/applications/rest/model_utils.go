@@ -16,7 +16,7 @@ func userTypeFStr(st string) entities.UserType {
 		"milter":  entities.MilterUser,
 	}
 
-	if ut, ok := umap[st]; !ok {
+	if ut, ok := umap[st]; ok {
 		return ut
 	}
 
