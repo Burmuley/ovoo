@@ -23,6 +23,7 @@ func NewUsersService(repoFactory *factory.RepoFactory) (*UsersService, error) {
 
 // Create creates a new user
 func (u *UsersService) Create(ctx context.Context, user entities.User) (entities.User, error) {
+	user.ID = entities.NewId()
 	if err := user.Validate(); err != nil {
 		return entities.User{}, fmt.Errorf("creating user: %w", err)
 	}
@@ -35,7 +36,6 @@ func (u *UsersService) Create(ctx context.Context, user entities.User) (entities
 		}
 	}
 
-	user.ID = entities.NewId()
 	err := u.repoFactory.Users.Create(ctx, user)
 	if err != nil {
 		return entities.User{}, fmt.Errorf("creating user: %w", err)
