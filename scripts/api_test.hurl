@@ -28,6 +28,22 @@ HTTP 200
 [Asserts]
 jsonpath "$['id']" == "{{alias1_id}}"
 
+POST https://localhost:8808/api/v1/aliases
+{
+  "protected_address_id": "{{praddr1_id}}",
+  "metadata": {
+    "comment": "test alias to delete",
+    "service_name": "test alias service name"
+  }
+}
+HTTP 201
+[Captures]
+alias2_id: jsonpath "$['id']"
+alias2_email: jsonpath "$['email']"
+
+DELETE https://localhost:8808/api/v1/aliases/{{alias2_id}}
+HTTP 204
+
 POST https://localhost:8808/api/v1/chains
 {
     "from_email": "{{ext_sender_input}}",

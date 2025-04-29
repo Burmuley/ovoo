@@ -162,12 +162,12 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 func (a *Application) DeleteAlias(w http.ResponseWriter, r *http.Request) {
 	aliasId := entities.Id(r.PathValue("id"))
 	if err := aliasId.Validate(); err != nil {
-		a.errorLogNResponse(w, "getting alias by id: parsing id", err)
+		a.errorLogNResponse(w, "deleting alias by id", err)
 		return
 	}
 
 	if err := a.svcGw.Aliases.DeleteById(a.context, aliasId); err != nil {
-		a.errorLogNResponse(w, "getting alias by id: parsing id", err)
+		a.errorLogNResponse(w, "deleting alias by id", err)
 		return
 	}
 

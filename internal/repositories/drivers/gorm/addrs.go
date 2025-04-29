@@ -58,8 +58,12 @@ func (a *AddressGORMRepo) DeleteById(ctx context.Context, id entities.Id) error 
 		return wrapGormError(err)
 	}
 
-	return wrapGormError(a.db.WithContext(ctx).Model(&Address{}).Where("id = ?", id).Unscoped().
-		Delete(&Address{Model: Model{ID: id.String()}}).Error)
+	if err := a.db.WithContext(ctx).Model(&Address{}).Where("id = ?", id).Unscoped().
+		Delete(&Address{Model: Model{ID: id.String()}}).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
 }
 
 // DeleteByEmail removes an address from the database by its email.
@@ -68,8 +72,12 @@ func (a *AddressGORMRepo) DeleteByEmail(ctx context.Context, email entities.Emai
 		return wrapGormError(err)
 	}
 
-	return wrapGormError(a.db.WithContext(ctx).Model(&Address{}).Where("email = ?", email.String()).Unscoped().
-		Delete(&Address{Email: string(email)}).Error)
+	if err := a.db.WithContext(ctx).Model(&Address{}).Where("email = ?", email.String()).Unscoped().
+		Delete(&Address{Email: string(email)}).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
 }
 
 // GetById retrieves an address from the database by its ID.

@@ -98,9 +98,6 @@ func (a *Application) Start(ctx context.Context) error {
 	a.context = ctx
 	mux := http.NewServeMux()
 
-	// root
-	mux.HandleFunc("/", a.handleRoot)
-
 	// docs
 	mux.HandleFunc("/api/docs/openapi.yaml", a.handleOpenAPI)
 	mux.HandleFunc("/api/docs", a.handleDocs)
@@ -124,7 +121,7 @@ func (a *Application) Start(ctx context.Context) error {
 	mux.HandleFunc("GET /api/v1/aliases/{id}", a.GetAliaseById)
 	mux.HandleFunc("POST /api/v1/aliases", a.CreateAlias)
 	mux.HandleFunc("PATCH /api/v1/alises/{id}", a.UpdateAlias)
-	mux.HandleFunc("DELETE /api/v1/alias/{id}", a.DeleteAlias)
+	mux.HandleFunc("DELETE /api/v1/aliases/{id}", a.DeleteAlias)
 
 	// protected addresses routes
 	mux.HandleFunc("GET /api/v1/praddrs", a.GetAllPrAddrs)
@@ -141,6 +138,9 @@ func (a *Application) Start(ctx context.Context) error {
 	// authentication endpoints
 	mux.HandleFunc(middleware.OIDCLoginUri, middleware.HandleOIDCLogin)
 	mux.HandleFunc(middleware.OIDCCallbackUri, middleware.HandleOIDCCallback)
+
+	// root
+	mux.HandleFunc("/{$}", a.handleRoot)
 
 	handler := middleware.Adapt(mux,
 		middleware.SecurityHeaders(),
