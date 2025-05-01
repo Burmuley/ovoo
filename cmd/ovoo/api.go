@@ -107,7 +107,7 @@ func startApi(cfgPath string) error {
 	ctx := context.TODO()
 
 	// initialize services
-	domain := "alias-test.local"
+	domain := cfg.String("domain")
 	svcGw, err := makeServices(repoFactory, domain, dict)
 	if err != nil {
 		return fmt.Errorf("error initializing services gateway: %w", err)
