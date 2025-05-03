@@ -38,7 +38,10 @@ func startMilter(cfgPath string) error {
 	if ovooApiToken == "" {
 		return errors.New("missing 'auth_token' configuration parameter")
 	}
-	ovooClient := milter.NewOvooClient(ovooApiAddr, ovooApiToken, cfg.Bool("api.tls_skip_verify"))
+	ovooClient, err := milter.NewOvooClient(ovooApiAddr, ovooApiToken, cfg.Bool("api.tls_skip_verify"), cfg.String("domain"))
+	if err != nil {
+		return fmt.Errorf("error creating Ovoo API client: %w", err)
+	}
 	ctrl, _ := milter.New(listen_addr, logger, ovooClient)
 	return ctrl.Start(context.Background())
 }

@@ -24,13 +24,15 @@ func NewProtectedAddrService(repoFactory *factory.RepoFactory) (*ProtectedAddrSe
 }
 
 // Create creates a new protected address
-func (pauc *ProtectedAddrService) Create(ctx context.Context, protEmail entities.Email, metadata entities.AddressMetadata, owner entities.User) (entities.Address, error) {
+func (prs *ProtectedAddrService) Create(ctx context.Context, protEmail entities.Email, metadata entities.AddressMetadata, owner entities.User) (entities.Address, error) {
 	if err := protEmail.Validate(); err != nil {
 		return entities.Address{}, err
 	}
 
-	if _, err := pauc.repoFactory.Address.GetByEmail(ctx, protEmail); err == nil {
-		return entities.Address{}, fmt.Errorf("%w: protected address with email %s already exists", entities.ErrDuplicateEntry, protEmail)
+	if addr, err := prs.repoFactory.Address.GetByEmail(ctx, protEmail); err == nil {
+		if addr.Type == entities.ProtectedAddress {
+			return entities.Address{}, fmt.Errorf("%w: protected address with email %s already exists", entities.ErrDuplicateEntry, protEmail)
+		}
 	}
 
 	praddr := entities.Address{
@@ -41,7 +43,7 @@ func (pauc *ProtectedAddrService) Create(ctx context.Context, protEmail entities
 		Owner:    owner,
 	}
 
-	if err := pauc.repoFactory.Address.Create(ctx, praddr); err != nil {
+	if err := prs.repoFactory.Address.Create(ctx, praddr); err != nil {
 		return entities.Address{}, fmt.Errorf("creating protected address: %w", err)
 	}
 
@@ -49,12 +51,12 @@ func (pauc *ProtectedAddrService) Create(ctx context.Context, protEmail entities
 }
 
 // Update updates an existing protected address
-func (pauc *ProtectedAddrService) Update(ctx context.Context, praddr entities.Address) (entities.Address, error) {
+func (prs *ProtectedAddrService) Update(ctx context.Context, praddr entities.Address) (entities.Address, error) {
 	if err := praddr.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("updating protected address: %w", err)
 	}
 
-	cur, err := pauc.repoFactory.Address.GetById(ctx, praddr.ID)
+	cur, err := prs.repoFactory.Address.GetById(ctx, praddr.ID)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("updating protected address: %w", err)
 	}
@@ -76,7 +78,7 @@ func (pauc *ProtectedAddrService) Update(ctx context.Context, praddr entities.Ad
 		return entities.Address{}, fmt.Errorf("%w: address owner can not be changed", entities.ErrValidation)
 	}
 
-	if err := pauc.repoFactory.Address.Update(ctx, praddr); err != nil {
+	if err := prs.repoFactory.Address.Update(ctx, praddr); err != nil {
 		return entities.Address{}, fmt.Errorf("updating protected address: %w", err)
 	}
 
@@ -84,13 +86,13 @@ func (pauc *ProtectedAddrService) Update(ctx context.Context, praddr entities.Ad
 }
 
 // GetAll retrieves all protected addresses for a given owner
-func (pauc *ProtectedAddrService) GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error) {
+func (prs *ProtectedAddrService) GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error) {
 	if filters == nil {
 		filters = make(map[string][]string)
 	}
 
 	filters["type"] = []string{strconv.Itoa(entities.ProtectedAddress)}
-	praddrs, err := pauc.repoFactory.Address.GetAll(ctx, filters)
+	praddrs, err := prs.repoFactory.Address.GetAll(ctx, filters)
 	if err != nil {
 		return nil, fmt.Errorf("getting protected addresses: %w", err)
 	}
@@ -99,12 +101,12 @@ func (pauc *ProtectedAddrService) GetAll(ctx context.Context, filters map[string
 }
 
 // GetById retrieves a protected address by its ID
-func (pauc *ProtectedAddrService) GetById(ctx context.Context, id entities.Id) (entities.Address, error) {
+func (prs *ProtectedAddrService) GetById(ctx context.Context, id entities.Id) (entities.Address, error) {
 	if err := id.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("getting protected address by id: %w", err)
 	}
 
-	praddr, err := pauc.repoFactory.Address.GetById(ctx, id)
+	praddr, err := prs.repoFactory.Address.GetById(ctx, id)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("getting protected address by id: %w", err)
 	}
@@ -112,12 +114,12 @@ func (pauc *ProtectedAddrService) GetById(ctx context.Context, id entities.Id) (
 	return praddr, nil
 }
 
-func (pauc *ProtectedAddrService) GetByEmail(ctx context.Context, email entities.Email) (entities.Address, error) {
+func (prs *ProtectedAddrService) GetByEmail(ctx context.Context, email entities.Email) (entities.Address, error) {
 	if err := email.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("getting protected address by email: validating email: %w", err)
 	}
 
-	praddr, err := pauc.repoFactory.Address.GetByEmail(ctx, entities.Email(email))
+	praddr, err := prs.repoFactory.Address.GetByEmail(ctx, entities.Email(email))
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("getting protected address by email: %w", err)
 	}
@@ -125,12 +127,12 @@ func (pauc *ProtectedAddrService) GetByEmail(ctx context.Context, email entities
 	return praddr, nil
 }
 
-func (pauc *ProtectedAddrService) DeleteById(ctx context.Context, id entities.Id) error {
+func (prs *ProtectedAddrService) DeleteById(ctx context.Context, id entities.Id) error {
 	if err := id.Validate(); err != nil {
 		return fmt.Errorf("deleting protected address by id: %w", err)
 	}
 
-	if err := pauc.repoFactory.Address.DeleteById(ctx, id); err != nil {
+	if err := prs.repoFactory.Address.DeleteById(ctx, id); err != nil {
 		return fmt.Errorf("deleting protected address by id: %w", err)
 	}
 

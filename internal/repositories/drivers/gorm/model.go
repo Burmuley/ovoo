@@ -56,14 +56,18 @@ func (a Address) TableName() string {
 
 // Chain represents a chain of addresses
 type Chain struct {
-	Hash          string         `gorm:"column:hash;primaryKey"`
-	FromAddressID string         `gorm:"column:from_address_id"`
-	FromAddress   Address        `gorm:"foreignKey:FromAddressID"`
-	ToAddressID   string         `gorm:"column:to_address_id"`
-	ToAddress     Address        `gorm:"foreignKey:ToAddressID"`
-	CreatedAt     time.Time      `gorm:"column:created_at"`
-	UpdatedAt     time.Time      `gorm:"column:updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"columnt:deleted_at"`
+	Hash              string         `gorm:"column:hash;primaryKey"`
+	FromAddressID     string         `gorm:"column:from_address_id"`
+	FromAddress       Address        `gorm:"foreignKey:FromAddressID"`
+	ToAddressID       string         `gorm:"column:to_address_id"`
+	ToAddress         Address        `gorm:"foreignKey:ToAddressID"`
+	OrigFromAddressID string         `gorm:"column:orig_from_address_id"`
+	OrigFromAddress   Address        `gorm:"foreignKey:OrigFromAddressID"`
+	OrigToAddressID   string         `gorm:"column:orig_to_address_id"`
+	OrigToAddress     Address        `gorm:"foreignKey:OrigToAddressID"`
+	CreatedAt         time.Time      `gorm:"column:created_at"`
+	UpdatedAt         time.Time      `gorm:"column:updated_at"`
+	DeletedAt         gorm.DeletedAt `gorm:"columnt:deleted_at"`
 }
 
 // TableName specifies the table name for Chain

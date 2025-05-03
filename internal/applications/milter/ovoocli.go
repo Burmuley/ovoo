@@ -5,16 +5,24 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 )
 
+type OvooChainAddressData struct {
+	Email string `json:"email"`
+	Type  string `json:"type"`
+}
+
 type OvooChainData struct {
-	Hash     string `json:"hash"`
-	FromAddr string `json:"from_email"`
-	ToAddr   string `json:"to_email"`
+	Hash            string               `json:"hash"`
+	FromEmail       string               `json:"from_email"`
+	ToEmail         string               `json:"to_email"`
+	OrigFromAddress OvooChainAddressData `json:"orig_from_address"`
+	OrigToAddress   OvooChainAddressData `json:"orig_to_address"`
 }
 
 type OvooChainCreateRequestBody struct {
@@ -31,15 +39,20 @@ type OvooClient struct {
 	client *http.Client
 	server string
 	token  string
+	domain string
 }
 
-func NewOvooClient(server string, authToken string, tlsSkipVerify bool) OvooClient {
+func NewOvooClient(server string, authToken string, tlsSkipVerify bool, domain string) (OvooClient, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify},
 		},
 	}
-	return OvooClient{client: client, server: server, token: authToken}
+
+	if domain == "" {
+		return OvooClient{}, errors.New("missing value for configuration option 'domain'")
+	}
+	return OvooClient{client: client, server: server, token: authToken, domain: domain}, nil
 }
 
 func (o OvooClient) createRequest(ctx context.Context, server, path, method string, body io.Reader, headers map[string]string, queryParams map[string]string) (*http.Request, error) {

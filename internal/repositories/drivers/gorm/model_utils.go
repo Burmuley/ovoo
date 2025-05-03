@@ -96,10 +96,12 @@ func addressToEntity(a Address) entities.Address {
 // chainFromEntity converts an entities.Chain to a Chain
 func chainFromEntity(e entities.Chain) Chain {
 	return Chain{
-		Hash:        string(e.Hash),
-		CreatedAt:   e.CreatedAt,
-		FromAddress: addressFromEntity(e.FromAddress),
-		ToAddress:   addressFromEntity(e.ToAddress),
+		Hash:            string(e.Hash),
+		CreatedAt:       e.CreatedAt,
+		FromAddress:     addressFromEntity(e.FromAddress),
+		ToAddress:       addressFromEntity(e.ToAddress),
+		OrigFromAddress: addressFromEntity(e.OrigFromAddress),
+		OrigToAddress:   addressFromEntity(e.OrigToAddress),
 	}
 }
 
@@ -115,10 +117,12 @@ func chainFromEntityList(echains []entities.Chain) []Chain {
 // chainToEntity converts a Chain to an entities.Chain
 func chainToEntity(e Chain) entities.Chain {
 	return entities.Chain{
-		Hash:        entities.Hash(e.Hash),
-		FromAddress: addressToEntity(e.FromAddress),
-		ToAddress:   addressToEntity(e.ToAddress),
-		CreatedAt:   e.CreatedAt,
+		Hash:            entities.Hash(e.Hash),
+		FromAddress:     addressToEntity(e.FromAddress),
+		ToAddress:       addressToEntity(e.ToAddress),
+		OrigFromAddress: addressToEntity(e.OrigFromAddress),
+		OrigToAddress:   addressToEntity(e.OrigToAddress),
+		CreatedAt:       e.CreatedAt,
 	}
 }
 

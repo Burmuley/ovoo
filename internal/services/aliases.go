@@ -34,7 +34,7 @@ func NewAliasesService(domain string, wordsDict []string, repoFabric *factory.Re
 }
 
 // Create generates a new alias address and stores it.
-func (auc *AliasesService) Create(
+func (als *AliasesService) Create(
 	ctx context.Context,
 	protAddr entities.Address,
 	metadata entities.AddressMetadata,
@@ -44,7 +44,7 @@ func (auc *AliasesService) Create(
 		return entities.Address{}, err
 	}
 
-	aliasEmail, err := entities.GenAliasEmail(auc.domain, auc.wordsDictionary)
+	aliasEmail, err := entities.GenAliasEmail(als.domain, als.wordsDictionary)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("creating alias address: %w", err)
 	}
@@ -62,7 +62,7 @@ func (auc *AliasesService) Create(
 		return entities.Address{}, fmt.Errorf("creating alias address: %w", err)
 	}
 
-	if err := auc.repoFactory.Address.Create(ctx, alias); err != nil {
+	if err := als.repoFactory.Address.Create(ctx, alias); err != nil {
 		return entities.Address{}, fmt.Errorf("creating alias address: %w", err)
 	}
 
@@ -70,12 +70,12 @@ func (auc *AliasesService) Create(
 }
 
 // Update modifies an existing alias address.
-func (auc *AliasesService) Update(ctx context.Context, alias entities.Address) (entities.Address, error) {
+func (als *AliasesService) Update(ctx context.Context, alias entities.Address) (entities.Address, error) {
 	if err := alias.Validate(); err != nil {
 		return entities.Address{}, err
 	}
 
-	cur, err := auc.repoFactory.Address.GetById(ctx, alias.ID)
+	cur, err := als.repoFactory.Address.GetById(ctx, alias.ID)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("updating alias address: %w", err)
 	}
@@ -100,7 +100,7 @@ func (auc *AliasesService) Update(ctx context.Context, alias entities.Address) (
 		return entities.Address{}, fmt.Errorf("%w: address owner can not be changed", entities.ErrValidation)
 	}
 
-	if err := auc.repoFactory.Address.Update(ctx, alias); err != nil {
+	if err := als.repoFactory.Address.Update(ctx, alias); err != nil {
 		return entities.Address{}, fmt.Errorf("updating alias address: %w", err)
 	}
 
@@ -108,13 +108,13 @@ func (auc *AliasesService) Update(ctx context.Context, alias entities.Address) (
 }
 
 // GetAll retrieves all alias addresses for a given owner.
-func (auc *AliasesService) GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error) {
+func (als *AliasesService) GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error) {
 	if filters == nil {
 		filters = make(map[string][]string)
 	}
 
 	filters["type"] = []string{strconv.Itoa(entities.AliasAddress)}
-	aliases, err := auc.repoFactory.Address.GetAll(ctx, filters)
+	aliases, err := als.repoFactory.Address.GetAll(ctx, filters)
 	if err != nil {
 		return nil, fmt.Errorf("getting alias addresses: %w", err)
 	}
@@ -123,12 +123,12 @@ func (auc *AliasesService) GetAll(ctx context.Context, filters map[string][]stri
 }
 
 // GetById retrieves an alias address by its ID.
-func (auc *AliasesService) GetById(ctx context.Context, id entities.Id) (entities.Address, error) {
+func (als *AliasesService) GetById(ctx context.Context, id entities.Id) (entities.Address, error) {
 	if err := id.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("getting alias by id: %w", err)
 	}
 
-	alias, err := auc.repoFactory.Address.GetById(ctx, id)
+	alias, err := als.repoFactory.Address.GetById(ctx, id)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("getting alias address by id: %w", err)
 	}
@@ -136,12 +136,12 @@ func (auc *AliasesService) GetById(ctx context.Context, id entities.Id) (entitie
 	return alias, nil
 }
 
-func (auc *AliasesService) DeleteById(ctx context.Context, id entities.Id) error {
+func (als *AliasesService) DeleteById(ctx context.Context, id entities.Id) error {
 	if err := id.Validate(); err != nil {
 		return fmt.Errorf("deleting alias by id: %w", err)
 	}
 
-	if err := auc.repoFactory.Address.DeleteById(ctx, id); err != nil {
+	if err := als.repoFactory.Address.DeleteById(ctx, id); err != nil {
 		return fmt.Errorf("deleting alias by id: %w", err)
 	}
 

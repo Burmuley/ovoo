@@ -39,6 +39,21 @@ func userTypeTStr(ut entities.UserType) string {
 	return "unknown"
 }
 
+func addrTypeTStr(t entities.AddressType) string {
+	amap := map[entities.AddressType]string{
+		entities.AliasAddress:      "alias",
+		entities.ExternalAddress:   "external",
+		entities.ProtectedAddress:  "protected_address",
+		entities.ReplyAliasAddress: "reply_alias",
+	}
+
+	if tp, ok := amap[t]; ok {
+		return tp
+	}
+
+	return "unknown"
+}
+
 // userTResponse converts an entities.User to a UserData response.
 // It maps fields from the internal user entity to the API response structure.
 func userTResponse(u entities.User) UserData {
@@ -84,9 +99,17 @@ func addressTPrAddrData(praddr entities.Address) ProtectedAddressData {
 // This function transforms the internal chain entity to the API response format.
 func chainTChainData(chain entities.Chain) ChainData {
 	return ChainData{
-		FromEmail: string(chain.FromAddress.Email),
 		Hash:      chain.Hash.String(),
+		FromEmail: string(chain.FromAddress.Email),
 		ToEmail:   string(chain.ToAddress.Email),
+		OrigFromAddress: ChainAddressData{
+			Email: string(chain.OrigFromAddress.Email),
+			Type:  addrTypeTStr(chain.OrigFromAddress.Type),
+		},
+		OrigToAddress: ChainAddressData{
+			Email: string(chain.OrigToAddress.Email),
+			Type:  addrTypeTStr(chain.OrigToAddress.Type),
+		},
 	}
 }
 

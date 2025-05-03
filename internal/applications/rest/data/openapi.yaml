@@ -695,6 +695,16 @@ components:
         - owner
         - metadata
         - id
+    chainAddressData:
+      type: object
+      properties:
+        email:
+          type: string
+        type:
+          type: string
+      required:
+        - email
+        - type
     chainData:
       type: object
       properties:
@@ -704,10 +714,16 @@ components:
           type: string
         to_email:
           type: string
+        orig_from_address:
+          $ref: "#/components/schemas/chainAddressData"
+        orig_to_address:
+          $ref: "#/components/schemas/chainAddressData"
       required:
         - hash
         - from_email
         - to_email
+        - orig_from_address
+        - orig_to_address
     addressMetadata:
       type: object
       properties:

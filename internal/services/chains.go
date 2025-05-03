@@ -12,14 +12,14 @@ import (
 
 // ChainsService represents a use case for managing chains
 type ChainsService struct {
-	repoFactory *factory.RepoFactory
-	domain      string
+	repof  *factory.RepoFactory
+	domain string
 }
 
 // NewChainsService creates a new instance of ChainsUsecase
 // It takes a RepoFabric as a parameter and returns a pointer to ChainsUsecase and an error
-func NewChainsService(domain string, repoFactory *factory.RepoFactory) (*ChainsService, error) {
-	if repoFactory == nil {
+func NewChainsService(domain string, repof *factory.RepoFactory) (*ChainsService, error) {
+	if repof == nil {
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
@@ -27,15 +27,15 @@ func NewChainsService(domain string, repoFactory *factory.RepoFactory) (*ChainsS
 		return nil, fmt.Errorf("%w: domain should be defined", entities.ErrConfiguration)
 	}
 
-	return &ChainsService{domain: domain, repoFactory: repoFactory}, nil
+	return &ChainsService{domain: domain, repof: repof}, nil
 }
 
-func (cuc *ChainsService) GetByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
+func (cs *ChainsService) GetByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
 	if err := hash.Validate(); err != nil {
 		return entities.Chain{}, fmt.Errorf("getting chain by hash: parsing hash: %w", err)
 	}
 
-	chain, err := cuc.repoFactory.Chain.GetByHash(ctx, hash)
+	chain, err := cs.repof.Chain.GetByHash(ctx, hash)
 	if err != nil {
 		return entities.Chain{}, fmt.Errorf("getting chain by hash: %w", err)
 	}
@@ -44,12 +44,12 @@ func (cuc *ChainsService) GetByHash(ctx context.Context, hash entities.Hash) (en
 	return chain, nil
 }
 
-func (cuc *ChainsService) DeleteByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
+func (cs *ChainsService) DeleteByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
 	if err := hash.Validate(); err != nil {
 		return entities.Chain{}, fmt.Errorf("getting chain by hash: parsing hash: %w", err)
 	}
 
-	chain, err := cuc.repoFactory.Chain.Delete(ctx, hash)
+	chain, err := cs.repof.Chain.Delete(ctx, hash)
 	if err != nil {
 		return entities.Chain{}, fmt.Errorf("deleting chain by hash: %w", err)
 	}
@@ -57,89 +57,92 @@ func (cuc *ChainsService) DeleteByHash(ctx context.Context, hash entities.Hash) 
 	return chain, nil
 }
 
-func (cuc *ChainsService) Create(ctx context.Context, faddr, taddr string, owner entities.User) (entities.Chain, error) {
-	// 1. Calculate Hash(FromAddress, ToAddress) (HashForward)
-	fwdHash := entities.NewHash(faddr, taddr)
-
-	// 2. Check if there's a record already exists in the DB, if found - return exiting record
-	chain, err := cuc.repoFactory.Chain.GetByHash(ctx, fwdHash)
-	if err == nil {
+func (cs *ChainsService) Create(ctx context.Context, fromEmail, toEmail string, owner entities.User) (entities.Chain, error) {
+	// calculate hash and return corresponding chain if found in the DB
+	hash := entities.NewHash(fromEmail, toEmail)
+	if chain, err := cs.repof.Chain.GetByHash(ctx, hash); err == nil {
 		return chain, nil
 	}
 
-	// 3. Check if ToAddress already exists in the Addresses table
-	destAddr, err := cuc.repoFactory.Address.GetByEmail(ctx, entities.Email(taddr))
-	if err != nil {
-		return entities.Chain{}, fmt.Errorf("creating chain: getting destination address: %w", err)
-	}
-
-	// 3.1 If found and AddressType == ReplyAlias - return error
+	// create new chains if no hash present in the DB
+	// heck if toEmail already exists in the DB and is of type AliasAddress
 	// (reply chain can not be created without initial email)
-	// 3.2 If found and AddressType == ProtectedAddress - return error
 	// (Ovoo don't accept email for outer domains)
-	if destAddr.Type != entities.AliasAddress {
-		return entities.Chain{}, fmt.Errorf("%w: creating chain: destination address is not of type 'Alias'", entities.ErrValidation)
+	alias, err := cs.repof.Address.GetByEmail(ctx, entities.Email(toEmail))
+	if err != nil {
+		return entities.Chain{}, fmt.Errorf("creating chain: getting destination alias: %w", err)
 	}
 
-	srcAddr, err := checkCreateSrcAddr(ctx, *cuc.repoFactory, faddr, owner)
+	if alias.Type != entities.AliasAddress {
+		return entities.Chain{}, fmt.Errorf("%w: creating chain: destination alias is not of type 'Alias'", entities.ErrValidation)
+	}
+
+	src, err := checkCreateSrcAddr(ctx, cs.repof, fromEmail, owner)
 	if err != nil {
 		return entities.Chain{}, fmt.Errorf("creating chain: creating source address: %w", err)
 	}
 
-	// 4. Generate ReplyAlias(FromAddress, ToAddress)
+	// Generate ReplyAlias(FromAddress, ToAddress)
 	// (creates Address record with ForwardAddress set to original external sender)
-	replyAliasEmail, _, err := entities.GenReplyAliasEmail(
-		entities.Email(faddr),
-		entities.Email(taddr),
-		cuc.domain,
-	)
+	ralias, err := genReplyAlias(ctx, cs.repof, fromEmail, toEmail, cs.domain, &src, owner)
 	if err != nil {
-		return entities.Chain{}, fmt.Errorf("creating chain: generating new reply alias: %w", err)
-	}
-
-	replyAlias := entities.Address{
-		Type:           entities.ReplyAliasAddress,
-		ID:             entities.NewId(),
-		Email:          replyAliasEmail,
-		ForwardAddress: &srcAddr,
-		Owner:          owner,
-		Metadata:       entities.AddressMetadata{},
-	}
-
-	if err := cuc.repoFactory.Address.Create(ctx, replyAlias); err != nil {
-		return entities.Chain{}, fmt.Errorf("creating chain: storing new reply alias: %w", err)
+		return entities.Chain{}, fmt.Errorf("creating chain: %w", err)
 	}
 
 	// forward chain
-	fwdChain := entities.Chain{
-		Hash:        fwdHash,
-		FromAddress: replyAlias,
-		ToAddress:   *destAddr.ForwardAddress,
-		CreatedAt:   time.Now().UTC(),
+	fchain := entities.Chain{
+		Hash:            hash,
+		FromAddress:     ralias,
+		ToAddress:       *alias.ForwardAddress,
+		OrigFromAddress: src,
+		OrigToAddress:   alias,
+		CreatedAt:       time.Now().UTC(),
 	}
 
 	// reply chain
-	replyHash := entities.NewHash(string(destAddr.ForwardAddress.Email), string(replyAlias.Email))
-	replyChain := entities.Chain{
-		Hash:        replyHash,
-		FromAddress: destAddr,
-		ToAddress:   srcAddr,
-		CreatedAt:   time.Now().UTC(),
+	rhash := entities.NewHash(string(alias.ForwardAddress.Email), string(ralias.Email))
+	rchain := entities.Chain{
+		Hash:            rhash,
+		FromAddress:     alias,
+		ToAddress:       src,
+		OrigFromAddress: *alias.ForwardAddress,
+		OrigToAddress:   ralias,
+		CreatedAt:       time.Now().UTC(),
 	}
 
 	// create chains
-	if err := cuc.repoFactory.Chain.BatchCreate(ctx, []entities.Chain{fwdChain, replyChain}); err != nil {
+	if err := cs.repof.Chain.BatchCreate(ctx, []entities.Chain{fchain, rchain}); err != nil {
 		return entities.Chain{}, fmt.Errorf("creating chains: %w", err)
 	}
 
-	return fwdChain, nil
-
+	return fchain, nil
 }
 
-func checkCreateSrcAddr(ctx context.Context, repoFactory factory.RepoFactory, faddr string, owner entities.User) (entities.Address, error) {
+func genReplyAlias(ctx context.Context, repof *factory.RepoFactory, fromEmail, toEmail, domain string, fwdAddr *entities.Address, owner entities.User) (entities.Address, error) {
+	raliasEmail, _, err := entities.GenReplyAliasEmail(entities.Email(fromEmail), entities.Email(toEmail), domain)
+	if err != nil {
+		return entities.Address{}, fmt.Errorf("generating new reply alias: %w", err)
+	}
+
+	ralias := entities.Address{
+		Type:           entities.ReplyAliasAddress,
+		ID:             entities.NewId(),
+		Email:          raliasEmail,
+		ForwardAddress: fwdAddr,
+		Owner:          owner,
+	}
+
+	if err := repof.Address.Create(ctx, ralias); err != nil {
+		return entities.Address{}, fmt.Errorf("storing new reply alias: %w", err)
+	}
+
+	return ralias, nil
+}
+
+func checkCreateSrcAddr(ctx context.Context, repof *factory.RepoFactory, faddr string, owner entities.User) (entities.Address, error) {
 	var srcAddr entities.Address
 	var err error
-	srcAddr, err = repoFactory.Address.GetByEmail(ctx, entities.Email(faddr))
+	srcAddr, err = repof.Address.GetByEmail(ctx, entities.Email(faddr))
 	if err != nil && errors.Is(err, entities.ErrNotFound) {
 		{
 			var err error
@@ -149,7 +152,7 @@ func checkCreateSrcAddr(ctx context.Context, repoFactory factory.RepoFactory, fa
 				Email: entities.Email(faddr),
 				Owner: owner,
 			}
-			err = repoFactory.Address.Create(ctx, srcAddr)
+			err = repof.Address.Create(ctx, srcAddr)
 			if err != nil {
 				return entities.Address{}, err
 			}

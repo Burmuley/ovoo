@@ -7,10 +7,12 @@ import (
 
 // Chain represents a link between two addresses with a hash and creation timestamp.
 type Chain struct {
-	Hash        Hash
-	FromAddress Address
-	ToAddress   Address
-	CreatedAt   time.Time
+	Hash            Hash
+	FromAddress     Address
+	ToAddress       Address
+	OrigFromAddress Address
+	OrigToAddress   Address
+	CreatedAt       time.Time
 }
 
 // Validate checks the integrity of the Chain structure.

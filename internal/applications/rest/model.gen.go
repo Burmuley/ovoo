@@ -76,11 +76,19 @@ type BasicAuthForm struct {
 	User string `json:"user"`
 }
 
+// ChainAddressData defines model for chainAddressData.
+type ChainAddressData struct {
+	Email string `json:"email"`
+	Type  string `json:"type"`
+}
+
 // ChainData defines model for chainData.
 type ChainData struct {
-	FromEmail string `json:"from_email"`
-	Hash      string `json:"hash"`
-	ToEmail   string `json:"to_email"`
+	FromEmail       string           `json:"from_email"`
+	Hash            string           `json:"hash"`
+	OrigFromAddress ChainAddressData `json:"orig_from_address"`
+	OrigToAddress   ChainAddressData `json:"orig_to_address"`
+	ToEmail         string           `json:"to_email"`
 }
 
 // Error defines model for error.

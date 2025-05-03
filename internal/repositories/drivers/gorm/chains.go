@@ -28,7 +28,7 @@ func NewChainsGORMRepo(db *gorm.DB) (repositories.ChainReadWriter, error) {
 // It returns the Chain entity and any error encountered during the process.
 func (c *ChainsGORMRepo) GetByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
 	chain := Chain{}
-	err := c.db.WithContext(ctx).Model(&Chain{}).Where("hash = ?", hash).Preload("ToAddress").Preload("FromAddress").First(&chain).Error
+	err := c.db.WithContext(ctx).Model(&Chain{}).Where("hash = ?", hash).Preload("ToAddress").Preload("FromAddress").Preload("OrigFromAddress").Preload("OrigToAddress").First(&chain).Error
 	if err != nil {
 		return entities.Chain{}, wrapGormError(err)
 	}

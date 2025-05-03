@@ -30,8 +30,8 @@ func (m *Application) Start(ctx context.Context) error {
 		"tcp",
 		m.listenAddr,
 		AddressRewriter(m.ovooCli),
-		mailfilter.WithDecisionAt(mailfilter.DecisionAtEndOfHeaders),
-		mailfilter.WithoutBody(), mailfilter.WithErrorHandling(mailfilter.RejectWhenError),
+		mailfilter.WithDecisionAt(mailfilter.DecisionAtEndOfMessage),
+		mailfilter.WithErrorHandling(mailfilter.RejectWhenError),
 	)
 
 	if err != nil {
