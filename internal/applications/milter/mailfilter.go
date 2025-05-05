@@ -54,6 +54,10 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 			trx.ChangeMailFrom(chain.FromEmail, trx.MailFrom().Args)
 			trx.Headers().Set("from", nfrom.String())
 			trx.Headers().Set("to", nto.String())
+
+			// delete DKIM headers belong to different domain
+			trx.Headers().Set("dkim-signature", "")
+			trx.Headers().Set("x-google-dkim-signature", "") // google specific signature
 		}
 
 		return mailfilter.Accept, nil
