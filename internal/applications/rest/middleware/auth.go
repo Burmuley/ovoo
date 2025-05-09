@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"slices"
 
@@ -12,12 +11,9 @@ import (
 
 const (
 	authorizationHeader = "Authorization"
+	RootPageURI         = "/"
 
-	// OIDC constants
-	OIDCLoginUri     = "/auth/oidc"
-	OIDCCallbackUri  = "/auth/callback"
-	OIDCLoginPageUri = "/"
-
+	// cookies names
 	stateCookieName = "ovoo_state"
 	nonceCookieName = "ovoo_nonce"
 	authCookieName  = "ovoo_auth"
@@ -26,36 +22,63 @@ const (
 	apiTokenCookieName = "ovoo_key"
 )
 
+// var providerConfig *OIDCProvider
+var oidcConfigs map[string]OIDCProvider
+
 type UserContextKey string
 
 // Authentication creates a middleware adapter for handling user authentication.
 // It supports multiple authentication methods:
-// - OIDC/OAuth2 via cookies (browser sessions)
+// - OIDC/OAuth2 via cookies (browser sessions) with multiple providers through URL-based registration
 // - Basic authentication (username/password)
 // - Bearer token authentication (OIDC/OAuth2)
-// - API token authentication
+// - API token authentication via cookie or header
 //
 // Parameters:
-//   - skipUris: a slice of URI paths that bypass authentication
-//   - svcGw: service gateway for authentication operations
-//   - logger: structured logger for recording authentication events
+//   - skipUris: a slice of URI paths that bypass authentication entirely
+//   - svcGw: service gateway providing user/token validation capabilities
 //
 // The middleware adds authenticated user information to the request context
 // with the UserContextKey("user") key when authentication succeeds.
 //
 // Authentication flow:
-// 1. Skip authentication for whitelisted URIs
-// 2. Try Basic authentication (username/password)
-// 3. Try Bearer token authentication (OIDC/OAuth2) if provider configured
-// 4. Try API token authentication
-// 5. Allow access to login page without authentication
-// 6. Return 401 Unauthorized for all other cases
-func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *slog.Logger) Adapter {
+// 1. Skip authentication for whitelisted URIs in skipUris
+// 2. Check for provider-specific OIDC login/callback URIs using regex matching
+// 3. Try Basic authentication header (username/password combo)
+// 4. Try API token from cookie or header
+// 5. Try Bearer token authentication (OIDC/OAuth2) if providers configured
+// 6. Allow unauthenticated access to root page "/"
+// 7. Return 401 Unauthorized for all other cases
+func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Skip authentication for whitelisted URIs
 			if slices.Contains(skipUris, r.URL.Path) {
 				h.ServeHTTP(w, r)
+				return
+			}
+
+			if match := oidcLoginUriReg.FindStringSubmatch(r.URL.Path); match != nil {
+				provider, ok := oidcConfigs[match[1]]
+				if !ok {
+					logger.Error("unknown OIDC provider login URI", "src", r.RemoteAddr, "value", match[1])
+					http.Error(w, "unknown OIDC provider login URI", http.StatusBadRequest)
+					return
+				}
+
+				handleOIDCLogin(w, r, provider)
+				return
+			}
+
+			if match := oidcCallbackUriReg.FindStringSubmatch(r.URL.Path); match != nil {
+				provider, ok := oidcConfigs[match[1]]
+				if !ok {
+					logger.Error("unknown OIDC provider callback URI", "src", r.RemoteAddr, "value", match[1])
+					http.Error(w, "unknown OIDC provider callback URI", http.StatusBadRequest)
+					return
+				}
+
+				handleOIDCCallback(w, r, provider)
 				return
 			}
 
@@ -73,12 +96,33 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 				return
 			}
 
+			apiToken := getApiToken(r)
+			if apiToken != "" {
+				user, err := validateApiToken(r.Context(), svcGw, apiToken)
+				if err != nil {
+					logger.Error("invalid api token", "src", r.RemoteAddr, "error", err.Error())
+					http.Error(w, "invalid or expired api token", http.StatusUnauthorized)
+					return
+				}
+
+				r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
+				h.ServeHTTP(w, r)
+				return
+			}
+
 			// Process Bearer token authentication (OIDC/OAuth2)
-			if providerConfig != nil {
+			if oidcConfigs != nil {
 				oidcToken := getOIDCToken(r)
 				if oidcToken != "" {
-					userEmail, err := validateOIDCToken(r.Context(), oidcToken)
-					if err != nil && r.URL.Path != OIDCLoginPageUri {
+					prov, err := getJWTTokenProvider(oidcToken)
+					if err != nil {
+						logger.Error("invalid OAuth2 credentials", "src", r.RemoteAddr, "error", err.Error())
+						http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)
+						return
+					}
+
+					userEmail, err := validateOIDCToken(r.Context(), oidcToken, prov)
+					if err != nil && r.URL.Path != RootPageURI {
 						logger.Error("invalid OAuth2 credentials", "src", r.RemoteAddr, "error", err.Error())
 						http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)
 						return
@@ -97,22 +141,8 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway, logger *s
 				}
 			}
 
-			apiToken := getApiToken(r)
-			if apiToken != "" {
-				user, err := validateApiToken(r.Context(), svcGw, apiToken)
-				if err != nil {
-					logger.Error("invalid api token", "src", r.RemoteAddr, "error", err.Error())
-					http.Error(w, "invalid or expired api token", http.StatusUnauthorized)
-					return
-				}
-
-				r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
-				h.ServeHTTP(w, r)
-				return
-			}
-
-			// if authentication info not found still pass to the login webpage
-			if r.URL.Path == OIDCLoginPageUri {
+			// if authentication info not found still pass to the root webpage
+			if r.URL.Path == RootPageURI {
 				h.ServeHTTP(w, r)
 				return
 			}

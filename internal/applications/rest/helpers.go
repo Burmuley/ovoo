@@ -39,3 +39,15 @@ func userFromContext(r *http.Request) (entities.User, error) {
 
 	return userraw.(entities.User), nil
 }
+
+// mapKeys extracts and returns all keys from a map as a slice.
+// It takes a map with comparable keys and any values, and returns a slice containing all the keys.
+// This is useful when you need to process or iterate over just the keys of a map.
+func mapKeys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+
+	return keys
+}

@@ -127,7 +127,7 @@ func startApi(cfgPath string) error {
 	}
 
 	restApi, err := rest.New(
-		listen_addr, logger, svcGw, cfg.String("tls.key"), cfg.String("tls.cert"), cfg.MapAt("oidc_config"),
+		listen_addr, logger, svcGw, cfg.String("tls.key"), cfg.String("tls.cert"), cfg.MapAt("oidc"),
 	)
 	if err != nil {
 		return fmt.Errorf("error initializing rest api: %w", err)

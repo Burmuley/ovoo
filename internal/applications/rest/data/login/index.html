@@ -4,17 +4,19 @@
     <title>Login Form</title>
 </head>
 <body>
-{{if eq .Login ""}}
-    <h2>Login</h2>
-    <form action="/auth/oidc" method="get">
+{{if eq .User.Login ""}}
+    <h2>You're unathenticated</h2>
+    {{ range .Providers }}
+    <form action="/auth/{{.}}/login" method="get">
         <input type="hidden" name="return_url" value="/">
-        <button type="submit">OIDC Login</button>
+        <button type="submit">Login with {{.}}</button>
     </form>
+    {{end}}
 {{else}}
     <h2>Logged in</h2>
-    <p>Username: {{.Login}}</p>
-    <p>First name: {{.FirstName}}</p>
-    <p>Last name: {{.LastName}}</p>
+    <p>Username: {{.User.Login}}</p>
+    <p>First name: {{.User.FirstName}}</p>
+    <p>Last name: {{.User.LastName}}</p>
     <p><a href="/api/docs">API Docs</a></p>
 {{end}}
 </body>

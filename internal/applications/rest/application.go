@@ -5,12 +5,14 @@ import (
 	"context"
 	"embed"
 	"errors"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/applications"
 	"github.com/Burmuley/ovoo/internal/applications/rest/middleware"
+	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -26,28 +28,39 @@ const (
 var staticData embed.FS
 
 // Application represents the main structure for handling REST API requests.
-// It contains references to various use cases, a listen address, context, and logger.
+// It contains references to a service gateway for business logic, network configuration,
+// application context, logging, authentication settings, and OIDC provider configurations.
 type Application struct {
-	svcGw          *services.ServiceGateway
-	listenAddr     string
-	context        context.Context
-	logger         *slog.Logger
-	authSkipURIs   []string
-	tls_cert       string
-	tls_key        string
-	providerConfig *middleware.OIDCProvider
+	svcGw           *services.ServiceGateway
+	listenAddr      string
+	context         context.Context
+	logger          *slog.Logger
+	authSkipURIs    []string
+	tls_cert        string
+	tls_key         string
+	providerConfigs map[string]middleware.OIDCProvider
 }
 
-// New creates and returns a new Controller instance.
-// It initializes the controller with the provided listen address, logger, and use cases.
-// If the listen address is empty, it uses the default address.
-// It returns an error if any of the required use cases or the logger is nil.
+// New creates and returns a new Application instance configured for REST API handling.
+// It validates and initializes all required components including services, logging, and auth providers.
+//
+// Parameters:
+//   - listenAddr: Network address to listen on (uses DefaultListenAddr if empty)
+//   - logger: Structured logger for application logging
+//   - svcGw: Service gateway containing business logic implementations
+//   - tls_key: Path to TLS private key file
+//   - tls_cert: Path to TLS certificate file
+//   - providersConfig: Map of OIDC provider configurations
+//
+// Returns:
+//   - applications.Application: Configured application instance
+//   - error: Non-nil if initialization fails
 func New(
 	listenAddr string,
 	logger *slog.Logger,
 	svcGw *services.ServiceGateway,
 	tls_key, tls_cert string,
-	providerConfig map[string]any,
+	providersConfig map[string]any,
 ) (applications.Application, error) {
 	ctrl := &Application{
 		svcGw:      svcGw,
@@ -75,25 +88,40 @@ func New(
 		return nil, errors.New("logger must be set")
 	}
 
-	ctrl.authSkipURIs = []string{middleware.OIDCCallbackUri, middleware.OIDCLoginUri}
+	ctrl.authSkipURIs = []string{}
 
 	{
 		var err error
-		if ctrl.providerConfig, err = parseProviderCfg(
-			context.Background(), providerConfig,
-		); err != nil {
+		if ctrl.providerConfigs, err = parseProvidersCfg(providersConfig); err != nil {
 			return nil, err
 		}
-		middleware.SetOIDCProvider(ctrl.providerConfig)
+		middleware.SetOIDCConfigs(ctrl.providerConfigs)
 	}
+
+	if err := middleware.SetLogger(logger); err != nil {
+		return nil, err
+	}
+
 	return ctrl, nil
 }
 
 // Start initializes and starts the HTTP server for the Ovoo API.
-// It sets up routes for users, aliases, protected addresses, chains, and API tokens,
-// registers authentication endpoints, applies middleware for security, logging, and authentication,
-// and begins listening for incoming HTTPS requests with TLS.
-// The server runs until the provided context is cancelled or an error occurs.
+// It sets up all API routes, middleware chains, and starts the HTTPS server.
+//
+// The server provides endpoints for:
+// - User management (/api/v1/users/*)
+// - API token management (/api/v1/users/apitokens/*)
+// - Alias management (/api/v1/aliases/*)
+// - Protected address management (/api/v1/praddrs/*)
+// - Chain management (/api/v1/chains/*)
+// - Authentication flows
+// - API documentation
+//
+// Parameters:
+//   - ctx: Context for server lifecycle management
+//
+// Returns:
+//   - error: Non-nil if server fails to start or encounters fatal error
 func (a *Application) Start(ctx context.Context) error {
 	a.context = ctx
 	mux := http.NewServeMux()
@@ -135,75 +163,91 @@ func (a *Application) Start(ctx context.Context) error {
 	mux.HandleFunc("POST /api/v1/chains", a.CreateChain)
 	mux.HandleFunc("DELETE /api/v1/chains/{hash}", a.DeleteChain)
 
-	// authentication endpoints
-	mux.HandleFunc(middleware.OIDCLoginUri, middleware.HandleOIDCLogin)
-	mux.HandleFunc(middleware.OIDCCallbackUri, middleware.HandleOIDCCallback)
-
 	// root
-	mux.HandleFunc("/{$}", a.handleRoot)
+	mux.HandleFunc("/{$}", a.handleRoot([]string(mapKeys(a.providerConfigs))))
 
 	handler := middleware.Adapt(mux,
 		middleware.SecurityHeaders(),
 		middleware.Logging(a.logger),
-		middleware.Authentication(a.authSkipURIs, a.svcGw, a.logger),
+		middleware.Authentication(a.authSkipURIs, a.svcGw),
 	)
 	a.logger.Info("started Ovoo API server", "addr", a.listenAddr)
 	return http.ListenAndServeTLS(a.listenAddr, a.tls_cert, a.tls_key, handler)
 }
 
 // handleRoot serves the root page of the application.
-// It parses and renders the login template, injecting the current user information if available.
-// If there are any errors during template parsing or rendering, it will log the error
-// and return an appropriate error response to the client.
+// It parses and renders the login template with current user and provider information.
 //
 // Parameters:
-//   - w: The HTTP response writer to write the response to
-//   - r: The HTTP request that triggered this handler
-func (a *Application) handleRoot(w http.ResponseWriter, r *http.Request) {
-	user, _ := userFromContext(r)
-	tmpl, err := template.New("index").ParseFS(staticData, "data/login/index.html")
-	if err != nil {
-		a.errorLogNResponse(w, "root page: parsing template", err)
-		return
-	}
+//   - providers: List of configured authentication providers to display
+//
+// Returns:
+//   - http.HandlerFunc: Handler that renders the root/login page
+func (a *Application) handleRoot(providers []string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := userFromContext(r)
+		tmpl, err := template.New("index").ParseFS(staticData, "data/login/index.html")
+		if err != nil {
+			a.errorLogNResponse(w, "root page: parsing template", err)
+			return
+		}
 
-	if err := tmpl.ExecuteTemplate(w, "index.html", user); err != nil {
-		a.errorLogNResponse(w, "root page: rendering template", err)
+		if err := tmpl.ExecuteTemplate(
+			w,
+			"index.html",
+			struct {
+				User      entities.User
+				Providers []string
+			}{User: user, Providers: providers},
+		); err != nil {
+			a.errorLogNResponse(w, "root page: rendering template", err)
+		}
 	}
 }
 
+// handleDocs serves the API documentation HTML page
 func (a *Application) handleDocs(w http.ResponseWriter, r *http.Request) {
 	http.ServeFileFS(w, r, staticData, "data/docs/index.html")
 }
 
+// handleOpenAPI serves the OpenAPI specification file
 func (a *Application) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 	http.ServeFileFS(w, r, staticData, "data/openapi.yaml")
 }
 
-// parseProviderCfg converts a generic configuration map into an OAuth2Provider struct.
-// It extracts OAuth2 provider configuration details like client ID, client secret,
-// authorization URL, token URL, user info URL, and issuer from the provided map.
-// Returns a pointer to the configured OAuth2Provider and an error if the configuration
-// format is invalid.
-func parseProviderCfg(ctx context.Context, cfg map[string]any) (*middleware.OIDCProvider, error) {
-	var err error
+// parseProvidersCfg initializes OIDC providers from configuration.
+// It creates provider instances with OAuth2 and OIDC configurations.
+//
+// Parameters:
+//   - cfg: Map of provider names to their raw configurations
+//
+// Returns:
+//   - map[string]middleware.OIDCProvider: Configured providers mapped by name
+//   - error: Non-nil if provider initialization fails
+func parseProvidersCfg(cfg map[string]any) (map[string]middleware.OIDCProvider, error) {
+	providers := make(map[string]middleware.OIDCProvider)
+	for name, config := range cfg {
+		mapCfg := config.(map[string]any)
+		var err error
+		p := middleware.OIDCProvider{}
+		p.Issuer = mapCfg["issuer"].(string)
+		if p.OIDCProvider, err = oidc.NewProvider(context.Background(), p.Issuer); err != nil {
+			return nil, err
+		}
 
-	p := &middleware.OIDCProvider{}
-	p.Issuer = cfg["issuer"].(string)
-	if p.OIDCProvider, err = oidc.NewProvider(ctx, p.Issuer); err != nil {
-		return nil, err
+		p.OAuth2Config = &oauth2.Config{
+			ClientID:     mapCfg["client_id"].(string),
+			ClientSecret: mapCfg["client_secret"].(string),
+			Endpoint:     p.OIDCProvider.Endpoint(),
+			RedirectURL:  fmt.Sprintf("/auth/%s/callback", name),
+			Scopes:       []string{"openid", "profile", "email"},
+		}
+		p.OIDCConfig = &oidc.Config{
+			ClientID: mapCfg["client_id"].(string),
+		}
+
+		providers[name] = p
 	}
 
-	p.OAuth2Config = &oauth2.Config{
-		ClientID:     cfg["client_id"].(string),
-		ClientSecret: cfg["client_secret"].(string),
-		Endpoint:     p.OIDCProvider.Endpoint(),
-		RedirectURL:  cfg["redirect_url"].(string),
-		Scopes:       []string{"openid", "profile", "email"},
-	}
-	p.OIDCConfig = &oidc.Config{
-		ClientID: cfg["client_id"].(string),
-	}
-
-	return p, nil
+	return providers, nil
 }

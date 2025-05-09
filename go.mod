@@ -3,7 +3,7 @@ module github.com/Burmuley/ovoo
 go 1.24.0
 
 require (
-	github.com/coreos/go-oidc/v3 v3.13.0
+	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/d--j/go-milter v0.8.5
 	github.com/glebarez/sqlite v1.10.0
 	github.com/knadh/koanf v1.5.0
