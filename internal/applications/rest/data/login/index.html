@@ -3,21 +3,58 @@
 <head>
     <title>Login Form</title>
 </head>
+<style>
+/* From Uiverse.io by cssbuttons-io */
+div {
+  padding: 25px 50px 75px 100px;
+}
+
+button {
+  padding: 12.5px 30px;
+  border: 0;
+  border-radius: 100px;
+  background-color: #2ba8fb;
+  color: #ffffff;
+  font-weight: Bold;
+  transition: all 0.5s;
+  -webkit-transition: all 0.5s;
+}
+
+button:hover {
+  background-color: #6fc5ff;
+  box-shadow: 0 0 20px #6fc5ff50;
+  transform: scale(1.1);
+}
+
+button:active {
+  background-color: #3d94cf;
+  transition: all 0.25s;
+  -webkit-transition: all 0.25s;
+  box-shadow: none;
+  transform: scale(0.98);
+}
+</style>
 <body>
 {{if eq .User.Login ""}}
-    <h2>You're unathenticated</h2>
+    <div>
+    <h2>Please sign-in</h2>
     {{ range .Providers }}
     <form action="/auth/{{.}}/login" method="get">
         <input type="hidden" name="return_url" value="/">
         <button type="submit">Login with {{.}}</button>
     </form>
     {{end}}
+    </div>
 {{else}}
-    <h2>Logged in</h2>
+    <div>
+    <h2>Logged in!</h2>
     <p>Username: {{.User.Login}}</p>
     <p>First name: {{.User.FirstName}}</p>
     <p>Last name: {{.User.LastName}}</p>
-    <p><a href="/api/docs">API Docs</a></p>
+    <form action="/api/docs" method="get">
+        <button type="submit">API Docs</button>
+    </form>
+    </div>
 {{end}}
 </body>
 </html>

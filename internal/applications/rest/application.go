@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"regexp"
 
 	"github.com/Burmuley/ovoo/internal/applications"
 	"github.com/Burmuley/ovoo/internal/applications/rest/middleware"
@@ -226,7 +227,11 @@ func (a *Application) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 //   - error: Non-nil if provider initialization fails
 func parseProvidersCfg(cfg map[string]any) (map[string]middleware.OIDCProvider, error) {
 	providers := make(map[string]middleware.OIDCProvider)
+	nameReg := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	for name, config := range cfg {
+		if !nameReg.MatchString(name) {
+			return nil, errors.New("invalid oidc provider name")
+		}
 		mapCfg := config.(map[string]any)
 		var err error
 		p := middleware.OIDCProvider{}
