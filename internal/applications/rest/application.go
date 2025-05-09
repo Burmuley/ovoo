@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/Burmuley/ovoo/internal/applications"
 	"github.com/Burmuley/ovoo/internal/applications/rest/middleware"
@@ -187,7 +188,10 @@ func (a *Application) Start(ctx context.Context) error {
 func (a *Application) handleRoot(providers []string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, _ := userFromContext(r)
-		tmpl, err := template.New("index").ParseFS(staticData, "data/login/index.html")
+		funcMap := template.FuncMap{
+			"ToTitle": strings.Title,
+		}
+		tmpl, err := template.New("index").Funcs(funcMap).ParseFS(staticData, "data/login/index.html")
 		if err != nil {
 			a.errorLogNResponse(w, "root page: parsing template", err)
 			return

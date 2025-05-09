@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login Form</title>
+    <title>Ovoo Email Privacy</title>
 </head>
 <style>
 /* From Uiverse.io by cssbuttons-io */
-div {
+.maindiv {
   padding: 25px 50px 75px 100px;
 }
 
@@ -36,17 +36,17 @@ button:active {
 </style>
 <body>
 {{if eq .User.Login ""}}
-    <div>
+    <div class="maindiv">
     <h2>Please sign-in</h2>
     {{ range .Providers }}
-    <form action="/auth/{{.}}/login" method="get">
+    <p><form action="/auth/{{.}}/login" method="get">
         <input type="hidden" name="return_url" value="/">
-        <button type="submit">Login with {{.}}</button>
-    </form>
+        <button type="submit">Login with {{. | ToTitle }}</button>
+    </form></p>
     {{end}}
     </div>
 {{else}}
-    <div>
+    <div class="maindiv">
     <h2>Logged in!</h2>
     <p>Username: {{.User.Login}}</p>
     <p>First name: {{.User.FirstName}}</p>
