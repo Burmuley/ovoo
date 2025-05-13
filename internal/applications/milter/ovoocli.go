@@ -128,7 +128,7 @@ func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) 
 	req, err := o.createRequest(
 		ctx,
 		o.server,
-		"/api/v1/chains",
+		"/private/api/v1/chains",
 		http.MethodPost,
 		bytes.NewReader(bodyBytes),
 		headers,

@@ -30,7 +30,11 @@ func NewChainsService(domain string, repof *factory.RepoFactory) (*ChainsService
 	return &ChainsService{domain: domain, repof: repof}, nil
 }
 
-func (cs *ChainsService) GetByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
+func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
+	if !canGetChain(cuser) {
+		return entities.Chain{}, fmt.Errorf("getting chain: %w", entities.ErrNotAuthorized)
+	}
+
 	if err := hash.Validate(); err != nil {
 		return entities.Chain{}, fmt.Errorf("getting chain by hash: parsing hash: %w", err)
 	}
@@ -44,7 +48,11 @@ func (cs *ChainsService) GetByHash(ctx context.Context, hash entities.Hash) (ent
 	return chain, nil
 }
 
-func (cs *ChainsService) DeleteByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
+func (cs *ChainsService) DeleteByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
+	if !canDeleteChain(cuser) {
+		return entities.Chain{}, fmt.Errorf("getting chain: %w", entities.ErrNotAuthorized)
+	}
+
 	if err := hash.Validate(); err != nil {
 		return entities.Chain{}, fmt.Errorf("getting chain by hash: parsing hash: %w", err)
 	}
@@ -57,7 +65,11 @@ func (cs *ChainsService) DeleteByHash(ctx context.Context, hash entities.Hash) (
 	return chain, nil
 }
 
-func (cs *ChainsService) Create(ctx context.Context, fromEmail, toEmail string, owner entities.User) (entities.Chain, error) {
+func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEmail, toEmail string, owner entities.User) (entities.Chain, error) {
+	if !canCreateChain(cuser) {
+		return entities.Chain{}, fmt.Errorf("getting chain: %w", entities.ErrNotAuthorized)
+	}
+
 	// calculate hash and return corresponding chain if found in the DB
 	hash := entities.NewHash(fromEmail, toEmail)
 	if chain, err := cs.repof.Chain.GetByHash(ctx, hash); err == nil {

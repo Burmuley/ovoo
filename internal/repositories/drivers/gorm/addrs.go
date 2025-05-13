@@ -7,6 +7,7 @@ import (
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -103,19 +104,20 @@ func (a *AddressGORMRepo) GetByEmail(ctx context.Context, email entities.Email) 
 
 // GetAll retrieves all addresses from the database, with optional filters.
 // Filters can be applied using the following keys:
-// - "type": Filter by address type (integer values)
-// - "owner": Filter by owner ID
-// - "id": Filter by address ID
-// - "email": Filter by email address
+// - "type": filter by address type (integer values)
+// - "owner": filter by owner ID
+// - "id": filter by address ID
+// - "email": filter by email address
+// - "service_name": filter by service_name metadata field
 // Returns a slice of entities.Address and an error, if any.
 func (a *AddressGORMRepo) GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error) {
 	gorm_addrs := make([]Address, 0)
-	stmt := a.db.WithContext(ctx).Model(&Address{}).Preload("Owner")
+	stmt := a.db.WithContext(ctx).Model(&Address{})
 
 	for filter, vals := range filters {
 		switch filter {
 		case "type":
-			atypes := make([]int, len(vals))
+			atypes := make([]int, 0, len(vals))
 			for _, val := range vals {
 				atype, err := strconv.Atoi(val)
 				if err != nil {
@@ -130,12 +132,16 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filters map[string][]strin
 			stmt.Where("id IN ?", vals)
 		case "email":
 			stmt.Where("email IN ?", vals)
+		case "service_name":
+			for _, val := range vals {
+				stmt.Or(datatypes.JSONQuery("metadata").Likes(val, "service_name"))
+			}
 		default:
 			return nil, fmt.Errorf("%w: unsupported filter '%s'", entities.ErrValidation, filter)
 		}
 	}
 
-	if err := stmt.Preload("ForwardAddress").Find(&gorm_addrs).Error; err != nil {
+	if err := stmt.Preload("ForwardAddress").Preload("Owner").Find(&gorm_addrs).Error; err != nil {
 		return nil, wrapGormError(err)
 	}
 

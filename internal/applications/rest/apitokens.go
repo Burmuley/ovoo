@@ -13,12 +13,12 @@ import (
 //   - 200 OK with list of API tokens on success
 //   - Error response if user authentication or token retrieval fails
 func (a *Application) GetApiTokens(w http.ResponseWriter, r *http.Request) {
-	user, err := userFromContext(r)
+	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting api tokens: identifying user", err)
 	}
 
-	tokens, err := a.svcGw.Tokens.GetAll(r.Context(), user.ID)
+	tokens, err := a.svcGw.Tokens.GetAll(r.Context(), cuser)
 	if err != nil {
 		a.errorLogNResponse(w, "getting tokens: parsing id", err)
 		return
@@ -39,14 +39,14 @@ func (a *Application) GetApiTokens(w http.ResponseWriter, r *http.Request) {
 //   - 200 OK with token details on success
 //   - Error response if user authentication or token retrieval fails
 func (a *Application) GetApiTokenById(w http.ResponseWriter, r *http.Request) {
-	user, err := userFromContext(r)
+	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting api token by id: identifying user", err)
 	}
 
-	token, err := a.svcGw.Tokens.GetByIdValidOwner(r.Context(), entities.Id(r.PathValue("id")), user.ID)
+	token, err := a.svcGw.Tokens.GetByIdCurUser(r.Context(), cuser, entities.Id(r.PathValue("id")))
 	if err != nil {
-		a.errorLogNResponse(w, "getting token by id: parsing id", err)
+		a.errorLogNResponse(w, "getting token by id", err)
 		return
 	}
 
@@ -66,7 +66,7 @@ func (a *Application) GetApiTokenById(w http.ResponseWriter, r *http.Request) {
 //   - 200 OK with the created token details on success
 //   - Error response if user authentication, request parsing, or token creation fails
 func (a *Application) CreateApiToken(w http.ResponseWriter, r *http.Request) {
-	user, err := userFromContext(r)
+	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "creating new api token: identifying user", err)
 	}
@@ -76,7 +76,11 @@ func (a *Application) CreateApiToken(w http.ResponseWriter, r *http.Request) {
 		a.errorLogNResponse(w, "creating new api token: parsing request", err)
 	}
 
-	token, err := a.svcGw.Tokens.Create(r.Context(), user, req.Name, *req.Description, int(req.ExpireIn))
+	description := ""
+	if req.Description != nil {
+		description = *req.Description
+	}
+	token, err := a.svcGw.Tokens.Create(r.Context(), cuser, req.Name, description, int(req.ExpireIn))
 	if err != nil {
 		a.errorLogNResponse(w, "creating new api token", err)
 	}
@@ -97,7 +101,7 @@ func (a *Application) CreateApiToken(w http.ResponseWriter, r *http.Request) {
 //   - 200 OK with the updated token details on success
 //   - Error response if user authentication, request parsing, or token update fails
 func (a *Application) UpdateApiToken(w http.ResponseWriter, r *http.Request) {
-	user, err := userFromContext(r)
+	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting api token by id: identifying user", err)
 	}
@@ -109,12 +113,12 @@ func (a *Application) UpdateApiToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenId := entities.Id(r.PathValue("id"))
-	if _, err := a.svcGw.Tokens.GetByIdValidOwner(r.Context(), tokenId, user.ID); err != nil {
+	if _, err := a.svcGw.Tokens.GetByIdCurUser(r.Context(), cuser, tokenId); err != nil {
 		a.errorLogNResponse(w, "updating token by id: validating token id", err)
 		return
 	}
 
-	updToken, err := a.svcGw.Tokens.Update(r.Context(), tokenId, req.Name, req.Description, req.Active)
+	updToken, err := a.svcGw.Tokens.Update(r.Context(), cuser, tokenId, req.Name, req.Description, req.Active)
 	if err != nil {
 		a.errorLogNResponse(w, "updating token by id", err)
 		return
@@ -131,19 +135,19 @@ func (a *Application) UpdateApiToken(w http.ResponseWriter, r *http.Request) {
 //   - 200 OK with the deleted token details on success
 //   - Error response if user authentication, token validation, or deletion fails
 func (a *Application) DeleteApiToken(w http.ResponseWriter, r *http.Request) {
-	user, err := userFromContext(r)
+	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "deleting api token by id: identifying user", err)
 	}
 
 	tokenId := entities.Id(r.PathValue("id"))
-	token, err := a.svcGw.Tokens.GetByIdValidOwner(r.Context(), tokenId, user.ID)
+	token, err := a.svcGw.Tokens.GetByIdCurUser(r.Context(), cuser, tokenId)
 	if err != nil {
 		a.errorLogNResponse(w, "deleting token by id: validating token id", err)
 		return
 	}
 
-	if err := a.svcGw.Tokens.Delete(r.Context(), tokenId); err != nil {
+	if err := a.svcGw.Tokens.Delete(r.Context(), cuser, tokenId); err != nil {
 		a.errorLogNResponse(w, "deleting token by id", err)
 		return
 	}

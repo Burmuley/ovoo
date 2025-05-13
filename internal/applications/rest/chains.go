@@ -7,13 +7,13 @@ import (
 )
 
 func (a *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
-	chainHash := entities.Hash(r.PathValue("hash"))
-	if err := chainHash.Validate(); err != nil {
-		a.errorLogNResponse(w, "getting chain by hash: parsing hash", err)
-		return
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting chain: identifying user", err)
 	}
 
-	chain, err := a.svcGw.Chains.GetByHash(a.context, chainHash)
+	chainHash := entities.Hash(r.PathValue("hash"))
+	chain, err := a.svcGw.Chains.GetByHash(a.context, cuser, chainHash)
 	if err != nil {
 		a.errorLogNResponse(w, "getting chain by hash", err)
 		return
@@ -24,22 +24,23 @@ func (a *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting chain: identifying user", err)
+	}
+
 	rb := CreateEmailChain{}
 	if err := readBody(r.Body, &rb); err != nil {
 		a.errorLogNResponse(w, "parsing chain create request", err)
 		return
 	}
 
-	user, err := userFromContext(r)
-	if err != nil {
-		a.errorLogNResponse(w, "getting aliases: identifying user", err)
-	}
-
 	chain, err := a.svcGw.Chains.Create(
 		a.context,
+		cuser,
 		string(rb.FromEmail),
 		string(rb.ToEmail),
-		user,
+		cuser,
 	)
 
 	if err != nil {
@@ -51,6 +52,17 @@ func (a *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
 	a.successResponse(w, resp, http.StatusCreated)
 }
 
-func (c *Application) DeleteChain(w http.ResponseWriter, r *http.Request) {
-	panic("implement me!")
+func (a *Application) DeleteChain(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting chain: identifying user", err)
+	}
+
+	hash := entities.Hash(r.PathValue("hash"))
+	if _, err := a.svcGw.Chains.DeleteByHash(r.Context(), cuser, hash); err != nil {
+		a.errorLogNResponse(w, "deleting chain", err)
+		return
+	}
+
+	a.successResponse(w, "", http.StatusNoContent)
 }

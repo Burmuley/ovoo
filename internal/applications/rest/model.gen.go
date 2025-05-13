@@ -280,8 +280,8 @@ type UpdateUserRequest struct {
 
 // GetAliasesParams defines parameters for GetAliases.
 type GetAliasesParams struct {
-	// Owner owner ID to fetch parameters for
-	Owner string `form:"owner" json:"owner"`
+	// Owner owner ID to fetch parameters for; works only for admin users, regular users will only receive list of aliases they own
+	Owner *string `form:"owner,omitempty" json:"owner,omitempty"`
 }
 
 // CreateAliasJSONBody defines parameters for CreateAlias.

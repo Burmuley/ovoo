@@ -57,7 +57,7 @@ func makeDefaultAdmin(svcGw *services.ServiceGateway, admin map[string]string) e
 		Type:         entities.AdminUser,
 		PasswordHash: admin["password"],
 	}
-	if _, err := svcGw.Users.Create(context.Background(), adminUser); err != nil {
+	if _, err := svcGw.Users.CreatePriv(context.Background(), adminUser); err != nil {
 		if errors.Is(err, entities.ErrDuplicateEntry) {
 			slog.Info("default admin user already present in the repository, not creating")
 			return nil

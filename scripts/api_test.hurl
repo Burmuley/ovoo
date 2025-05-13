@@ -44,7 +44,7 @@ alias2_email: jsonpath "$['email']"
 DELETE https://localhost:8808/api/v1/aliases/{{alias2_id}}
 HTTP 204
 
-POST https://localhost:8808/api/v1/chains
+POST https://localhost:8808/private/api/v1/chains
 {
     "from_email": "{{ext_sender_input}}",
     "to_email": "{{alias1_email}}"

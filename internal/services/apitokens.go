@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -34,16 +33,16 @@ func (t *ApiTokensService) GetById(ctx context.Context, tokenId entities.Id) (en
 	return token, nil
 }
 
-// GetByIdValidOwner retrieves an API token by ID and validates ownership against the provided owner ID.
+// GetByIdCurUser retrieves an API token by ID and validates ownership against the provided owner ID.
 // Returns an error if token validation fails or if the token doesn't belong to the owner.
-func (t *ApiTokensService) GetByIdValidOwner(ctx context.Context, tokenId, ownerId entities.Id) (entities.ApiToken, error) {
+func (t *ApiTokensService) GetByIdCurUser(ctx context.Context, cuser entities.User, tokenId entities.Id) (entities.ApiToken, error) {
 	token, err := t.GetById(ctx, tokenId)
 	if err != nil {
 		return entities.ApiToken{}, err
 	}
 
-	if token.Owner.ID != ownerId {
-		return entities.ApiToken{}, errors.New("token does not belong to the current user")
+	if !canGetApiToken(cuser, token) {
+		return entities.ApiToken{}, fmt.Errorf("getting token: %w", entities.ErrNotAuthorized)
 	}
 
 	return token, nil
@@ -51,8 +50,8 @@ func (t *ApiTokensService) GetByIdValidOwner(ctx context.Context, tokenId, owner
 
 // GetAll retrieves all API tokens belonging to the specified owner.
 // Returns an error if owner ID validation fails.
-func (t *ApiTokensService) GetAll(ctx context.Context, ownerId entities.Id) ([]entities.ApiToken, error) {
-	tokens, err := t.repoFactory.ApiTokens.GetAllForUser(ctx, ownerId)
+func (t *ApiTokensService) GetAll(ctx context.Context, cuser entities.User) ([]entities.ApiToken, error) {
+	tokens, err := t.repoFactory.ApiTokens.GetAllForUser(ctx, cuser.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +62,11 @@ func (t *ApiTokensService) GetAll(ctx context.Context, ownerId entities.Id) ([]e
 // Create generates a new API token for the specified owner with the given name, description,
 // and expiration duration (in days). Returns the created token or an error if validation
 // or token creation fails.
-func (t *ApiTokensService) Create(ctx context.Context, owner entities.User, name, description string, expireIn int) (entities.ApiToken, error) {
-	token, err := entities.NewToken(time.Now().Add(time.Duration(expireIn*24)*time.Hour), name, description, owner)
+func (t *ApiTokensService) Create(ctx context.Context, cuser entities.User, name, description string, expireIn int) (entities.ApiToken, error) {
+	if !canCreateApiToken(cuser) {
+		return entities.ApiToken{}, fmt.Errorf("creating token: %w", entities.ErrNotAuthorized)
+	}
+	token, err := entities.NewToken(time.Now().Add(time.Duration(expireIn*24)*time.Hour), name, description, cuser)
 	if err != nil {
 		return entities.ApiToken{}, fmt.Errorf("generating new token: %w", err)
 	}
@@ -79,10 +81,14 @@ func (t *ApiTokensService) Create(ctx context.Context, owner entities.User, name
 // Update modifies an existing API token with the provided details.
 // Updates token name, description, and/or active status based on the provided non-nil values.
 // Returns an error if trying to activate an expired token.
-func (t *ApiTokensService) Update(ctx context.Context, tokenId entities.Id, name, description *string, active *bool) (entities.ApiToken, error) {
+func (t *ApiTokensService) Update(ctx context.Context, cuser entities.User, tokenId entities.Id, name, description *string, active *bool) (entities.ApiToken, error) {
 	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
 	if err != nil {
 		return entities.ApiToken{}, fmt.Errorf("updating token: %w", err)
+	}
+
+	if !canUpdateApiToken(cuser, token) {
+		return entities.ApiToken{}, fmt.Errorf("deleting token: %w", entities.ErrNotAuthorized)
 	}
 
 	if name != nil {
@@ -110,6 +116,15 @@ func (t *ApiTokensService) Update(ctx context.Context, tokenId entities.Id, name
 
 // Delete removes an API token with the specified ID.
 // Permanently removes the token from the repository.
-func (t *ApiTokensService) Delete(ctx context.Context, tokenId entities.Id) error {
+func (t *ApiTokensService) Delete(ctx context.Context, cuser entities.User, tokenId entities.Id) error {
+	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
+	if err != nil {
+		return err
+	}
+
+	if !canDeleteApiToken(cuser, token) {
+		return fmt.Errorf("deleting token: %w", entities.ErrNotAuthorized)
+	}
+
 	return t.repoFactory.ApiTokens.Delete(ctx, tokenId)
 }

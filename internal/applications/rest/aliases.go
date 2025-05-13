@@ -12,35 +12,45 @@ import (
 // It validates any provided IDs, fetches the aliases for the current user, and returns them
 // in the HTTP response. Currently uses a temporary owner until authentication is implemented.
 func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
-	user, err := userFromContext(r)
+	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting aliases: identifying user", err)
 	}
 
-	filters := map[string][]string{"owner": []string{user.ID.String()}}
+	// filling filters
+	filters := make(map[string][]string)
+	if owners, ok := r.URL.Query()["id"]; ok {
+		filters["owner"] = owners
+	}
+
 	if ids, ok := r.URL.Query()["id"]; ok {
 		filters["id"] = ids
-		for _, id := range ids {
-			if err := entities.Id(id).Validate(); err != nil {
-				a.errorLogNResponse(w, "getting aliases: parsing id", err)
-				return
-			}
-		}
 	}
 
-	if service_names, ok := r.URL.Query()["service"]; ok {
-		filters["service"] = service_names
+	if service_names, ok := r.URL.Query()["service_name"]; ok {
+		filters["service_name"] = service_names
 	}
 
-	aliases, err := a.svcGw.Aliases.GetAll(a.context, filters)
+	if emails, ok := r.URL.Query()["email"]; ok {
+		filters["email"] = emails
+	}
+
+	aliases, err := a.svcGw.Aliases.GetAll(a.context, cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting aliases", err)
 		return
 	}
+
+	if len(aliases) == 0 {
+		a.errorLogNResponse(w, "getting aliases", entities.ErrNotFound)
+		return
+	}
+
 	aliasData := make([]AliasData, 0, len(aliases))
 	for _, alias := range aliases {
 		aliasData = append(aliasData, addressTAliasData(alias))
 	}
+
 	resp := GetAliasesResponse(aliasData)
 	a.successResponse(w, resp, http.StatusOK)
 }
@@ -49,13 +59,13 @@ func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 // fetches the corresponding alias details, and returns them in the HTTP response. If the alias
 // is not found or there's an error, it returns an appropriate error response.
 func (a *Application) GetAliaseById(w http.ResponseWriter, r *http.Request) {
-	aliasId := entities.Id(r.PathValue("id"))
-	if err := aliasId.Validate(); err != nil {
-		a.errorLogNResponse(w, "getting alias by id: parsing id", err)
-		return
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "geting alias: identifying user", err)
 	}
 
-	alias, err := a.svcGw.Aliases.GetById(a.context, entities.Id(aliasId))
+	aliasId := entities.Id(r.PathValue("id"))
+	alias, err := a.svcGw.Aliases.GetById(a.context, cuser, entities.Id(aliasId))
 	if err != nil {
 		a.errorLogNResponse(w, "getting alias by id", err)
 		return
@@ -70,30 +80,28 @@ func (a *Application) GetAliaseById(w http.ResponseWriter, r *http.Request) {
 // the current user (temporarily using first user until authentication is implemented), and returns
 // the created alias details in the response.
 func (a *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "creating alias: identifying user", err)
+	}
+
 	rb := CreateAliasRequest{}
 	if err := readBody(r.Body, &rb); err != nil {
 		a.errorLogNResponse(w, "parsing chain create request", err)
 		return
 	}
 
-	prot_addr, err := a.svcGw.PrAddrs.GetById(a.context, entities.Id(rb.ProtectedAddressId))
+	prot_addr, err := a.svcGw.PrAddrs.GetById(a.context, cuser, entities.Id(rb.ProtectedAddressId))
 	if err != nil {
 		a.errorLogNResponse(w, "getting new alias forward address", err)
 		return
 	}
 
-	user, err := userFromContext(r)
-	if err != nil {
-		a.errorLogNResponse(w, "getting aliases: identifying user", err)
-	}
-
-	// TODO: get real user from auth info
-	alias, err := a.svcGw.Aliases.Create(a.context, prot_addr,
+	alias, err := a.svcGw.Aliases.Create(a.context, cuser, prot_addr,
 		entities.AddressMetadata{
 			Comment:     rb.Metadata.Comment,
 			ServiceName: rb.Metadata.ServiceName,
 		},
-		user,
 	)
 
 	if err != nil {
@@ -110,13 +118,13 @@ func (a *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
 // The function validates the alias ID, retrieves the current alias,
 // applies the requested changes, and returns the updated alias in the response.
 func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
-	aliasId := entities.Id(r.PathValue("id"))
-	if err := aliasId.Validate(); err != nil {
-		a.errorLogNResponse(w, "getting alias by id: parsing id", err)
-		return
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "creating alias: identifying user", err)
 	}
 
-	alias, err := a.svcGw.Aliases.GetById(a.context, aliasId)
+	aliasId := entities.Id(r.PathValue("id"))
+	alias, err := a.svcGw.Aliases.GetById(a.context, cuser, aliasId)
 	if err != nil {
 		a.errorLogNResponse(w, "updating alias: retrieving alias by id", err)
 		return
@@ -135,7 +143,7 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if rb.ProtectedAddressId != nil {
-		newFwd, err := a.svcGw.PrAddrs.GetById(a.context, entities.Id(*rb.ProtectedAddressId))
+		newFwd, err := a.svcGw.PrAddrs.GetById(a.context, cuser, entities.Id(*rb.ProtectedAddressId))
 		if err != nil {
 			a.errorLogNResponse(w, "updating alias: retrieving protected address", err)
 			return
@@ -147,7 +155,7 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 		alias.Metadata = entities.AddressMetadata(*rb.Metadata)
 	}
 
-	alias, err = a.svcGw.Aliases.Update(a.context, alias)
+	alias, err = a.svcGw.Aliases.Update(a.context, cuser, alias)
 	if err != nil {
 		a.errorLogNResponse(w, "updating alias", err)
 		return
@@ -160,13 +168,13 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 // DeleteAlias deletes an alias by its ID.
 // It validates the alias ID, performs the deletion, and returns a no-content response on success.
 func (a *Application) DeleteAlias(w http.ResponseWriter, r *http.Request) {
-	aliasId := entities.Id(r.PathValue("id"))
-	if err := aliasId.Validate(); err != nil {
-		a.errorLogNResponse(w, "deleting alias by id", err)
-		return
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "creating alias: identifying user", err)
 	}
 
-	if err := a.svcGw.Aliases.DeleteById(a.context, aliasId); err != nil {
+	aliasId := entities.Id(r.PathValue("id"))
+	if err := a.svcGw.Aliases.DeleteById(a.context, cuser, aliasId); err != nil {
 		a.errorLogNResponse(w, "deleting alias by id", err)
 		return
 	}

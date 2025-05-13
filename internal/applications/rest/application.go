@@ -161,9 +161,9 @@ func (a *Application) Start(ctx context.Context) error {
 	mux.HandleFunc("DELETE /api/v1/praddrs/{id}", a.DeletePrAddr)
 
 	// chains routes
-	mux.HandleFunc("GET /api/v1/chains/{hash}", a.getChainByHash)
-	mux.HandleFunc("POST /api/v1/chains", a.CreateChain)
-	mux.HandleFunc("DELETE /api/v1/chains/{hash}", a.DeleteChain)
+	mux.HandleFunc("GET /private/api/v1/chains/{hash}", a.getChainByHash)
+	mux.HandleFunc("POST /private/api/v1/chains", a.CreateChain)
+	mux.HandleFunc("DELETE /private/api/v1/chains/{hash}", a.DeleteChain)
 
 	// root
 	mux.HandleFunc("/{$}", a.handleRoot([]string(mapKeys(a.providerConfigs))))

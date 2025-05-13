@@ -57,6 +57,10 @@ func statusFErr(err error) int {
 		return http.StatusBadRequest
 	}
 
+	if errors.Is(err, entities.ErrNotAuthorized) {
+		return http.StatusForbidden
+	}
+
 	return http.StatusInternalServerError
 }
 

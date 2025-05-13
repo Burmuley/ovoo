@@ -9,11 +9,11 @@ import (
 // GetAllPrAddrs retrieves all protected addresses for the current user.
 // Supports filtering by ID and email through query parameters.
 func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
-	// TODO: get real user when authentication is enabled
 	user, err := userFromContext(r)
 	if err != nil {
-		a.errorLogNResponse(w, "getting aliases: identifying user", err)
+		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
 	}
+
 	filters := map[string][]string{"owner": []string{user.ID.String()}}
 	if ids, ok := r.URL.Query()["id"]; ok {
 		filters["id"] = ids
@@ -35,7 +35,7 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	praddrs, err := a.svcGw.PrAddrs.GetAll(a.context, filters)
+	praddrs, err := a.svcGw.PrAddrs.GetAll(a.context, user, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses", err)
 		return
@@ -52,13 +52,13 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 
 // GetPrAddrById retrieves a single protected address by its ID.
 func (a *Application) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
-	prAddrId := entities.Id(r.PathValue("id"))
-	if err := prAddrId.Validate(); err != nil {
-		a.errorLogNResponse(w, "getting protected address by id: parsing id", err)
-		return
+	user, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
 	}
 
-	prAddr, err := a.svcGw.Aliases.GetById(a.context, entities.Id(prAddrId))
+	prAddrId := entities.Id(r.PathValue("id"))
+	prAddr, err := a.svcGw.Aliases.GetById(a.context, user, entities.Id(prAddrId))
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected address by id", err)
 		return
@@ -72,7 +72,7 @@ func (a *Application) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
 func (a *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
-		a.errorLogNResponse(w, "getting aliases: identifying user", err)
+		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
 	}
 
 	rb := CreateProtectedAddressRequest{}
@@ -82,7 +82,7 @@ func (a *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	praddr, err := a.svcGw.PrAddrs.Create(
-		a.context, entities.Email(rb.Email), entities.AddressMetadata(rb.Metadata), user,
+		a.context, user, entities.Email(rb.Email), entities.AddressMetadata(rb.Metadata),
 	)
 	if err != nil {
 		a.errorLogNResponse(w, "creating protected address", err)
@@ -95,13 +95,13 @@ func (a *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePrAddr updates an existing protected address by its ID.
 func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
-	prAddrId := entities.Id(r.PathValue("id"))
-	if err := prAddrId.Validate(); err != nil {
-		a.errorLogNResponse(w, "getting protected address by id: parsing id", err)
-		return
+	user, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
 	}
 
-	prAddr, err := a.svcGw.PrAddrs.GetById(a.context, prAddrId)
+	prAddrId := entities.Id(r.PathValue("id"))
+	prAddr, err := a.svcGw.PrAddrs.GetById(a.context, user, prAddrId)
 	if err != nil {
 		a.errorLogNResponse(w, "updating protected address: retrieving alias by id", err)
 		return
@@ -117,7 +117,7 @@ func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 		prAddr.Metadata = entities.AddressMetadata(*rb.Metadata)
 	}
 
-	prAddr, err = a.svcGw.PrAddrs.Update(a.context, prAddr)
+	prAddr, err = a.svcGw.PrAddrs.Update(a.context, user, prAddr)
 	if err != nil {
 		a.errorLogNResponse(w, "updating protected address", err)
 		return
@@ -129,13 +129,13 @@ func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 
 // DeletePrAddr deletes a protected address by its ID.
 func (a *Application) DeletePrAddr(w http.ResponseWriter, r *http.Request) {
-	prAddrId := entities.Id(r.PathValue("id"))
-	if err := prAddrId.Validate(); err != nil {
-		a.errorLogNResponse(w, "getting protected address by id: parsing id", err)
-		return
+	user, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
 	}
 
-	if err := a.svcGw.PrAddrs.DeleteById(a.context, prAddrId); err != nil {
+	prAddrId := entities.Id(r.PathValue("id"))
+	if err := a.svcGw.PrAddrs.DeleteById(a.context, user, prAddrId); err != nil {
 		a.errorLogNResponse(w, "getting alias by id: parsing id", err)
 		return
 	}

@@ -14,34 +14,40 @@ info:
 externalDocs:
   description: Ovoo service source code
   url: https://github.com/Burmuley/ovoo
+security:
+  - OAuth2: []
+  - BasicAuthentication: []
+  - ApiToken: []
 servers:
   - url: https://ovoolocal.burmuley.com:8808
     description: Local testing server
     variables: {}
+  - url: https://ovoomail.burmuley.com:8808
+    description: Public testting server
 tags:
   - name: Aliases
     description: >-
-      API endpoint provides basic operations to manage alias emails for regular
+      API group defines basic operations to manage alias emails for regular
       users and admins
   - name: Protected Addresses
     description: >-
-      API endpoint provides operations on protected addresses for regular users
+      API group defines operations on protected addresses for regular users
       and admins
   - name: Users
-    description: ""
+    description: >-
+      API group defines operations to manage user accounts for users with `admin` role
   - name: Email chains
-    description: ""
-  - name: Authentication
-    description: Endpoints to support users authentication
+    description: >-
+      API group defines operations to manage email chains, used by Milter service
   - name: ApiTokens
-    description: API tokens
+    description: >-
+      API group defines operations to manage API tokens for all users of the system
 paths:
   /api/v1/aliases:
     get:
       summary: Get all aliases
       description: >-
-        Retrieve a list of alias addresses for particular owner. Path parameter
-        \`owner\` is required.
+        Retrieve a list of alias addresses found in the database considering filters defined in query parameters: owner, id, email. Each query parameter can be defined multiple times. Filter `owner` is only useful for admin users, regular users always get only aliases they own.
       operationId: getAliases
       tags:
         - Aliases
@@ -54,16 +60,31 @@ paths:
           $ref: "#/components/responses/HTTP401"
         "403":
           $ref: "#/components/responses/HTTP403"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
       parameters:
         - in: query
           name: owner
           description: owner ID to fetch parameters for
           schema:
             type: string
-          required: true
+          required: false
+        - in: query
+          name: email
+          description: email of an alias to lookup
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: id
+          description: alias id to retrieve
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: service_name
+          description: allows to lookup aliases by service name metadata field value
+          schema:
+            type: string
+          required: false
     post:
       description: Create new alias address. Request is of the type \`application/json\`.
       operationId: createAlias
@@ -1124,7 +1145,3 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/basicAuthForm"
-security:
-  - OAuth2: []
-  - ApiToken: []
-  - BasicAuthentication: []

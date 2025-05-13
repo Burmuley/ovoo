@@ -9,7 +9,12 @@ import (
 
 // GetUsers retrieves all users and returns them as a response.
 func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := a.svcGw.Users.GetAll(a.context)
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting users: identifying user", err)
+	}
+
+	users, err := a.svcGw.Users.GetAll(a.context, cuser)
 	if err != nil {
 		a.errorLogNResponse(w, "gettings users", err)
 		return
@@ -24,20 +29,29 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUserById retrieves a user by their ID and returns the user details.
-func (c *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
-	userId := r.PathValue("id")
-	user, err := c.svcGw.Users.GetById(c.context, entities.Id(userId))
+func (a *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
 	if err != nil {
-		c.errorLogNResponse(w, "getting user by id", err)
+		a.errorLogNResponse(w, "getting user by id: identifying user", err)
+	}
+
+	userId := r.PathValue("id")
+	user, err := a.svcGw.Users.GetById(a.context, cuser, entities.Id(userId))
+	if err != nil {
+		a.errorLogNResponse(w, "getting user by id", err)
 		return
 	}
 
 	resp := userTResponse(user)
-	c.successResponse(w, resp, http.StatusOK)
+	a.successResponse(w, resp, http.StatusOK)
 }
 
 // CreateUser creates a new user based on the provided request and returns the created user details.
 func (a *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "creating user: identifying user", err)
+	}
 	req_body := CreateUserRequest{}
 	if err := readBody(r.Body, &req_body); err != nil {
 		a.errorLogNResponse(w, "parsing user create request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
@@ -49,7 +63,7 @@ func (a *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 		password = *req_body.Password
 	}
 
-	user, err := a.svcGw.Users.Create(a.context, entities.User{
+	user, err := a.svcGw.Users.Create(a.context, cuser, entities.User{
 		Login:        req_body.Login,
 		FirstName:    req_body.FirstName,
 		LastName:     req_body.LastName,
@@ -68,8 +82,13 @@ func (a *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates an existing user's information and returns the updated user details.
 func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "updating user: identifying user", err)
+	}
+
 	userId := r.PathValue("id")
-	user, err := a.svcGw.Users.GetById(a.context, entities.Id(userId))
+	user, err := a.svcGw.Users.GetById(a.context, cuser, entities.Id(userId))
 	if err != nil {
 		a.errorLogNResponse(w, "updating user by id", err)
 		return
@@ -84,7 +103,7 @@ func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user.FirstName = *req_body.FirstName
 	user.LastName = *req_body.LastName
 	user.Type = userTypeFStr(*req_body.Type)
-	user, err = a.svcGw.Users.Update(a.context, user)
+	user, err = a.svcGw.Users.Update(a.context, cuser, user)
 	if err != nil {
 		a.errorLogNResponse(w, "updating user by id", fmt.Errorf("updating user: %w", err))
 		return
@@ -96,14 +115,14 @@ func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a user by their ID and returns the deleted user's details.
 func (a *Application) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	userId := r.PathValue("id")
-	user, err := a.svcGw.Users.GetById(a.context, entities.Id(userId))
+	cuser, err := userFromContext(r)
 	if err != nil {
-		a.errorLogNResponse(w, "check if user to delete by id exists", err)
-		return
+		a.errorLogNResponse(w, "deleting user: identifying user", err)
 	}
 
-	if err := a.svcGw.Users.Delete(a.context, entities.Id(userId)); err != nil {
+	userId := r.PathValue("id")
+	user, err := a.svcGw.Users.Delete(a.context, cuser, entities.Id(userId))
+	if err != nil {
 		a.errorLogNResponse(w, "deleting user by id", err)
 		return
 	}
