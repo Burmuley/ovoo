@@ -136,6 +136,7 @@ func apiTokenFromEntity(e entities.ApiToken) ApiToken {
 		Description: e.Description,
 		Owner:       userFromEntity(e.Owner),
 		Expiration:  e.Expiration,
+		Active:      e.Active,
 	}
 }
 
@@ -158,5 +159,6 @@ func apiTokenToEntity(t ApiToken) entities.ApiToken {
 		Description: t.Description,
 		Owner:       userToEntity(t.Owner),
 		Expiration:  t.Expiration,
+		Active:      t.Active,
 	}
 }

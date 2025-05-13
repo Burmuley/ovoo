@@ -85,6 +85,7 @@ type ApiToken struct {
 	OwnerID     string    `gorm:"column:owner_id"`
 	Owner       User      `gorm:"foreignKey:OwnerID"`
 	Expiration  time.Time `gorm:"column:expiration"`
+	Active      bool      `gorm:"column:active"`
 }
 
 // TableName specifies the table name for ApiToken

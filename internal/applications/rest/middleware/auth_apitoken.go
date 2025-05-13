@@ -59,8 +59,8 @@ func validateApiToken(ctx context.Context, svcGw *services.ServiceGateway, apiTo
 	}
 
 	hash := entities.HashApiToken(token.Salt, tokenBody)
-	if hash != token.TokenHash || token.Expired() {
-		return entities.User{}, errors.New("invalid or expired token")
+	if hash != token.TokenHash || token.Expired() || !token.Active {
+		return entities.User{}, errors.New("invalid, expired or inactive token")
 	}
 
 	return token.Owner, nil

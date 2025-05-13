@@ -101,7 +101,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 				user, err := validateApiToken(r.Context(), svcGw, apiToken)
 				if err != nil {
 					logger.Error("invalid api token", "src", r.RemoteAddr, "error", err.Error())
-					http.Error(w, "invalid or expired api token", http.StatusUnauthorized)
+					http.Error(w, err.Error(), http.StatusUnauthorized)
 					return
 				}
 
