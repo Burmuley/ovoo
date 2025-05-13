@@ -83,9 +83,26 @@ func (u *UserGORMRepo) GetByLogin(ctx context.Context, login entities.Email) (en
 }
 
 // GetAll retrieves all users from the database.
-func (u *UserGORMRepo) GetAll(ctx context.Context) ([]entities.User, error) {
+func (u *UserGORMRepo) GetAll(ctx context.Context, filters map[string][]string) ([]entities.User, error) {
 	gorm_users := make([]User, 0)
-	if err := u.db.WithContext(ctx).Model(&User{}).Find(&gorm_users).Error; err != nil {
+	stmt := u.db.WithContext(ctx).Model(&User{})
+
+	for filter, vals := range filters {
+		switch filter {
+		case "type":
+			types := make([]int, 0, len(vals))
+			for _, val := range vals {
+				types = append(types, entities.UserTypeAtoi(val))
+			}
+			stmt.Where("type IN ?", types)
+		case "id":
+			stmt.Where("id IN ?", vals)
+		case "login":
+			stmt.Where("login IN ?", vals)
+		}
+	}
+
+	if err := stmt.Find(&gorm_users).Error; err != nil {
 		return nil, wrapGormError(err)
 	}
 

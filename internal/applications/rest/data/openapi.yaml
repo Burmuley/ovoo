@@ -185,12 +185,30 @@ paths:
     get:
       description: >-
         Retrieve a list of users accessible for the currently authenticated
-        user. In case if authenticated user is a regular one (i.e. not admin)
-        the only record in the list is the user information about itself.
+        user. In case if authenticated user is not of admin role -
+        the only record in the list is the user information about itself (all filters are ignored)
       operationId: getUsers
       tags:
         - Users
-      parameters: []
+      parameters:
+        - in: query
+          name: id
+          description: user id filter
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: login
+          description: user login filter
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: type
+          description: user type filter
+          schema:
+            type: string
+          required: false
       responses:
         "200":
           $ref: "#/components/responses/getUsersResponse"

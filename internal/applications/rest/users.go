@@ -14,7 +14,21 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 		a.errorLogNResponse(w, "getting users: identifying user", err)
 	}
 
-	users, err := a.svcGw.Users.GetAll(a.context, cuser)
+	// filling filters
+	filters := make(map[string][]string)
+	if ids, ok := r.URL.Query()["id"]; ok {
+		filters["id"] = ids
+	}
+
+	if types, ok := r.URL.Query()["type"]; ok {
+		filters["type"] = types
+	}
+
+	if logins, ok := r.URL.Query()["login"]; ok {
+		filters["login"] = logins
+	}
+
+	users, err := a.svcGw.Users.GetAll(a.context, cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "gettings users", err)
 		return

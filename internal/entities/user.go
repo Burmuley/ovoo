@@ -14,6 +14,36 @@ const (
 	MilterUser
 )
 
+func UserTypeAtoi(uStr string) int {
+	m := map[string]int{
+		"regular": int(RegularUser),
+		"admin":   int(AdminUser),
+		"milter":  int(MilterUser),
+	}
+
+	uInt, ok := m[uStr]
+	if !ok {
+		return 99
+	}
+
+	return uInt
+}
+
+func UserTypeItoa(uInt int) string {
+	m := map[int]string{
+		int(RegularUser): "regular",
+		int(AdminUser):   "admin",
+		int(MilterUser):  "milter",
+	}
+
+	uStr, ok := m[uInt]
+	if !ok {
+		return "unknown"
+	}
+
+	return uStr
+}
+
 // User represents a user in the system with various attributes.
 type User struct {
 	Type           UserType

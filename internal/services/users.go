@@ -164,8 +164,14 @@ func (u *UsersService) GetByLogin(ctx context.Context, login entities.Email) (en
 }
 
 // GetAll retrieves all users
-func (u *UsersService) GetAll(ctx context.Context, cuser entities.User) ([]entities.User, error) {
-	users, err := u.repoFactory.Users.GetAll(ctx)
+func (u *UsersService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.User, error) {
+	// reset all filters if user is not admin
+	if cuser.Type == entities.RegularUser || cuser.Type == entities.MilterUser {
+		filters = make(map[string][]string)
+		filters["id"] = []string{string(cuser.ID)}
+	}
+
+	users, err := u.repoFactory.Users.GetAll(ctx, filters)
 	if err != nil {
 		return nil, fmt.Errorf("getting all users: %w", err)
 	}

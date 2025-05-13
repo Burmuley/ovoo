@@ -53,7 +53,7 @@ type ChainReadWriter interface {
 
 // UsersReader defines methods for reading user data.
 type UsersReader interface {
-	GetAll(ctx context.Context) ([]entities.User, error)
+	GetAll(ctx context.Context, filters map[string][]string) ([]entities.User, error)
 	GetById(ctx context.Context, id entities.Id) (entities.User, error)
 	GetByLogin(ctx context.Context, login entities.Email) (entities.User, error)
 }
