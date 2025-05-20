@@ -80,13 +80,20 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 	// heck if toEmail already exists in the DB and is of type AliasAddress
 	// (reply chain can not be created without initial email)
 	// (Ovoo don't accept email for outer domains)
-	alias, err := cs.repof.Address.GetByEmail(ctx, entities.Email(toEmail))
+	addrs, err := cs.repof.Address.GetByEmail(ctx, entities.Email(toEmail))
 	if err != nil {
 		return entities.Chain{}, fmt.Errorf("creating chain: getting destination alias: %w", err)
 	}
 
-	if alias.Type != entities.AliasAddress {
-		return entities.Chain{}, fmt.Errorf("%w: creating chain: destination alias is not of type 'Alias'", entities.ErrValidation)
+	var alias *entities.Address
+	for _, addr := range addrs {
+		if addr.Type == entities.AliasAddress {
+			alias = &addr
+		}
+	}
+
+	if alias == nil {
+		return entities.Chain{}, fmt.Errorf("%w: creating chain: destination alias not found", entities.ErrValidation)
 	}
 
 	src, err := checkCreateSrcAddr(ctx, cs.repof, fromEmail, owner)
@@ -107,7 +114,7 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 		FromAddress:     ralias,
 		ToAddress:       *alias.ForwardAddress,
 		OrigFromAddress: src,
-		OrigToAddress:   alias,
+		OrigToAddress:   *alias,
 		CreatedAt:       time.Now().UTC(),
 	}
 
@@ -115,7 +122,7 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 	rhash := entities.NewHash(string(alias.ForwardAddress.Email), string(ralias.Email))
 	rchain := entities.Chain{
 		Hash:            rhash,
-		FromAddress:     alias,
+		FromAddress:     *alias,
 		ToAddress:       src,
 		OrigFromAddress: *alias.ForwardAddress,
 		OrigToAddress:   ralias,
@@ -152,26 +159,30 @@ func genReplyAlias(ctx context.Context, repof *factory.RepoFactory, fromEmail, t
 }
 
 func checkCreateSrcAddr(ctx context.Context, repof *factory.RepoFactory, faddr string, owner entities.User) (entities.Address, error) {
-	var srcAddr entities.Address
-	var err error
-	srcAddr, err = repof.Address.GetByEmail(ctx, entities.Email(faddr))
+	srcAddrs, err := repof.Address.GetByEmail(ctx, entities.Email(faddr))
 	if err != nil && errors.Is(err, entities.ErrNotFound) {
 		{
-			var err error
-			srcAddr = entities.Address{
+			srcAddr := entities.Address{
 				Type:  entities.ExternalAddress,
 				ID:    entities.NewId(),
 				Email: entities.Email(faddr),
 				Owner: owner,
 			}
-			err = repof.Address.Create(ctx, srcAddr)
-			if err != nil {
+
+			if err := repof.Address.Create(ctx, srcAddr); err != nil {
 				return entities.Address{}, err
 			}
+
+			return srcAddr, nil
 		}
 	} else if err != nil {
 		return entities.Address{}, err
 	}
 
-	return srcAddr, nil
+	for _, addr := range srcAddrs {
+		if addr.Type == entities.ExternalAddress {
+			return addr, nil
+		}
+	}
+	return entities.Address{}, fmt.Errorf("%w: source address found in DB but is not external address type", entities.ErrValidation)
 }

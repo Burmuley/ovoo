@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/Burmuley/ovoo/internal/entities"
@@ -33,9 +34,12 @@ func (prs *ProtectedAddrService) Create(ctx context.Context, cuser entities.User
 		return entities.Address{}, err
 	}
 
-	if addr, err := prs.repoFactory.Address.GetByEmail(ctx, protEmail); err == nil {
-		if addr.Type == entities.ProtectedAddress {
-			return entities.Address{}, fmt.Errorf("%w: protected address with email %s already exists", entities.ErrDuplicateEntry, protEmail)
+	// check if protected address with the email already exists
+	if addrs, err := prs.repoFactory.Address.GetByEmail(ctx, protEmail); err == nil {
+		for _, addr := range addrs {
+			if addr.Type == entities.ProtectedAddress {
+				return entities.Address{}, fmt.Errorf("%w: protected address with email %s already exists", entities.ErrDuplicateEntry, protEmail)
+			}
 		}
 	}
 
@@ -99,6 +103,21 @@ func (prs *ProtectedAddrService) GetAll(ctx context.Context, cuser entities.User
 		filters = make(map[string][]string)
 	}
 
+	// by default all requests with no 'owner' filter set are limited to the current user
+	if len(filters["owner"]) == 0 {
+		filters["owner"] = []string{string(cuser.ID)}
+	} else {
+		// if 'owner' filter has entry 'all' - remove filter to retrieve all entries for admin user
+		if cuser.Type == entities.AdminUser && slices.Contains(filters["owner"], "all") {
+			delete(filters, "owner")
+		}
+
+		// reset 'owner' filter to the current user for non-admins
+		if cuser.Type != entities.AdminUser {
+			filters["owner"] = []string{string(cuser.ID)}
+		}
+	}
+
 	filters["type"] = []string{strconv.Itoa(entities.ProtectedAddress)}
 	praddrs, err := prs.repoFactory.Address.GetAll(ctx, filters)
 	if err != nil {
@@ -131,16 +150,22 @@ func (prs *ProtectedAddrService) GetByEmail(ctx context.Context, cuser entities.
 		return entities.Address{}, fmt.Errorf("getting protected address by email: validating email: %w", err)
 	}
 
-	praddr, err := prs.repoFactory.Address.GetByEmail(ctx, entities.Email(email))
+	praddrs, err := prs.repoFactory.Address.GetByEmail(ctx, entities.Email(email))
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("getting protected address by email: %w", err)
 	}
 
-	if !canGetPrAddr(cuser, praddr) {
-		return entities.Address{}, fmt.Errorf("getting protected address: %w", entities.ErrNotAuthorized)
+	for _, praddr := range praddrs {
+		if praddr.Type == entities.ProtectedAddress {
+			if !canGetPrAddr(cuser, praddr) {
+				return entities.Address{}, fmt.Errorf("getting protected address by email: %w", entities.ErrNotAuthorized)
+			}
+			return praddr, nil
+		}
+
 	}
 
-	return praddr, nil
+	return entities.Address{}, fmt.Errorf("getting protected address by email: %w", entities.ErrNotFound)
 }
 
 func (prs *ProtectedAddrService) DeleteById(ctx context.Context, cuser entities.User, id entities.Id) error {

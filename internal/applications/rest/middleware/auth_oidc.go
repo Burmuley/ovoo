@@ -31,6 +31,10 @@ type OIDCProvider struct {
 
 func SetOIDCConfigs(configs map[string]OIDCProvider) {
 	oidcConfigs = configs
+	oidcProviderNames = make([]string, 0, len(oidcConfigs))
+	for name := range oidcConfigs {
+		oidcProviderNames = append(oidcProviderNames, name)
+	}
 }
 
 // validateOIDCToken validates an OIDC token and extracts the user's email from its claims.

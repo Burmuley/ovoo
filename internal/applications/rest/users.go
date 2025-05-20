@@ -42,6 +42,16 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 	a.successResponse(w, resp, http.StatusOK)
 }
 
+func (a *Application) GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting user profile: identifying user", err)
+	}
+
+	resp := userTResponse(cuser)
+	a.successResponse(w, resp, http.StatusOK)
+}
+
 // GetUserById retrieves a user by their ID and returns the user details.
 func (a *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)

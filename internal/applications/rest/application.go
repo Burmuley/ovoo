@@ -6,15 +6,13 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"html/template"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/Burmuley/ovoo/internal/applications"
 	"github.com/Burmuley/ovoo/internal/applications/rest/middleware"
-	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -26,8 +24,11 @@ const (
 	callbackURI              = "/auth/callback"
 )
 
-//go:embed data
+//go:embed data/**
 var staticData embed.FS
+
+//go:embed data/webui/**
+var webuiData embed.FS
 
 // Application represents the main structure for handling REST API requests.
 // It contains references to a service gateway for business logic, network configuration,
@@ -90,7 +91,7 @@ func New(
 		return nil, errors.New("logger must be set")
 	}
 
-	ctrl.authSkipURIs = []string{}
+	ctrl.authSkipURIs = []string{"/index.html", "/assets"}
 
 	{
 		var err error
@@ -134,6 +135,7 @@ func (a *Application) Start(ctx context.Context) error {
 
 	// users routes
 	mux.HandleFunc("GET /api/v1/users", a.GetUsers)
+	mux.HandleFunc("GET /api/v1/users/profile", a.GetUserProfile)
 	mux.HandleFunc("GET /api/v1/users/{id}", a.GetUserById)
 	mux.HandleFunc("POST /api/v1/users", a.CreateUser)
 	mux.HandleFunc("PATCH /api/v1/users/{id}", a.UpdateUser)
@@ -166,7 +168,11 @@ func (a *Application) Start(ctx context.Context) error {
 	mux.HandleFunc("DELETE /private/api/v1/chains/{hash}", a.DeleteChain)
 
 	// root
-	mux.HandleFunc("/{$}", a.handleRoot([]string(mapKeys(a.providerConfigs))))
+	webui, err := fs.Sub(webuiData, "data/webui")
+	if err != nil {
+		return err
+	}
+	mux.Handle("/", http.FileServer(http.FS(webui)))
 
 	handler := middleware.Adapt(mux,
 		middleware.SecurityHeaders(),
@@ -175,39 +181,6 @@ func (a *Application) Start(ctx context.Context) error {
 	)
 	a.logger.Info("started Ovoo API server", "addr", a.listenAddr)
 	return http.ListenAndServeTLS(a.listenAddr, a.tls_cert, a.tls_key, handler)
-}
-
-// handleRoot serves the root page of the application.
-// It parses and renders the login template with current user and provider information.
-//
-// Parameters:
-//   - providers: List of configured authentication providers to display
-//
-// Returns:
-//   - http.HandlerFunc: Handler that renders the root/login page
-func (a *Application) handleRoot(providers []string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		user, _ := userFromContext(r)
-		funcMap := template.FuncMap{
-			"ToTitle": strings.Title,
-		}
-		tmpl, err := template.New("index").Funcs(funcMap).ParseFS(staticData, "data/login/index.html")
-		if err != nil {
-			a.errorLogNResponse(w, "root page: parsing template", err)
-			return
-		}
-
-		if err := tmpl.ExecuteTemplate(
-			w,
-			"index.html",
-			struct {
-				User      entities.User
-				Providers []string
-			}{User: user, Providers: providers},
-		); err != nil {
-			a.errorLogNResponse(w, "root page: rendering template", err)
-		}
-	}
 }
 
 // handleDocs serves the API documentation HTML page

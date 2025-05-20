@@ -14,7 +14,7 @@ type RepositoryConfig interface {
 // AddressReader defines methods for reading address data.
 type AddressReader interface {
 	GetById(ctx context.Context, id entities.Id) (entities.Address, error)
-	GetByEmail(ctx context.Context, email entities.Email) (entities.Address, error)
+	GetByEmail(ctx context.Context, email entities.Email) ([]entities.Address, error)
 	GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error)
 }
 
@@ -24,7 +24,6 @@ type AddressWriter interface {
 	BatchCreate(ctx context.Context, addresses []entities.Address) error
 	Update(ctx context.Context, address entities.Address) error
 	DeleteById(ctx context.Context, id entities.Id) error
-	DeleteByEmail(ctx context.Context, email entities.Email) error
 }
 
 // AddressReadWriter combines AddressReader and AddressWriter interfaces.

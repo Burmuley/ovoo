@@ -41,11 +41,6 @@ func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(aliases) == 0 {
-		a.errorLogNResponse(w, "getting aliases", entities.ErrNotFound)
-		return
-	}
-
 	aliasData := make([]AliasData, 0, len(aliases))
 	for _, alias := range aliases {
 		aliasData = append(aliasData, addressTAliasData(alias))

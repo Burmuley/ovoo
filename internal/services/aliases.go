@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 
 	"github.com/Burmuley/ovoo/internal/entities"
@@ -121,9 +122,19 @@ func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filt
 		filters = make(map[string][]string)
 	}
 
-	// reset owner value if user is `regular`
-	if cuser.Type == entities.RegularUser {
+	// by default all requests with no 'owner' filter set are limited to the current user
+	if len(filters["owner"]) == 0 {
 		filters["owner"] = []string{string(cuser.ID)}
+	} else {
+		// if 'owner' filter has entry 'all' - remove filter to retrieve all entries for admin user
+		if cuser.Type == entities.AdminUser && slices.Contains(filters["owner"], "all") {
+			delete(filters, "owner")
+		}
+
+		// reset 'owner' filter to the current user for non-admins
+		if cuser.Type != entities.AdminUser {
+			filters["owner"] = []string{string(cuser.ID)}
+		}
 	}
 
 	filters["type"] = []string{strconv.Itoa(entities.AliasAddress)}
@@ -132,18 +143,7 @@ func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filt
 		return nil, fmt.Errorf("getting aliases: %w", err)
 	}
 
-	if cuser.Type == entities.AdminUser {
-		return aliases, nil
-	}
-
-	fAliases := make([]entities.Address, 0, len(aliases)) // filtered aliases
-	for _, alias := range aliases {
-		if alias.Owner.ID == cuser.ID {
-			fAliases = append(fAliases, alias)
-		}
-	}
-
-	return fAliases, nil
+	return aliases, nil
 }
 
 // GetById retrieves an alias address by its ID.

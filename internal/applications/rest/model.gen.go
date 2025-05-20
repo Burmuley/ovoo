@@ -280,8 +280,17 @@ type UpdateUserRequest struct {
 
 // GetAliasesParams defines parameters for GetAliases.
 type GetAliasesParams struct {
-	// Owner owner ID to fetch parameters for; works only for admin users, regular users will only receive list of aliases they own
+	// Owner owner ID to fetch parameters for
 	Owner *string `form:"owner,omitempty" json:"owner,omitempty"`
+
+	// Email email of an alias to lookup
+	Email *string `form:"email,omitempty" json:"email,omitempty"`
+
+	// Id alias id to retrieve
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// ServiceName allows to lookup aliases by service name metadata field value
+	ServiceName *string `form:"service_name,omitempty" json:"service_name,omitempty"`
 }
 
 // CreateAliasJSONBody defines parameters for CreateAlias.
@@ -311,6 +320,18 @@ type CreatePrAddrJSONBody struct {
 // UpdatePrAddrJSONBody defines parameters for UpdatePrAddr.
 type UpdatePrAddrJSONBody struct {
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
+}
+
+// GetUsersParams defines parameters for GetUsers.
+type GetUsersParams struct {
+	// Id user id filter
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Login user login filter
+	Login *string `form:"login,omitempty" json:"login,omitempty"`
+
+	// Type user type filter
+	Type *string `form:"type,omitempty" json:"type,omitempty"`
 }
 
 // CreateUserJSONBody defines parameters for CreateUser.

@@ -1,0 +1,179 @@
+$filter-button-background-color: #fff
+$filter-button-color: #626262
+$filter-button-border-size: 1px
+$filter-button-border-style: solid
+$filter-button-border-color: #c9c9c9
+$filter-button-border-radius: 3px
+$filter-button-font-size: 15px
+$filter-button-min-width: 150px
+$filter-button-padding: 6px 10px
+
+$filter-dropdown-menu-background: #fff
+$filter-dropdown-menu-width: 280px
+$filter-dropdown-menu-padding: 2px 8px
+$filter-dropdown-menu-border: 1px solid #fff
+$filter-dropdown-menu-border-radius: 4px
+$filter-dropdown-menu-color: #555
+
+$filter-dropdown-title-color: #5c5c5c
+$filter-dropdown-title-border: 1px solid rgba(0,0,0,0.1)
+$filter-dropdown-title-close-color: #ababab
+
+$filter-input-icon-color: #ababab
+$filter-input-color: #555
+$filter-input-border: 1px solid rgba(0,0,0,0.1)
+$filter-input-border-radius: 2px
+
+$filter-dropdown-divider-color: 1px solid rgba(0,0,0,0.1)
+$filter-dropdown-item-hover-color: #fbfbfb
+$filter-dropdown-loading-background: rgba(255, 255, 255, 0.7)
+
+$filter-dropdown-bottom-message-color: #adadad
+$filter-dropdown-bottom-message-font-weight: bold
+$filter-dropdown-bottom-message-font-size: 0.8em
+$filter-dropdown-bottom-message-padding: 5px 0
+$filter-dropdown-bottom-message-background: #fff
+$filter-dropdown-bottom-message-align: center
+
+.dropdown-menu-toggle
+  background: $filter-button-background-color
+  color: $filter-button-color
+  border: $filter-button-border-size $filter-button-border-style $filter-button-border-color
+  border-radius: $filter-button-border-radius
+  font-size: $filter-button-font-size
+  min-width: $filter-button-min-width
+  padding: $filter-button-padding
+  text-align: left
+  position: relative
+  cursor: pointer
+  display: flex
+  justify-content: space-between
+
+.dropdown-menu-toggle-link
+  text-decoration: none
+  color: $filter-button-color
+
+.dropdown-menu
+  background: $filter-dropdown-menu-background
+  width: $filter-dropdown-menu-width
+  padding: $filter-dropdown-menu-padding
+  border-radius: $filter-dropdown-menu-border-radius
+  border: $filter-dropdown-menu-border
+  color: $filter-dropdown-menu-color
+  margin-top: 5px
+  position: absolute
+  display: none
+  z-index: 10
+
+.dropdown-open .dropdown-menu
+  display: block
+
+.dropdown-title
+  color: $filter-dropdown-title-color
+  border-bottom: $filter-dropdown-title-border
+  text-align: center
+  white-space: nowrap
+  font-weight: 600
+  padding: 8px 0
+  margin-right: 3px
+
+.dropdown-menu-close
+  color: $filter-dropdown-title-close-color
+  position: absolute
+  right: 23px
+
+.dropdown-input-container
+  margin: 10px 15px 10px 0
+  position: relative
+
+  .fa
+    font-size: .9em
+    position: absolute
+    top: 9px
+    right: 0
+    color: $filter-input-icon-color
+
+.dropdown-input
+  color: $filter-input-color
+  border: $filter-input-border
+  border-radius: $filter-input-border-radius
+  width: 100%
+  padding: 0 5px
+  line-height: 30px
+
+.dropdown-content, .dropdown-footer
+  max-height: 210px
+  overflow-y: scroll
+  margin: 10px 0
+
+  ul:first-child
+    padding-top: 0
+
+  ul:last-child
+    padding-bottom: 0
+
+  ul
+    list-style: none
+    padding: 10px 0
+    margin: 0
+
+    li.divider
+      border-bottom: $filter-dropdown-divider-color
+      margin: 0 0 5px 0
+
+    li a
+      padding: 5px 30px
+      display: block
+      text-decoration: none
+      color: $filter-dropdown-menu-color
+      position: relative
+
+    li a:hover
+      background: $filter-dropdown-item-hover-color
+
+    li a.is-selected::before
+      content: "\f00c"
+      font: normal normal normal 14px/1 FontAwesome
+      color: $filter-dropdown-menu-color
+      margin-right: 5px
+      position: absolute
+      top: 8px
+      left: 10px
+
+  ul.dropdown-header-items
+    border-bottom: $filter-dropdown-divider-color
+    margin-right: 5px
+
+.dropdown-footer
+  overflow-y: auto
+  border-top: $filter-dropdown-divider-color
+  margin-top: 10px
+  font-size: 0.9em
+
+.dropdown-loading
+  position: absolute
+  top: 0
+  bottom: 0
+  left: 0
+  right: 0
+  justify-content: center
+  align-items: center
+  background: $filter-dropdown-loading-background
+  display: none
+
+.dropdown-loading.show
+  display: flex
+
+.dropdown-items
+  position: relative
+
+.bottom-message
+  text-align: $filter-dropdown-bottom-message-align
+  font-weight: $filter-dropdown-bottom-message-font-weight
+  color: $filter-dropdown-bottom-message-color
+  font-size: $filter-dropdown-bottom-message-font-size
+  padding: $filter-dropdown-bottom-message-padding
+  background: $filter-dropdown-bottom-message-background
+  position: absolute
+  bottom: 0
+  width: 100%

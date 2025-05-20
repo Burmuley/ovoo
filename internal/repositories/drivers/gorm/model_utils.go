@@ -93,6 +93,15 @@ func addressToEntity(a Address) entities.Address {
 	return addr
 }
 
+func addressToEntityList(a []Address) []entities.Address {
+	ea := make([]entities.Address, 0, len(a))
+	for _, addr := range a {
+		ea = append(ea, addressToEntity(addr))
+	}
+
+	return ea
+}
+
 // chainFromEntity converts an entities.Chain to a Chain
 func chainFromEntity(e entities.Chain) Chain {
 	return Chain{

@@ -67,20 +67,6 @@ func (a *AddressGORMRepo) DeleteById(ctx context.Context, id entities.Id) error 
 	return nil
 }
 
-// DeleteByEmail removes an address from the database by its email.
-func (a *AddressGORMRepo) DeleteByEmail(ctx context.Context, email entities.Email) error {
-	if _, err := a.GetByEmail(ctx, email); err != nil {
-		return wrapGormError(err)
-	}
-
-	if err := a.db.WithContext(ctx).Model(&Address{}).Where("email = ?", email.String()).Unscoped().
-		Delete(&Address{Email: string(email)}).Error; err != nil {
-		return wrapGormError(err)
-	}
-
-	return nil
-}
-
 // GetById retrieves an address from the database by its ID.
 func (a *AddressGORMRepo) GetById(ctx context.Context, id entities.Id) (entities.Address, error) {
 	addr := Address{}
@@ -93,13 +79,13 @@ func (a *AddressGORMRepo) GetById(ctx context.Context, id entities.Id) (entities
 
 // GetByEmail retrieves an address from the database by its email.
 // It returns the address as an entities.Address and an error, if any.
-func (a *AddressGORMRepo) GetByEmail(ctx context.Context, email entities.Email) (entities.Address, error) {
-	addr := Address{}
-	if err := a.db.WithContext(ctx).Model(&Address{}).Where("email = ?", email).Preload("ForwardAddress").Preload("Owner").First(&addr).Error; err != nil {
-		return entities.Address{}, wrapGormError(err)
+func (a *AddressGORMRepo) GetByEmail(ctx context.Context, email entities.Email) ([]entities.Address, error) {
+	addrs := make([]Address, 0)
+	if err := a.db.WithContext(ctx).Model(&Address{}).Where("email = ?", email).Preload("ForwardAddress").Preload("Owner").Find(&addrs).Error; err != nil {
+		return []entities.Address{}, wrapGormError(err)
 	}
 
-	return addressToEntity(addr), nil
+	return addressToEntityList(addrs), nil
 }
 
 // GetAll retrieves all addresses from the database, with optional filters.

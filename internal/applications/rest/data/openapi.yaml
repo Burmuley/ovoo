@@ -323,6 +323,19 @@ paths:
         schema:
           type: string
         required: true
+  /api/v1/users/profile:
+    get:
+      summary: Get current user profile
+      description: Retrieves currently logged on user profile
+      operationId: getUserProfile
+      tags:
+        - Users
+      parameters: []
+      responses:
+        "200":
+          $ref: "#/components/responses/getUserDetailsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
   /api/v1/users/apitokens:
     get:
       summary: Get user's API Tokens

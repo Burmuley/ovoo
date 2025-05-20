@@ -41,7 +41,7 @@ func setSecureCookie(w http.ResponseWriter, r *http.Request, name, value string,
 		Value:    value,
 		MaxAge:   maxAge,
 		Secure:   r.TLS != nil,
-		HttpOnly: true,
+		HttpOnly: false,
 		Path:     path,
 		Domain:   r.URL.Hostname(),
 	}

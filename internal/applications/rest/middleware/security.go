@@ -43,7 +43,7 @@ func SecurityHeaders() Adapter {
 				fmt.Sprintf("form-action 'self' %s", strings.Join(formActionUrls, " ")),
 				"style-src 'self' 'unsafe-inline'",
 				"connect-src 'self'",
-				fmt.Sprintf("script-src 'self' %s", strings.Join(scriptSrcUrls, " ")),
+				fmt.Sprintf("script-src 'self' 'unsafe-inline' %s", strings.Join(scriptSrcUrls, " ")),
 				"worker-src 'self' blob:",
 				"img-src 'self' 'unsafe-inline' https://cdn.redoc.ly/redoc/logo-mini.svg",
 			}

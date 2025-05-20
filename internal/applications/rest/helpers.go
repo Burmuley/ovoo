@@ -2,7 +2,7 @@ package rest
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -32,22 +32,10 @@ func readBody(body io.ReadCloser, data any) error {
 // Returns the user entity and nil if successful, or an empty user and error if the user
 // cannot be found in the context.
 func userFromContext(r *http.Request) (entities.User, error) {
-	userraw := r.Context().Value(middleware.UserContextKey("user"))
-	if userraw == nil {
-		return entities.User{}, errors.New("unable to get user")
+	user := r.Context().Value(middleware.UserContextKey("user"))
+	if user == nil {
+		return entities.User{}, fmt.Errorf("%w: no user info in headers", entities.ErrNotAuthorized)
 	}
 
-	return userraw.(entities.User), nil
-}
-
-// mapKeys extracts and returns all keys from a map as a slice.
-// It takes a map with comparable keys and any values, and returns a slice containing all the keys.
-// This is useful when you need to process or iterate over just the keys of a map.
-func mapKeys[K comparable, V any](m map[K]V) []K {
-	keys := make([]K, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-
-	return keys
+	return user.(entities.User), nil
 }

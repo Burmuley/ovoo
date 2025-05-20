@@ -1,0 +1,185 @@
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #f9f9f9;
+    color: #222;
+}
+
+button {
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: white;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+button:hover {
+    background-color: #f0f0f0;
+    position: relative;
+}
+
+input,
+select {
+    padding: 0.4rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+
+}
+
+div {
+    padding: 0;
+}
+
+.login-button {
+    padding: 12.5px 30px;
+    border: 0;
+    border-radius: 50px;
+    color: #222;
+    font-weight: Bold;
+    transition: all 0.5s;
+    -webkit-transition: all 0.5s;
+}
+
+.login-button:hover {
+    /* background-color: #6fc5ff; */
+    box-shadow: 0 0 20px #6fc5ff50;
+    transform: scale(1.1);
+}
+
+.login-button:active {
+    background-color: #3d94cf;
+    transition: all 0.25s;
+    -webkit-transition: all 0.25s;
+    box-shadow: none;
+    transform: scale(0.98);
+}
+
+.ovoo-items-list {
+    margin: top;
+    border: 1px solid #ccc;
+    width: 100%;
+}
+
+.ovoo-item {
+    padding: 12px;
+    background-color: #fafafa;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #ddd;
+    align-items: center;
+}
+
+.ovoo-item.dark {
+    background-color: #dedede;
+}
+
+.ovoo-item.buttons {
+    border-bottom: 0;
+    align-items: right;
+    padding: 0;
+}
+
+.ovoo-item.buttons.dark {
+    background-color: #a8a8a8;
+    align-items: right;
+}
+
+.ovoo-item.header {
+    border-bottom: 1px solid #ddd;
+    align-items: left;
+    padding: 10px;
+}
+
+.ovoo-item.add-form {
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.main-div {
+    margin: auto;
+    width: 85%;
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+}
+
+.login-div {
+    margin: auto;
+    width: 85%;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.tabs-div {
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    width: 30%;
+}
+
+.info-div {
+    border: 1px solid #ddd;
+    display: flex;
+    padding: 10px;
+    width: 70%;
+}
+
+.info-div.form {
+    flex-direction: column;
+    padding-bottom: 5px;
+}
+
+.user-info-div {
+    flex-direction: column;
+    border: 0;
+    display: flex;
+    padding: 0;
+    width: 100%;
+    justify-content: left;
+    align-items: left;
+}
+
+
+.tab-button {
+    width: 100%;
+    transition: all .5s;
+    -webkit-transition: all .5s;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+.tab-button.hover {
+    box-shadow: 0 0 20px #6fc5ff50;
+    transform: scale(1.1)
+}
+
+.tab-button.active {
+    transition: all .25s;
+    -webkit-transition: all .25s;
+    box-shadow: none;
+    transform: scale(.98)
+}
+
+.tab-button.current {
+    background-color: #538cff;
+    color: white;
+}
+
+
+.centered {
+    margin: auto;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    width: 70%;
+}

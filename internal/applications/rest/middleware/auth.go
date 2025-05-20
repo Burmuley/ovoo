@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/services"
@@ -20,10 +22,12 @@ const (
 
 	// ApiKey constants
 	apiTokenCookieName = "ovoo_key"
+	authProvidersUrl   = "/auth/providers"
 )
 
 // var providerConfig *OIDCProvider
 var oidcConfigs map[string]OIDCProvider
+var oidcProviderNames []string
 
 type UserContextKey string
 
@@ -53,8 +57,25 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Skip authentication for whitelisted URIs
-			if slices.Contains(skipUris, r.URL.Path) {
+			if slices.ContainsFunc(skipUris, func(s string) bool {
+				return strings.HasPrefix(r.URL.Path, s)
+			}) {
 				h.ServeHTTP(w, r)
+				return
+			}
+
+			// return auth providers list
+			if r.URL.Path == authProvidersUrl {
+				resp, err := json.Marshal(oidcProviderNames)
+				if err != nil {
+					logger.Error("could render providers list", "src", r.RemoteAddr, "error", err.Error())
+					http.Error(w, "internal error", http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write(resp)
 				return
 			}
 
