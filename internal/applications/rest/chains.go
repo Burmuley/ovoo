@@ -10,6 +10,7 @@ func (a *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting chain: identifying user", err)
+		return
 	}
 
 	chainHash := entities.Hash(r.PathValue("hash"))
@@ -27,6 +28,7 @@ func (a *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting chain: identifying user", err)
+		return
 	}
 
 	rb := CreateEmailChain{}
@@ -56,6 +58,7 @@ func (a *Application) DeleteChain(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting chain: identifying user", err)
+		return
 	}
 
 	hash := entities.Hash(r.PathValue("hash"))

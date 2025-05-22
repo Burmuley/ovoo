@@ -160,29 +160,32 @@ func genReplyAlias(ctx context.Context, repof *factory.RepoFactory, fromEmail, t
 
 func checkCreateSrcAddr(ctx context.Context, repof *factory.RepoFactory, faddr string, owner entities.User) (entities.Address, error) {
 	srcAddrs, err := repof.Address.GetByEmail(ctx, entities.Email(faddr))
-	if err != nil && errors.Is(err, entities.ErrNotFound) {
-		{
-			srcAddr := entities.Address{
-				Type:  entities.ExternalAddress,
-				ID:    entities.NewId(),
-				Email: entities.Email(faddr),
-				Owner: owner,
-			}
-
-			if err := repof.Address.Create(ctx, srcAddr); err != nil {
-				return entities.Address{}, err
-			}
-
-			return srcAddr, nil
-		}
-	} else if err != nil {
+	if err != nil && !errors.Is(err, entities.ErrNotFound) {
 		return entities.Address{}, err
 	}
 
-	for _, addr := range srcAddrs {
-		if addr.Type == entities.ExternalAddress {
-			return addr, nil
+	// check if requested external address is in the results
+	if srcAddrs != nil {
+		for _, addr := range srcAddrs {
+			if addr.Type == entities.ExternalAddress {
+				return addr, nil
+			}
 		}
 	}
-	return entities.Address{}, fmt.Errorf("%w: source address found in DB but is not external address type", entities.ErrValidation)
+
+	// fallback creating new external address
+	srcAddr := entities.Address{
+		Type:  entities.ExternalAddress,
+		ID:    entities.NewId(),
+		Email: entities.Email(faddr),
+		Owner: owner,
+	}
+
+	if err := repof.Address.Create(ctx, srcAddr); err != nil {
+		return entities.Address{}, err
+	}
+
+	return srcAddr, nil
+
+	// return entities.Address{}, fmt.Errorf("%w: source address found in DB but is not external address type", entities.ErrValidation)
 }

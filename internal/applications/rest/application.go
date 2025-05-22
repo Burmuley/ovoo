@@ -139,7 +139,7 @@ func (a *Application) Start(ctx context.Context) error {
 	mux.HandleFunc("GET /api/v1/users/{id}", a.GetUserById)
 	mux.HandleFunc("POST /api/v1/users", a.CreateUser)
 	mux.HandleFunc("PATCH /api/v1/users/{id}", a.UpdateUser)
-	mux.HandleFunc("DELETE /api/v1/users", a.DeleteUser)
+	mux.HandleFunc("DELETE /api/v1/users/{id}", a.DeleteUser)
 
 	// api tokens routes
 	mux.HandleFunc("GET /api/v1/users/apitokens", a.GetApiTokens)

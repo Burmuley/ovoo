@@ -3,11 +3,10 @@
         <div class="ovoo-item header">
             <button @click="addPrAddr">Add new Protected Address</button>
         </div>
-        <AddPrAddrForm v-if=showAddForm @request-sent=load />
         <div v-for="(addr, index) in praddrs" :key="addr.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">
             {{ addr.email }}
             <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
-                <button @click=" edit(addr)">Edit</button>
+                <button @click=" edit(addr)" style="margin-right: 5px;">Edit</button>
                 <button @click="remove(addr.id)">Delete</button>
             </div>
         </div>
@@ -17,7 +16,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../utils/api'
-import AddPrAddrForm from './AddPrAddrForm.vue'
 
 const emit = defineEmits(['add-praddr-clicked'])
 
@@ -40,8 +38,6 @@ const remove = async (id) => {
 const addPrAddr = () => {
     emit('add-praddr-clicked')
 }
-
-const showAddForm = ref(false)
 
 onMounted(load)
 </script>

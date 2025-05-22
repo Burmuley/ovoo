@@ -59,8 +59,11 @@ func (t *TokenGORMRepo) Delete(ctx context.Context, token_id entities.Id) error 
 		return wrapGormError(err)
 	}
 
-	return wrapGormError(t.db.WithContext(ctx).Model(&ApiToken{}).Where("id = ?", token_id).Unscoped().
-		Delete(&ApiToken{Model: Model{ID: token_id.String()}}).Error)
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("id = ?", token_id).Unscoped().
+		Delete(&ApiToken{Model: Model{ID: token_id.String()}}).Error; err != nil {
+		return wrapGormError(err)
+	}
+	return nil
 }
 
 // GetById retrieves an API token from the database based on its ID.

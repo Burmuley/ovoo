@@ -61,7 +61,7 @@ func userTResponse(u entities.User) UserData {
 		FirstName: u.FirstName,
 		Id:        string(u.ID),
 		LastName:  u.LastName,
-		Login:     types.Email(u.Login),
+		Login:     u.Login,
 		Type:      userTypeTStr(u.Type),
 	}
 }
@@ -117,6 +117,7 @@ func chainTChainData(chain entities.Chain) ChainData {
 // This is used for API token representations in standard responses.
 func tokenTApiTokenData(token entities.ApiToken) ApiTokenData {
 	return ApiTokenData{
+		Id:          (*string)(&token.ID),
 		Active:      token.Active,
 		Description: token.Description,
 		Expiration:  token.Expiration,
@@ -128,6 +129,7 @@ func tokenTApiTokenData(token entities.ApiToken) ApiTokenData {
 // This is specifically used when creating a new API token to include the token value in the response.
 func tokenTApiTokenDataOnCreate(token entities.ApiToken) ApiTokenDataOnCreate {
 	return ApiTokenDataOnCreate{
+		Id:          (*string)(&token.ID),
 		Active:      token.Active,
 		Description: token.Description,
 		Expiration:  token.Expiration,

@@ -46,6 +46,9 @@ type ApiTokenData struct {
 	// Expiration Time of expiration of the API token
 	Expiration time.Time `json:"expiration"`
 
+	// Id API token ULID ID
+	Id *string `json:"id,omitempty"`
+
 	// Name Name of the API token
 	Name string `json:"name"`
 }
@@ -63,6 +66,9 @@ type ApiTokenDataOnCreate struct {
 
 	// Expiration Time of expiration of the API token
 	Expiration time.Time `json:"expiration"`
+
+	// Id API token ULID ID
+	Id *string `json:"id,omitempty"`
 
 	// Name Name of the API token
 	Name string `json:"name"`
@@ -125,8 +131,8 @@ type UserData struct {
 	// LockoutUntil date/time the user account was lockout until
 	LockoutUntil *string `json:"lockout_until,omitempty"`
 
-	// Login user login
-	Login openapi_types.Email `json:"login"`
+	// Login user login (for OIDC support should be formatted as email)
+	Login string `json:"login"`
 
 	// Type user type
 	Type string `json:"type"`

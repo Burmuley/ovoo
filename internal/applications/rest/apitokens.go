@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
@@ -16,6 +17,7 @@ func (a *Application) GetApiTokens(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting api tokens: identifying user", err)
+		return
 	}
 
 	tokens, err := a.svcGw.Tokens.GetAll(r.Context(), cuser)
@@ -42,6 +44,7 @@ func (a *Application) GetApiTokenById(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting api token by id: identifying user", err)
+		return
 	}
 
 	token, err := a.svcGw.Tokens.GetByIdCurUser(r.Context(), cuser, entities.Id(r.PathValue("id")))
@@ -73,7 +76,8 @@ func (a *Application) CreateApiToken(w http.ResponseWriter, r *http.Request) {
 
 	req := CreateApiToken{}
 	if err := readBody(r.Body, &req); err != nil {
-		a.errorLogNResponse(w, "creating new api token: parsing request", err)
+		a.errorLogNResponse(w, "creating new api token: parsing request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
+		return
 	}
 
 	description := ""
@@ -83,10 +87,11 @@ func (a *Application) CreateApiToken(w http.ResponseWriter, r *http.Request) {
 	token, err := a.svcGw.Tokens.Create(r.Context(), cuser, req.Name, description, int(req.ExpireIn))
 	if err != nil {
 		a.errorLogNResponse(w, "creating new api token", err)
+		return
 	}
 
 	resp := CreateApiTokenResponse(tokenTApiTokenDataOnCreate(token))
-	a.successResponse(w, resp, http.StatusOK)
+	a.successResponse(w, resp, http.StatusCreated)
 }
 
 // UpdateApiToken updates an existing API token for the authenticated user.
@@ -104,6 +109,7 @@ func (a *Application) UpdateApiToken(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting api token by id: identifying user", err)
+		return
 	}
 
 	req := UpdateApiToken{}

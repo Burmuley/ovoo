@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,4 +39,40 @@ func userFromContext(r *http.Request) (entities.User, error) {
 	}
 
 	return user.(entities.User), nil
+}
+
+// statusFErr determines the appropriate HTTP status code based on the given error.
+// It maps specific error types to corresponding HTTP status codes.
+//
+// Parameters:
+//   - err: The error to be evaluated.
+//
+// Returns:
+//
+//	An integer representing the HTTP status code.
+//
+// The function checks for the following error types:
+//   - entities.ErrNotFound: Returns http.StatusNotFound (404)
+//   - entities.ErrValidation: Returns http.StatusBadRequest (400)
+//   - entities.ErrDuplicateEntry: Returns http.StatusBadRequest (400)
+//
+// For any other error types, it returns http.StatusInternalServerError (500).
+func statusFErr(err error) int {
+	if errors.Is(err, entities.ErrNotFound) {
+		return http.StatusNotFound
+	}
+
+	if errors.Is(err, entities.ErrValidation) {
+		return http.StatusBadRequest
+	}
+
+	if errors.Is(err, entities.ErrDuplicateEntry) {
+		return http.StatusBadRequest
+	}
+
+	if errors.Is(err, entities.ErrNotAuthorized) {
+		return http.StatusForbidden
+	}
+
+	return http.StatusInternalServerError
 }

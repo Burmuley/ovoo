@@ -12,6 +12,7 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
+		return
 	}
 
 	filters := map[string][]string{"owner": []string{user.ID.String()}}
@@ -55,6 +56,7 @@ func (a *Application) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
+		return
 	}
 
 	prAddrId := entities.Id(r.PathValue("id"))
@@ -73,6 +75,7 @@ func (a *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
+		return
 	}
 
 	rb := CreateProtectedAddressRequest{}
@@ -98,6 +101,7 @@ func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
+		return
 	}
 
 	prAddrId := entities.Id(r.PathValue("id"))
@@ -132,6 +136,7 @@ func (a *Application) DeletePrAddr(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses: identifying user", err)
+		return
 	}
 
 	prAddrId := entities.Id(r.PathValue("id"))

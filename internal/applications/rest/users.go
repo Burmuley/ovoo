@@ -12,6 +12,7 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting users: identifying user", err)
+		return
 	}
 
 	// filling filters
@@ -75,7 +76,9 @@ func (a *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "creating user: identifying user", err)
+		return
 	}
+
 	req_body := CreateUserRequest{}
 	if err := readBody(r.Body, &req_body); err != nil {
 		a.errorLogNResponse(w, "parsing user create request", fmt.Errorf("%w: %w", entities.ErrValidation, err))

@@ -672,8 +672,7 @@ components:
       properties:
         login:
           type: string
-          description: user login
-          format: email
+          description: user login (for OIDC support should be formatted as email)
         first_name:
           type: string
           description: user first name
@@ -701,6 +700,9 @@ components:
     apiTokenData:
       type: object
       properties:
+        id:
+          type: string
+          description: API token ULID ID
         name:
           type: string
           description: Name of the API token

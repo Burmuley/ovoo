@@ -66,6 +66,14 @@ func (t *ApiTokensService) Create(ctx context.Context, cuser entities.User, name
 	if !canCreateApiToken(cuser) {
 		return entities.ApiToken{}, fmt.Errorf("creating token: %w", entities.ErrNotAuthorized)
 	}
+
+	if name == "" {
+		return entities.ApiToken{}, fmt.Errorf("%w: name field cannot be empty", entities.ErrValidation)
+	}
+
+	if expireIn < 1 {
+		return entities.ApiToken{}, fmt.Errorf("%w: expire_in value cannot be less than 1", entities.ErrValidation)
+	}
 	token, err := entities.NewToken(time.Now().Add(time.Duration(expireIn*24)*time.Hour), name, description, cuser)
 	if err != nil {
 		return entities.ApiToken{}, fmt.Errorf("generating new token: %w", err)

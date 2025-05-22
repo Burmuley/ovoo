@@ -4,11 +4,10 @@
             <button @click="addAlias">Add new Alias</button>
 
         </div>
-        <AddAliasForm v-if=showAddForm @request-sent=load />
         <div v-for="(alias, index) in aliases" :key="alias.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">
             {{ alias.email }}
             <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
-                <button @click="edit(alias)" title="Edit alias">Edit</button>
+                <button @click="edit(alias)" title="Edit alias" style="margin-right: 5px;">Edit</button>
                 <button @click="deleteAlias(alias.id)" title="Delete alias">Delete</button>
             </div>
         </div>
@@ -18,7 +17,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../utils/api'
-import AddAliasForm from './AddAliasForm.vue'
 
 const emit = defineEmits(['add-alias-clicked'])
 
@@ -42,8 +40,6 @@ const deleteAlias = async (id) => {
 const addAlias = () => {
     emit('add-alias-clicked')
 }
-
-const showAddForm = ref(false)
 
 onMounted(load)
 </script>
