@@ -96,7 +96,7 @@ func NewApiOIDCConfig(clientid string, clientsecret string, issuer string) *ApiO
 
 type ApiDBConfig struct {
 	Config ApiDBGormConfig `json:"config,required"`
-	DBType string          `json:"db_type,required"`
+	DBType string          `json:"type,required"`
 }
 
 func NewApiDBConfig(config ApiDBGormConfig, dbtype string) *ApiDBConfig {

@@ -131,7 +131,8 @@
     "fields": {
       "DBType": {
         "type": "string",
-        "required": true
+        "required": true,
+        "override_json_tag": "type"
       },
       "Config": {
         "type": "ApiDBGormConfig",
