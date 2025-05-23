@@ -1,0 +1,201 @@
+[
+  {
+    "struct_name": "OvooConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Api": {
+        "type": "ApiConfig",
+        "required": true
+      },
+      "Milter": {
+        "type": "MilterConfig",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "ApiConfig",
+    "json_tags": true,
+    "optionals": true,
+    "fields": {
+      "ListenAddr": {
+        "type": "string",
+        "required": false,
+        "default": "127.0.0.1:8808"
+      },
+      "Log": {
+        "type": "OvooLogConfig",
+        "required": true
+      },
+      "Tls": {
+        "type": "ApiTLSConfig",
+        "required": true
+      },
+      "DefaultAdmin": {
+        "type": "ApiDefaultAdminConfig",
+        "required": true
+      },
+      "Domain": {
+        "type": "string",
+        "required": true
+      },
+      "OIDC": {
+        "type": "map[string]ApiOIDCConfig",
+        "required": true
+      },
+      "Database": {
+        "type": "ApiDBConfig",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "OvooLogConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Level": {
+        "type": "string",
+        "required": true,
+        "default": "debug"
+      },
+      "Destination": {
+        "type": "string",
+        "required": true,
+        "default": "stdout"
+      }
+    }
+  },
+  {
+    "struct_name": "ApiTLSConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Cert": {
+        "type": "string",
+        "required": true
+      },
+      "Key": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "ApiDefaultAdminConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Login": {
+        "type": "string",
+        "required": true
+      },
+      "FirstName": {
+        "type": "string",
+        "required": true
+      },
+      "LastName": {
+        "type": "string",
+        "required": true
+      },
+      "Password": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "ApiOIDCConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "ClientId": {
+        "type": "string",
+        "required": true
+      },
+      "ClientSecret": {
+        "type": "string",
+        "required": true
+      },
+      "Issuer": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "ApiDBConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "DBType": {
+        "type": "string",
+        "required": true
+      },
+      "Config": {
+        "type": "ApiDBGormConfig",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "ApiDBGormConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Driver": {
+        "type": "string",
+        "required": true
+      },
+      "ConnectionString": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "MilterConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "ListenAddr": {
+        "type": "string",
+        "required": false,
+        "default": "127.0.0.1:6785"
+      },
+      "Api": {
+        "type": "MilterApiConfig",
+        "required": true
+      },
+      "Log": {
+        "type": "OvooLogConfig",
+        "required": true
+      },
+      "Domain": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "MilterApiConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Addr": {
+        "type": "string",
+        "required": true,
+        "default": "127.0.0.1:8808"
+      },
+      "TlsSkipVerify": {
+        "type": "bool",
+        "required": true
+      },
+      "AuthToken": {
+        "type": "string",
+        "required": true
+      }
+    }
+  }
+]

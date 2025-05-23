@@ -13,6 +13,7 @@ import (
 
 	"github.com/Burmuley/ovoo/internal/applications"
 	"github.com/Burmuley/ovoo/internal/applications/rest/middleware"
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -63,7 +64,7 @@ func New(
 	logger *slog.Logger,
 	svcGw *services.ServiceGateway,
 	tls_key, tls_cert string,
-	providersConfig map[string]any,
+	providersConfig map[string]config.ApiOIDCConfig,
 ) (applications.Application, error) {
 	ctrl := &Application{
 		svcGw:      svcGw,
@@ -95,10 +96,12 @@ func New(
 
 	{
 		var err error
-		if ctrl.providerConfigs, err = parseProvidersCfg(providersConfig); err != nil {
-			return nil, err
+		if providersConfig != nil {
+			if ctrl.providerConfigs, err = parseProvidersCfg(providersConfig); err != nil {
+				return nil, err
+			}
+			middleware.SetOIDCConfigs(ctrl.providerConfigs)
 		}
-		middleware.SetOIDCConfigs(ctrl.providerConfigs)
 	}
 
 	if err := middleware.SetLogger(logger); err != nil {
@@ -202,30 +205,29 @@ func (a *Application) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 // Returns:
 //   - map[string]middleware.OIDCProvider: Configured providers mapped by name
 //   - error: Non-nil if provider initialization fails
-func parseProvidersCfg(cfg map[string]any) (map[string]middleware.OIDCProvider, error) {
+func parseProvidersCfg(cfg map[string]config.ApiOIDCConfig) (map[string]middleware.OIDCProvider, error) {
 	providers := make(map[string]middleware.OIDCProvider)
 	nameReg := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	for name, config := range cfg {
 		if !nameReg.MatchString(name) {
 			return nil, errors.New("invalid oidc provider name")
 		}
-		mapCfg := config.(map[string]any)
 		var err error
 		p := middleware.OIDCProvider{}
-		p.Issuer = mapCfg["issuer"].(string)
+		p.Issuer = config.Issuer
 		if p.OIDCProvider, err = oidc.NewProvider(context.Background(), p.Issuer); err != nil {
 			return nil, err
 		}
 
 		p.OAuth2Config = &oauth2.Config{
-			ClientID:     mapCfg["client_id"].(string),
-			ClientSecret: mapCfg["client_secret"].(string),
+			ClientID:     config.ClientId,
+			ClientSecret: config.ClientSecret,
 			Endpoint:     p.OIDCProvider.Endpoint(),
 			RedirectURL:  fmt.Sprintf("/auth/%s/callback", name),
 			Scopes:       []string{"openid", "profile", "email"},
 		}
 		p.OIDCConfig = &oidc.Config{
-			ClientID: mapCfg["client_id"].(string),
+			ClientID: config.ClientId,
 		}
 
 		providers[name] = p

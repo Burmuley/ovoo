@@ -48,14 +48,14 @@ func makeServices(repoFactory *factory.RepoFactory, domain string, dict []string
 	return svcGw, nil
 }
 
-func makeDefaultAdmin(svcGw *services.ServiceGateway, admin map[string]string) error {
+func makeDefaultAdmin(svcGw *services.ServiceGateway, admin config.ApiDefaultAdminConfig) error {
 	adminUser := entities.User{
-		FirstName:    admin["firstName"],
-		LastName:     admin["lastName"],
-		Login:        admin["login"],
+		FirstName:    admin.FirstName,
+		LastName:     admin.LastName,
+		Login:        admin.Login,
 		ID:           entities.NewId(),
 		Type:         entities.AdminUser,
-		PasswordHash: admin["password"],
+		PasswordHash: admin.Password,
 	}
 	if _, err := svcGw.Users.CreatePriv(context.Background(), adminUser); err != nil {
 		if errors.Is(err, entities.ErrDuplicateEntry) {
@@ -70,18 +70,12 @@ func makeDefaultAdmin(svcGw *services.ServiceGateway, admin map[string]string) e
 	return nil
 }
 
-func startApi(cfgPath string) error {
-	// load configuration
-	cfg, err := config.NewParser(cfgPath, "api")
-	if err != nil {
-		return fmt.Errorf("error parsing configuration: %s", err.Error())
-	}
-
+func startApi(cfg config.ApiConfig) error {
 	// logger configuration
 	logger := slog.New(slog.NewTextHandler(
 		os.Stdout,
 		&slog.HandlerOptions{
-			Level: config.GetSLogLevel(cfg.String("log.level")),
+			Level: config.GetSLogLevel(cfg.Log.Level),
 		},
 	))
 	slog.SetDefault(logger)
@@ -94,8 +88,11 @@ func startApi(cfgPath string) error {
 	}
 
 	// database configuration
-	db_drv := cfg.String("database.type")
-	db_config := cfg.StringMap("database.config")
+	db_drv := cfg.Database.DBType
+	db_config := map[string]string{
+		"driver":            cfg.Database.Config.Driver,
+		"connection_string": cfg.Database.Config.ConnectionString,
+	}
 
 	// initialize repo fabric
 	repoFactory, err := factory.New(db_drv, db_config)
@@ -107,28 +104,24 @@ func startApi(cfgPath string) error {
 	ctx := context.TODO()
 
 	// initialize services
-	domain := cfg.String("domain")
-	svcGw, err := makeServices(repoFactory, domain, dict)
+	svcGw, err := makeServices(repoFactory, cfg.Domain, dict)
 	if err != nil {
 		return fmt.Errorf("error initializing services gateway: %w", err)
 	}
 
-	defaultAdminCfg := cfg.StringMap("default_admin")
-	if len(defaultAdminCfg) > 0 {
-		if err := makeDefaultAdmin(svcGw, defaultAdminCfg); err != nil {
+	if len(cfg.DefaultAdmin.Login) > 0 {
+		if err := makeDefaultAdmin(svcGw, cfg.DefaultAdmin); err != nil {
 			return fmt.Errorf("error creating default admin: %w", err)
 		}
 	}
 
 	// initialize REST controller
-	listen_addr := cfg.String("listen_addr")
+	listen_addr := cfg.ListenAddr
 	if len(listen_addr) == 0 {
 		listen_addr = rest.DefaultListenAddr
 	}
 
-	restApi, err := rest.New(
-		listen_addr, logger, svcGw, cfg.String("tls.key"), cfg.String("tls.cert"), cfg.MapAt("oidc"),
-	)
+	restApi, err := rest.New(listen_addr, logger, svcGw, cfg.Tls.Key, cfg.Tls.Cert, cfg.OIDC)
 	if err != nil {
 		return fmt.Errorf("error initializing rest api: %w", err)
 	}

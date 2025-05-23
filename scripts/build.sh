@@ -19,6 +19,9 @@ popd
 
 cp -Rf "$WEBUI_DIR"/dist/* "$OVOO_API_DATA_DIR"
 
+go generate "$PWD/internal/applications/rest"
+go generate "$PWD/internal/config"
+
 if [[ "${TARGET}" == "local" ]]; then
     go build -o "bin/ovoo_${TARGET}" ./cmd/ovoo
 elif [[ "${TARGET}" == "linux" ]]; then

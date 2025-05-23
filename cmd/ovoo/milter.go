@@ -11,34 +11,28 @@ import (
 	"github.com/Burmuley/ovoo/internal/config"
 )
 
-func startMilter(cfgPath string) error {
-	// load configuration
-	cfg, err := config.NewParser(cfgPath, "milter")
-	if err != nil {
-		return fmt.Errorf("error parsing configuration: %w", err)
-	}
-
+func startMilter(cfg config.MilterConfig) error {
 	// logger configuration
 	logger := slog.New(slog.NewTextHandler(
 		os.Stdout,
 		&slog.HandlerOptions{
-			Level: config.GetSLogLevel(cfg.String("log.level")),
+			Level: config.GetSLogLevel(cfg.Log.Level),
 		},
 	))
 	slog.SetDefault(logger)
 
 	// initialize Milter controller
-	listen_addr := cfg.String("listen_addr")
+	listen_addr := cfg.ListenAddr
 	if len(listen_addr) == 0 {
 		listen_addr = milter.DefaultListenAddr
 	}
 
-	ovooApiAddr := cfg.String("api.addr")
-	ovooApiToken := cfg.String("api.auth_token")
+	ovooApiAddr := cfg.Api.Addr
+	ovooApiToken := cfg.Api.AuthToken
 	if ovooApiToken == "" {
 		return errors.New("missing 'auth_token' configuration parameter")
 	}
-	ovooClient, err := milter.NewOvooClient(ovooApiAddr, ovooApiToken, cfg.Bool("api.tls_skip_verify"), cfg.String("domain"))
+	ovooClient, err := milter.NewOvooClient(ovooApiAddr, ovooApiToken, cfg.Api.TlsSkipVerify, cfg.Domain)
 	if err != nil {
 		return fmt.Errorf("error creating Ovoo API client: %w", err)
 	}
