@@ -5,9 +5,12 @@
 
         </div>
         <div v-for="(user, index) in users" :key="user.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">
-            {{ user.first_name }} {{ user.last_name }} ({{ user.login }})
+            <div class="ovoo-item-content">
+                <p>{{ user.first_name }} {{ user.last_name }} ({{ user.login }})</p>
+                <p v-if="user.type"><small>Type: {{ user.type }}</small></p>
+            </div>
             <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
-                <button @click="edit(user)" title="Edit user" style="margin-right: 5px;">Edit</button>
+                <!-- <button @click="edit(user)" title="Edit user" style="margin-right: 5px;">Edit</button> -->
                 <button @click="deleteUser(user.id)" title="Delete user">Delete</button>
             </div>
         </div>

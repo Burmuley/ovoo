@@ -8,6 +8,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# WebUI distribution
+internal/applications/rest/data/webui
+
 node_modules
 .DS_Store
 dist

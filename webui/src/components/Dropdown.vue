@@ -2,7 +2,7 @@
     <div class="filter" :class="isOpen ? 'dropdown-open' : ''" ref="dropdown">
 
         <button v-if="!renderAsLink" class="dropdown-menu-toggle" @click="isOpen = !isOpen">
-            {{ text }}
+            {{ selectedValueText }}
             <i class="fa fa-angle-down" aria-hidden="true"></i>
         </button>
 
@@ -110,6 +110,7 @@ export default {
         return {
             isOpen: false,
             selectedValue: [],
+            selectedValueText: this.text,
             filterInputValue: ''
         }
     },
@@ -189,6 +190,7 @@ export default {
             const value = item.id ? item.id : item.text
 
             this.selectedValue = value
+            this.selectedValueText = item.text
             this.isOpen = false
             this.$emit('filter-selected', value)
 
@@ -239,6 +241,7 @@ export default {
                     }
 
                     this.selectedValue.push(value)
+                    this.selectedValueText = this.text
                     this.$emit('filter-selected', JSON.parse(JSON.stringify(this.selectedValue)))
                 }
 
@@ -246,6 +249,7 @@ export default {
             }
 
             this.selectedValue = value
+            this.selectedValueText = item.text
             this.isOpen = false
             this.$emit('filter-selected', value)
 

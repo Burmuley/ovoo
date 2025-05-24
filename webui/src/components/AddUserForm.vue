@@ -29,7 +29,7 @@
         <div v-if="Object.hasOwn(result, 'status')">
             <div v-if="result.status === 201" class="submit-form success-result">
                 <span>
-                    <p>New user '{{ result.json.email }}' was successfully created.</p>
+                    <p>New user '{{ result.json.login }}' was successfully created.</p>
                 </span>
             </div>
             <div v-else class="submit-form error-result">

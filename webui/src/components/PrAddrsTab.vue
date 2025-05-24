@@ -4,9 +4,12 @@
             <button @click="addPrAddr">Add new Protected Address</button>
         </div>
         <div v-for="(addr, index) in praddrs" :key="addr.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">
-            {{ addr.email }}
+            <div class="ovoo-item-content">
+                <p>{{ addr.email }}</p>
+                <p v-if="addr.metadata.comment"><small>Comment: {{ addr.metadata.comment }}</small></p>
+            </div>
             <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
-                <button @click=" edit(addr)" style="margin-right: 5px;">Edit</button>
+                <!-- <button @click=" edit(addr)" style="margin-right: 5px;">Edit</button> -->
                 <button @click="remove(addr.id)">Delete</button>
             </div>
         </div>
