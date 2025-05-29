@@ -1,35 +1,31 @@
 # Ovoo – Privacy Mail Gateway
 
-Ovoo is a self-hosted privacy mail gateway that enables users to deploy a secure and private email forwarding service on their own DNS domain. It allows you to manage disposable or long-term email aliases that forward to one or more personal mailboxes—keeping your real email address private.
+Ovoo is your personal email privacy guardian that you can host yourself. Imagine creating unlimited unique email addresses that all forward to your real inbox - without ever revealing your actual email address to anyone. Just like premium email privacy services, but completely under your control.
 
-Designed for individuals, small businesses, and communities, Ovoo empowers users to take control of their email privacy without relying on third-party services.
+Whether you're signing up for a newsletter, shopping online, or managing business communications, Ovoo lets you create disposable or permanent email aliases that protect your privacy while ensuring you never miss an important message.
 
 ## Overview
 
-The Ovoo operates a few major entities:
-* `Protected address` - is an email address configured by a user aimed to receive incoming email
-* `Alias` - a randomly generated email configured to forward all incoming emails to one of the Protected addresses keeping it hidden even if you reply to an incoming email
+Ovoo works with two simple concepts:
+* `Protected address` - Your real email address where you want to receive messages
+* `Alias` - A randomly generated email address that forwards messages to your protected address. Even when you reply, your real email stays hidden
 
-To operate Ovoo in a minimal setup only need to have one host running both Ovoo components along with an MTA
-repsonsinble for handling SMTP data transfers.
+Setting up Ovoo is straightforward - you just need one server running the Ovoo software and an email server (MTA) to handle the actual email delivery.
 
-Example Postfix MTA configuration you can find in [examples/postfix](./docs/examples/postfix) subdir.
+You can find example configurations for the Postfix email server in [examples/postfix](./docs/examples/postfix).
 
 ## Components
 
-Architecture of the Ovoo is quite simple and only involves two components that is running from the same binary.
+Ovoo has a simple architecture with just two main parts that run from the same program:
 
 ### Ovoo API
 
-This component is a simple REST API service implemented in Go and plays the core role in the Ovoo ecosystem.
+This is the central brain of Ovoo, providing a REST API service built with Go. It allows you to:
+* Create and manage your email aliases that forward to your real inbox
+* Control user access through modern authentication methods like OpenID Connect (OIDC), API Keys, or simple username/password
+* Use a friendly web interface built with Vue.js to manage everything
 
-You need Ovoo API to:
-* Create and manage email aliases mapped for forwarding to real mailboxes
-* Manage users and access to the API with the following supported options: OpenID Connect (OIDC), API Keys
-or the simplest one - HTTP Basic Authentication
-* Provide a user-friendly web UI built with Vue.js for your users (or yourself only)
-
-The OpenAPI definition you can find in the [openapi.yaml](./openapi.yaml) file in the root of the repository.
+Want to integrate with other tools? Check out the full API documentation in [openapi.yaml](./openapi.yaml).
 
 <p align="left">
     <img width="100%" src="./docs/assets/overview/ovoo_overview.svg" alt="Ovoo overview diagram" />
@@ -48,7 +44,7 @@ The OpenAPI definition you can find in the [openapi.yaml](./openapi.yaml) file i
 
 ### Ovoo Milter
 
-Ovoo Milter on the other hand implements [Sendmail Milter](https://www.postfix.org/MILTER_README.html)
+Ovoo Milter implements [Sendmail Milter](https://www.postfix.org/MILTER_README.html)
 protocol and is aimed to use as filtering layer for any MTA supporting this protocol (for now it's only tested
 with [Postfix](https://postfix.org))
 
