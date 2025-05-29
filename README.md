@@ -13,9 +13,11 @@ The Ovoo operates a few major entities:
 To operate Ovoo in a minimal setup only need to have one host running both Ovoo components along with an MTA
 repsonsinble for handling SMTP data transfers.
 
+Example Postfix MTA configuration you can find in [examples/postfix](./docs/examples/postfix) subdir.
+
 ## Components
 
-Architecture of the Ovoo is quite simple and only involves two components that could be running from the same binary.
+Architecture of the Ovoo is quite simple and only involves two components that is running from the same binary.
 
 ### Ovoo API
 
@@ -30,7 +32,7 @@ or the simplest one - HTTP Basic Authentication
 The OpenAPI definition you can find in the [openapi.yaml](./openapi.yaml) file in the root of the repository.
 
 <p align="left">
-    <img width="100%" src="./docs/assets/ovoo_overview.svg" alt="Ovoo overview diagram" />
+    <img width="100%" src="./docs/assets/overview/ovoo_overview.svg" alt="Ovoo overview diagram" />
 </p>
 
 ## REST API Overview
@@ -58,6 +60,7 @@ Ovoo ecosystem, in other words if it can find an `Alias` in the database, it wil
 - [x] REST API and core mail flow logic
 - [x] Milter and integration with Postfix
 - [x] WebUI for simple access
+- [ ] NoSQL databases support
 - [ ] Chrome browser plugin
 - [ ] Safari browser plugin
 - [ ] IaC for easy deployments to: GCP, AWS, VPS

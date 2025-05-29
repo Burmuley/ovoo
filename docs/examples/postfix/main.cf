@@ -1,0 +1,24 @@
+compatibility_level = 3.8
+myhostname = mx1.ovoomail.domain
+mydomain = ovoomail.domain
+myorigin = $mydomain
+
+# Postfix 2.6+, disable inet services, specifically disable smtpd(8)
+master_service_disable = inet
+
+# No local delivery:
+#
+mydestination =
+local_transport = relay:127.0.0.1:10025
+alias_database =
+alias_maps =
+local_recipient_maps =
+
+# Indexed table macro:
+# (use "hash", ... when cdb is not available)
+#
+default_database_type = cdb
+
+multi_instance_enable = yes
+multi_instance_wrapper = ${command_directory}/postmulti -p --
+multi_instance_directories = /etc/postfix-out /etc/postfix-in
