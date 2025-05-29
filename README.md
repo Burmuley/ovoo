@@ -27,11 +27,7 @@ This is the central brain of Ovoo, providing a REST API service built with Go. I
 
 Want to integrate with other tools? Check out the full API documentation in [openapi.yaml](./openapi.yaml).
 
-<p align="left">
-    <img width="100%" src="./docs/assets/overview/ovoo_overview.svg" alt="Ovoo overview diagram" />
-</p>
-
-## REST API Overview
+#### REST API Overview
 
 | Endpoints group         | Description                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------- |
@@ -50,6 +46,11 @@ with [Postfix](https://postfix.org))
 
 Ovoo Milter is responsible for receiving emails from MTA and checking if the destination address belongs to the
 Ovoo ecosystem, in other words if it can find an `Alias` in the database, it will rewrite incoming email headers to securely forward it to the matching `Protected Address`.
+
+<p align="left">
+    <img width="100%" src="./docs/assets/overview/ovoo_overview.svg" alt="Ovoo overview diagram" />
+</p>
+
 
 ## Roadmap
 
