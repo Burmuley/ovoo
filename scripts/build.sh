@@ -14,13 +14,10 @@ WEBUI_DIR="$PWD/webui"
 OVOO_API_DATA_DIR="$PWD/internal/applications/rest/data/webui"
 
 function build_webui () {
-    pushd "$WEBUI_DIR"
-    npm run build && cp -Rf dist/* ../internal/applications/rest/data/webui
-    popd
+    npm install -C "$WEBUI_DIR"
+    npm run build -C "$WEBUI_DIR"
+    cp -Rf "$WEBUI_DIR"/dist/* "$OVOO_API_DATA_DIR"
 }
-
-
-cp -Rf "$WEBUI_DIR"/dist/* "$OVOO_API_DATA_DIR"
 
 go generate "$PWD/internal/applications/rest"
 go generate "$PWD/internal/config"
