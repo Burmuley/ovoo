@@ -17,10 +17,10 @@ func NewId() Id {
 // Validate checks if the Id is valid
 func (id Id) Validate() error {
 	if len(id) == 0 {
-		return fmt.Errorf("%w: validating id: can not be empty", ErrValidation)
+		return fmt.Errorf("id can not be empty")
 	}
 	if _, err := ulid.Parse(string(id)); err != nil {
-		return fmt.Errorf("%w: validating id: %w", ErrValidation, err)
+		return err
 	}
 
 	return nil

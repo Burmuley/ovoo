@@ -24,6 +24,8 @@ type User struct {
 	PwdHash        string    `gorm:"column:pwd_hash"`
 	FailedAttempts int       `gorm:"column:failed_attempts"`
 	LockoutUntil   time.Time `gorm:"column:lockout_until"`
+	UpdatedByID    string    `gorm:"column:updated_by_id"`
+	UpdatedBy      *User     `gorm:"foreignKey:UpdatedByID"`
 }
 
 // TableName specifies the table name for User
@@ -47,6 +49,8 @@ type Address struct {
 	OwnerID          string          `gorm:"column:owner_id"`
 	Owner            User            `gorm:"foreignKey:OwnerID"`
 	Metadata         AddressMetadata `gorm:"serializer:json;index"`
+	UpdatedByID      string          `gorm:"column:updated_by_id"`
+	UpdatedBy        User            `gorm:"foreignKey:UpdatedByID"`
 }
 
 // TableName specifies the table name for Address
@@ -68,6 +72,8 @@ type Chain struct {
 	CreatedAt         time.Time      `gorm:"column:created_at"`
 	UpdatedAt         time.Time      `gorm:"column:updated_at"`
 	DeletedAt         gorm.DeletedAt `gorm:"columnt:deleted_at"`
+	UpdatedByID       string         `gorm:"column:updated_by_id"`
+	UpdatedBy         User           `gorm:"foreignKey:UpdatedByID"`
 }
 
 // TableName specifies the table name for Chain
@@ -86,6 +92,8 @@ type ApiToken struct {
 	Owner       User      `gorm:"foreignKey:OwnerID"`
 	Expiration  time.Time `gorm:"column:expiration"`
 	Active      bool      `gorm:"column:active"`
+	UpdatedByID string    `gorm:"column:updated_by_id"`
+	UpdatedBy   User      `gorm:"foreignKey:UpdatedByID"`
 }
 
 // TableName specifies the table name for ApiToken

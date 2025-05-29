@@ -1,7 +1,7 @@
 <template>
     <div class="ovoo-items-list">
         <div class="ovoo-item header">
-            <button @click="addUser">Add new User</button>
+            <button @click="addUser">Add new user</button>
 
         </div>
         <div v-for="(user, index) in users" :key="user.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">

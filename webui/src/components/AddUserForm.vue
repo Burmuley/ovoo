@@ -21,7 +21,7 @@
         </div>
         <div class="submit-form row-item">
             <label for="password" style="margin-right: 8px;">Password: </label>
-            <input id="password" v-model=password></input>
+            <input id="password" type="password" v-model=password></input>
         </div>
         <div>
             <button @click=createUser>Create</button>
@@ -34,7 +34,10 @@
             </div>
             <div v-else class="submit-form error-result">
                 <span>
-                    <p style="color: darkreded;">An error occurred while creating new API key: {{ result.json.msg }}</p>
+                    <p style="color: darkreded;">Some errors occurred while creating new User:</p>
+                    <p v-for="error in result.json.errors" style="color: darkreded;">
+                        - {{ error.detail }}
+                    </p>
                 </span>
             </div>
         </div>
@@ -51,7 +54,7 @@ const user_types = ref([
     { id: "admin", text: "admin" },
     { id: "milter", text: "milter" }
 ])
-const userTypeSelected = ref({})
+const userTypeSelected = ref('')
 const login = ref('')
 const first_name = ref('')
 const last_name = ref('')

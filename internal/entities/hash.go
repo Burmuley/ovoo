@@ -21,12 +21,12 @@ func NewHash(s1, s2 string) Hash {
 // It returns an error if the hash length is not 64 characters or if it contains invalid characters.
 func (h Hash) Validate() error {
 	if len(string(h)) != 64 {
-		return fmt.Errorf("%w: validating hash: wrong hash length", ErrValidation)
+		return fmt.Errorf("wrong hash length")
 	}
 
 	reg := regexp.MustCompile("^[a-fA-F0-9]{64}$")
 	if !reg.MatchString(string(h)) {
-		return fmt.Errorf("%w: validating hash: wrong hash pattern", ErrValidation)
+		return fmt.Errorf("wrong hash pattern")
 	}
 
 	return nil

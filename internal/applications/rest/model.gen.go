@@ -99,11 +99,11 @@ type ChainData struct {
 
 // Error defines model for error.
 type Error struct {
-	// Id error id
-	Id float32 `json:"id"`
+	// Detail Error details
+	Detail string `json:"detail"`
 
-	// Msg error description
-	Msg string `json:"msg"`
+	// Status HTTP status
+	Status string `json:"status"`
 }
 
 // ProtectedAddressData defines model for protectedAddressData.
@@ -182,8 +182,7 @@ type DeleteApiTokenResponse = ApiTokenData
 
 // ErrorResponse defines model for errorResponse.
 type ErrorResponse struct {
-	Id  float32 `json:"id"`
-	Msg string  `json:"msg"`
+	Errors []Error `json:"errors"`
 }
 
 // GetAliasDetailsResponse Address of type "alias" data structure

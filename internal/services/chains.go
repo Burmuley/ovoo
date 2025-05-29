@@ -32,16 +32,16 @@ func NewChainsService(domain string, repof *factory.RepoFactory) (*ChainsService
 
 func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
 	if !canGetChain(cuser) {
-		return entities.Chain{}, fmt.Errorf("getting chain: %w", entities.ErrNotAuthorized)
+		return entities.Chain{}, entities.ErrNotAuthorized
 	}
 
 	if err := hash.Validate(); err != nil {
-		return entities.Chain{}, fmt.Errorf("getting chain by hash: parsing hash: %w", err)
+		return entities.Chain{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
 	chain, err := cs.repof.Chain.GetByHash(ctx, hash)
 	if err != nil {
-		return entities.Chain{}, fmt.Errorf("getting chain by hash: %w", err)
+		return entities.Chain{}, err
 	}
 
 	// TODO: add logic to check if addresses in the chain are active (alias or praddr)
@@ -50,16 +50,16 @@ func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, has
 
 func (cs *ChainsService) DeleteByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
 	if !canDeleteChain(cuser) {
-		return entities.Chain{}, fmt.Errorf("getting chain: %w", entities.ErrNotAuthorized)
+		return entities.Chain{}, entities.ErrNotAuthorized
 	}
 
 	if err := hash.Validate(); err != nil {
-		return entities.Chain{}, fmt.Errorf("getting chain by hash: parsing hash: %w", err)
+		return entities.Chain{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
 	chain, err := cs.repof.Chain.Delete(ctx, hash)
 	if err != nil {
-		return entities.Chain{}, fmt.Errorf("deleting chain by hash: %w", err)
+		return entities.Chain{}, err
 	}
 
 	return chain, nil
@@ -67,7 +67,7 @@ func (cs *ChainsService) DeleteByHash(ctx context.Context, cuser entities.User, 
 
 func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEmail, toEmail string, owner entities.User) (entities.Chain, error) {
 	if !canCreateChain(cuser) {
-		return entities.Chain{}, fmt.Errorf("getting chain: %w", entities.ErrNotAuthorized)
+		return entities.Chain{}, entities.ErrNotAuthorized
 	}
 
 	// calculate hash and return corresponding chain if found in the DB
@@ -82,7 +82,7 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 	// (Ovoo don't accept email for outer domains)
 	addrs, err := cs.repof.Address.GetByEmail(ctx, entities.Email(toEmail))
 	if err != nil {
-		return entities.Chain{}, fmt.Errorf("creating chain: getting destination alias: %w", err)
+		return entities.Chain{}, err
 	}
 
 	var alias *entities.Address
@@ -93,19 +93,19 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 	}
 
 	if alias == nil {
-		return entities.Chain{}, fmt.Errorf("%w: creating chain: destination alias not found", entities.ErrValidation)
+		return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrValidation)
 	}
 
 	src, err := checkCreateSrcAddr(ctx, cs.repof, fromEmail, owner)
 	if err != nil {
-		return entities.Chain{}, fmt.Errorf("creating chain: creating source address: %w", err)
+		return entities.Chain{}, fmt.Errorf("creating source address: %w", err)
 	}
 
 	// Generate ReplyAlias(FromAddress, ToAddress)
 	// (creates Address record with ForwardAddress set to original external sender)
 	ralias, err := genReplyAlias(ctx, cs.repof, fromEmail, toEmail, cs.domain, &src, owner)
 	if err != nil {
-		return entities.Chain{}, fmt.Errorf("creating chain: %w", err)
+		return entities.Chain{}, fmt.Errorf("generating reply alias: %w", err)
 	}
 
 	// forward chain
@@ -116,6 +116,7 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 		OrigFromAddress: src,
 		OrigToAddress:   *alias,
 		CreatedAt:       time.Now().UTC(),
+		UpdatedBy:       cuser,
 	}
 
 	// reply chain
@@ -127,11 +128,12 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 		OrigFromAddress: *alias.ForwardAddress,
 		OrigToAddress:   ralias,
 		CreatedAt:       time.Now().UTC(),
+		UpdatedBy:       cuser,
 	}
 
 	// create chains
 	if err := cs.repof.Chain.BatchCreate(ctx, []entities.Chain{fchain, rchain}); err != nil {
-		return entities.Chain{}, fmt.Errorf("creating chains: %w", err)
+		return entities.Chain{}, err
 	}
 
 	return fchain, nil
@@ -140,7 +142,7 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 func genReplyAlias(ctx context.Context, repof *factory.RepoFactory, fromEmail, toEmail, domain string, fwdAddr *entities.Address, owner entities.User) (entities.Address, error) {
 	raliasEmail, _, err := entities.GenReplyAliasEmail(entities.Email(fromEmail), entities.Email(toEmail), domain)
 	if err != nil {
-		return entities.Address{}, fmt.Errorf("generating new reply alias: %w", err)
+		return entities.Address{}, err
 	}
 
 	ralias := entities.Address{
@@ -152,7 +154,7 @@ func genReplyAlias(ctx context.Context, repof *factory.RepoFactory, fromEmail, t
 	}
 
 	if err := repof.Address.Create(ctx, ralias); err != nil {
-		return entities.Address{}, fmt.Errorf("storing new reply alias: %w", err)
+		return entities.Address{}, err
 	}
 
 	return ralias, nil
@@ -186,6 +188,4 @@ func checkCreateSrcAddr(ctx context.Context, repof *factory.RepoFactory, faddr s
 	}
 
 	return srcAddr, nil
-
-	// return entities.Address{}, fmt.Errorf("%w: source address found in DB but is not external address type", entities.ErrValidation)
 }

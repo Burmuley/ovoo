@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/services"
 )
 
@@ -110,6 +109,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 				if err != nil {
 					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr, "msg", err.Error())
 					http.Error(w, "invalid basic credentials", http.StatusUnauthorized)
+					return
 				}
 
 				r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
@@ -149,7 +149,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 						return
 					}
 
-					user, err := svcGw.Users.GetByLogin(r.Context(), entities.Email(userEmail))
+					user, err := svcGw.Users.GetByLogin(r.Context(), userEmail)
 					if err != nil {
 						logger.Error("user from OAuth2 token not found in database", "src", r.RemoteAddr, "error", err.Error())
 						http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)

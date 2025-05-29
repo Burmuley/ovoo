@@ -21,6 +21,9 @@ type ApiToken struct {
 	Owner       User
 	Expiration  time.Time
 	Active      bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	UpdatedBy   User
 }
 
 // NewToken creates a new ApiToken with the given expiration, description, and owner.
@@ -53,15 +56,15 @@ func NewToken(expiration time.Time, name, description string, owner User) (*ApiT
 // Validate checks if the ApiToken's fields are valid.
 func (t *ApiToken) Validate() error {
 	if err := t.ID.Validate(); err != nil {
-		return fmt.Errorf("%w: validating token id: %w", ErrValidation, err)
+		return err
 	}
 
 	if err := t.Owner.Validate(); err != nil {
-		return fmt.Errorf("%w: validating token owner: %w", ErrValidation, err)
+		return fmt.Errorf("validating token owner: %w", err)
 	}
 
 	if len(t.TokenHash) == 0 {
-		return fmt.Errorf("%w: validating token: token value can not be empty", ErrValidation)
+		return fmt.Errorf("token value can not be empty")
 	}
 
 	return nil

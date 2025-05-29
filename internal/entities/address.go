@@ -1,6 +1,9 @@
 package entities
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type AddressType int8
 
@@ -22,12 +25,15 @@ type AddressMetadata struct {
 // It can be of different types (alias, reply alias, protected, or external) and may have
 // a forward address for routing purposes.
 type Address struct {
-	Type           AddressType
 	ID             Id
+	Type           AddressType
 	Email          Email
 	ForwardAddress *Address
 	Owner          User
 	Metadata       AddressMetadata
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	UpdatedBy      User
 }
 
 // Validate checks if the Address object is valid according to the defined rules.
@@ -36,32 +42,32 @@ type Address struct {
 // and owner ID. It also enforces rules specific to protected and external addresses.
 func (a *Address) Validate() error {
 	if err := a.ID.Validate(); err != nil {
-		return fmt.Errorf("%w: error validating address id: %w", ErrValidation, err)
+		return err
 	}
 	// protected address can not have ForwardEmail set
 	if a.Type == ProtectedAddress && a.ForwardAddress != nil {
-		return fmt.Errorf("%w: protected address can not have forward email set", ErrValidation)
+		return fmt.Errorf("protected address can not have forward email set")
 	}
 
 	// external address can not have ForwardEmail set
 	if a.Type == ExternalAddress && a.ForwardAddress != nil {
-		return fmt.Errorf("%w: external address can not have forward email set", ErrValidation)
+		return fmt.Errorf("external address can not have forward email set")
 	}
 
 	// Emails should be valid email
 	if err := a.Email.Validate(); err != nil {
-		return fmt.Errorf("%w: error validating address email: %w", ErrValidation, err)
+		return fmt.Errorf("validating address email: %w", err)
 	}
 
 	if a.Type != ProtectedAddress && a.Type != ExternalAddress {
 		if err := a.ForwardAddress.Validate(); err != nil {
-			return fmt.Errorf("%w: error validating address forward email: %w", ErrValidation, err)
+			return fmt.Errorf("validating address forward email: %w", err)
 		}
 	}
 
 	// owner should be set
 	if err := a.Owner.ID.Validate(); err != nil {
-		return fmt.Errorf("%w: validating owner id: %w", ErrValidation, err)
+		return fmt.Errorf("validating owner: %w", err)
 	}
 
 	return nil

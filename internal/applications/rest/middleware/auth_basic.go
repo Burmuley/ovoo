@@ -24,7 +24,7 @@ import (
 //   - entities.User: The authenticated user if successful
 //   - error: An error if authentication fails (user not found or invalid password)
 func validateBasicAuth(ctx context.Context, username, password string, svcGw *services.ServiceGateway) (entities.User, error) {
-	user, err := svcGw.Users.GetByLogin(ctx, entities.Email(username))
+	user, err := svcGw.Users.GetByLogin(ctx, username)
 	if err != nil {
 		return entities.User{}, err
 	}

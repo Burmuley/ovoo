@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"fmt"
 	"net/mail"
 )
 
@@ -12,7 +11,7 @@ type Email string
 func (e Email) Validate() error {
 	_, err := mail.ParseAddress(string(e))
 	if err != nil {
-		return fmt.Errorf("%w: validating email: %w", ErrValidation, err)
+		return err
 	}
 	return nil
 }

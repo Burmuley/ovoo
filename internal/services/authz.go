@@ -5,7 +5,7 @@ import (
 )
 
 func canGetAliases(cuser entities.User) bool {
-	panic("implement me!")
+	return cuser.Type != entities.MilterUser
 }
 
 func canGetAlias(cuser entities.User, addr entities.Address) bool {

@@ -28,7 +28,10 @@
             </div>
             <div v-else class="submit-form error-result">
                 <span>
-                    <p style="color: darkreded;">An error occurred while creating new API key: {{ result.json.msg }}</p>
+                    <p style="color: darkreded;">Some errors occurred while creating new API key:</p>
+                    <p v-for="error in result.json.errors" style="color: darkreded;">
+                        - {{ error.detail }}
+                    </p>
                 </span>
             </div>
         </div>

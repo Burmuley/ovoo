@@ -73,7 +73,7 @@ func (u *UserGORMRepo) GetById(ctx context.Context, id entities.Id) (entities.Us
 }
 
 // GetByLogin retrieves a user from the database by login (email).
-func (u *UserGORMRepo) GetByLogin(ctx context.Context, login entities.Email) (entities.User, error) {
+func (u *UserGORMRepo) GetByLogin(ctx context.Context, login string) (entities.User, error) {
 	user := User{}
 	if err := u.db.WithContext(ctx).Model(&User{}).Where("login = ?", login).First(&user).Error; err != nil {
 		return entities.User{}, wrapGormError(err)

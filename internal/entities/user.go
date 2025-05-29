@@ -46,28 +46,32 @@ func UserTypeItoa(uInt int) string {
 
 // User represents a user in the system with various attributes.
 type User struct {
-	Type           UserType
 	ID             Id
+	Type           UserType
 	Login          string
 	FirstName      string
 	LastName       string
 	PasswordHash   string
 	FailedAttempts int
 	LockoutUntil   time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	UpdatedBy      *User
+	CreatedBy      *User
 }
 
 // Validate checks if the User object is valid and returns an error if not.
 func (u User) Validate() error {
 	if err := u.ID.Validate(); err != nil {
-		return fmt.Errorf("%w: validating user: %w", ErrValidation, err)
+		return err
 	}
 
 	if len(u.Login) == 0 {
-		return fmt.Errorf("%w: validating user: login can not be empty", ErrValidation)
+		return fmt.Errorf("login can not be empty")
 	}
 
 	if u.Type > 2 {
-		return fmt.Errorf("%w: validating user: invalid user type", ErrValidation)
+		return fmt.Errorf("invalid user type")
 	}
 
 	return nil

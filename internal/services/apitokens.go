@@ -10,7 +10,7 @@ import (
 )
 
 type ApiTokensService struct {
-	repoFactory *factory.RepoFactory
+	repof *factory.RepoFactory
 }
 
 // NewApiTokensService creates a new ApiTokensService instance.
@@ -19,13 +19,13 @@ func NewApiTokensService(repoFabric *factory.RepoFactory) (*ApiTokensService, er
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
-	return &ApiTokensService{repoFactory: repoFabric}, nil
+	return &ApiTokensService{repof: repoFabric}, nil
 }
 
 // GetById retrieves an API token by ID without validating ownership.
 // This should only be used in trusted contexts.
 func (t *ApiTokensService) GetById(ctx context.Context, tokenId entities.Id) (entities.ApiToken, error) {
-	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
+	token, err := t.repof.ApiTokens.GetById(ctx, tokenId)
 	if err != nil {
 		return entities.ApiToken{}, err
 	}
@@ -42,7 +42,7 @@ func (t *ApiTokensService) GetByIdCurUser(ctx context.Context, cuser entities.Us
 	}
 
 	if !canGetApiToken(cuser, token) {
-		return entities.ApiToken{}, fmt.Errorf("getting token: %w", entities.ErrNotAuthorized)
+		return entities.ApiToken{}, entities.ErrNotAuthorized
 	}
 
 	return token, nil
@@ -51,7 +51,7 @@ func (t *ApiTokensService) GetByIdCurUser(ctx context.Context, cuser entities.Us
 // GetAll retrieves all API tokens belonging to the specified owner.
 // Returns an error if owner ID validation fails.
 func (t *ApiTokensService) GetAll(ctx context.Context, cuser entities.User) ([]entities.ApiToken, error) {
-	tokens, err := t.repoFactory.ApiTokens.GetAllForUser(ctx, cuser.ID)
+	tokens, err := t.repof.ApiTokens.GetAllForUser(ctx, cuser.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (t *ApiTokensService) GetAll(ctx context.Context, cuser entities.User) ([]e
 // or token creation fails.
 func (t *ApiTokensService) Create(ctx context.Context, cuser entities.User, name, description string, expireIn int) (entities.ApiToken, error) {
 	if !canCreateApiToken(cuser) {
-		return entities.ApiToken{}, fmt.Errorf("creating token: %w", entities.ErrNotAuthorized)
+		return entities.ApiToken{}, entities.ErrNotAuthorized
 	}
 
 	if name == "" {
@@ -76,11 +76,12 @@ func (t *ApiTokensService) Create(ctx context.Context, cuser entities.User, name
 	}
 	token, err := entities.NewToken(time.Now().Add(time.Duration(expireIn*24)*time.Hour), name, description, cuser)
 	if err != nil {
-		return entities.ApiToken{}, fmt.Errorf("generating new token: %w", err)
+		return entities.ApiToken{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
 	}
 
-	if err := t.repoFactory.ApiTokens.Create(ctx, *token); err != nil {
-		return entities.ApiToken{}, fmt.Errorf("creating new token: %w", err)
+	token.UpdatedBy = cuser
+	if err := t.repof.ApiTokens.Create(ctx, *token); err != nil {
+		return entities.ApiToken{}, err
 	}
 
 	return *token, nil
@@ -90,13 +91,13 @@ func (t *ApiTokensService) Create(ctx context.Context, cuser entities.User, name
 // Updates token name, description, and/or active status based on the provided non-nil values.
 // Returns an error if trying to activate an expired token.
 func (t *ApiTokensService) Update(ctx context.Context, cuser entities.User, tokenId entities.Id, name, description *string, active *bool) (entities.ApiToken, error) {
-	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
+	token, err := t.repof.ApiTokens.GetById(ctx, tokenId)
 	if err != nil {
-		return entities.ApiToken{}, fmt.Errorf("updating token: %w", err)
+		return entities.ApiToken{}, err
 	}
 
 	if !canUpdateApiToken(cuser, token) {
-		return entities.ApiToken{}, fmt.Errorf("deleting token: %w", entities.ErrNotAuthorized)
+		return entities.ApiToken{}, entities.ErrNotAuthorized
 	}
 
 	if name != nil {
@@ -109,14 +110,15 @@ func (t *ApiTokensService) Update(ctx context.Context, cuser entities.User, toke
 
 	if active != nil {
 		if *active == true && token.Expired() {
-			return entities.ApiToken{}, fmt.Errorf("updating token: can not activate expired token")
+			return entities.ApiToken{}, fmt.Errorf("%w: can not activate expired token", entities.ErrValidation)
 		}
 		token.Active = *active
 	}
 
-	token, err = t.repoFactory.ApiTokens.Update(ctx, token)
+	token.UpdatedBy = cuser
+	token, err = t.repof.ApiTokens.Update(ctx, token)
 	if err != nil {
-		return entities.ApiToken{}, fmt.Errorf("updating token: %w", err)
+		return entities.ApiToken{}, err
 	}
 
 	return token, nil
@@ -125,14 +127,15 @@ func (t *ApiTokensService) Update(ctx context.Context, cuser entities.User, toke
 // Delete removes an API token with the specified ID.
 // Permanently removes the token from the repository.
 func (t *ApiTokensService) Delete(ctx context.Context, cuser entities.User, tokenId entities.Id) error {
-	token, err := t.repoFactory.ApiTokens.GetById(ctx, tokenId)
+	token, err := t.repof.ApiTokens.GetById(ctx, tokenId)
 	if err != nil {
 		return err
 	}
 
 	if !canDeleteApiToken(cuser, token) {
-		return fmt.Errorf("deleting token: %w", entities.ErrNotAuthorized)
+		return entities.ErrNotAuthorized
 	}
 
-	return t.repoFactory.ApiTokens.Delete(ctx, tokenId)
+	token.UpdatedBy = cuser
+	return t.repof.ApiTokens.Delete(ctx, tokenId)
 }

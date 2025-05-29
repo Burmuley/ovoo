@@ -3,6 +3,7 @@ package rest
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 // successResponse writes a JSON-encoded success response to the http.ResponseWriter.
@@ -39,8 +40,12 @@ func (c *Application) errorLogNResponse(w http.ResponseWriter, operation string,
 	c.logger.Error(operation, "error", opErr.Error())
 	st_code := statusFErr(opErr)
 	err_response := ErrorResponse{
-		Id:  float32(st_code),
-		Msg: opErr.Error(),
+		Errors: []Error{
+			{
+				Status: strconv.Itoa(st_code),
+				Detail: opErr.Error(),
+			},
+		},
 	}
 	errBytes, _ := json.Marshal(err_response)
 	w.WriteHeader(st_code)

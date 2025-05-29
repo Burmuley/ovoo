@@ -11,6 +11,9 @@ lerna-debug.log*
 # WebUI distribution
 internal/applications/rest/data/webui
 
+# exclude local binary builds
+bin/
+
 node_modules
 .DS_Store
 dist
@@ -55,3 +58,5 @@ config*.json
 # TLS data not added by default
 *.pem
 *.p12
+# Added by goreleaser init:
+dist/

@@ -1,7 +1,7 @@
 <template>
     <div class="ovoo-items-list">
         <div class="ovoo-item header">
-            <button @click="addPrAddr">Add new Protected Address</button>
+            <button @click="addPrAddr">Add new Protected address</button>
         </div>
         <div v-for="(addr, index) in praddrs" :key="addr.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">
             <div class="ovoo-item-content">

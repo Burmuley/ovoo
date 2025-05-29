@@ -13,6 +13,8 @@ type Chain struct {
 	OrigFromAddress Address
 	OrigToAddress   Address
 	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	UpdatedBy       User
 }
 
 // Validate checks the integrity of the Chain structure.
@@ -21,24 +23,21 @@ type Chain struct {
 // Returns an error if any validation fails.
 func (c Chain) Validate() error {
 	if err := c.Hash.Validate(); err != nil {
-		return fmt.Errorf("%w: validating chain hash: %w", ErrValidation, err)
+		return err
 	}
 
 	if err := c.FromAddress.Validate(); err != nil {
-		return fmt.Errorf("%w: validating chain from address: %w", ErrValidation, err)
+		return fmt.Errorf("validating chain from address: %w", err)
 	}
 
 	if err := c.ToAddress.Validate(); err != nil {
-		return fmt.Errorf("%w: validating chain to address: %w", ErrValidation, err)
+		return fmt.Errorf("validating chain to address: %w", err)
 	}
 
-	// TODO: this validation is incorrect since FromAddress and ToAddress contains target addresses
-	// aimed to be used as replacements in milter, whereas Hash contains a has taken from original
-	// FromAddress+ToAddress pair
-	// hash := NewHash(string(c.FromAddress.Email), string(c.ToAddress.Email))
-	// if hash != c.Hash {
-	// 	return fmt.Errorf("%w: validating chain: emails produced different hash", ErrValidation)
-	// }
+	hash := NewHash(string(c.OrigFromAddress.Email), string(c.OrigToAddress.Email))
+	if hash != c.Hash {
+		return fmt.Errorf("emails produced different hash")
+	}
 
 	return nil
 }

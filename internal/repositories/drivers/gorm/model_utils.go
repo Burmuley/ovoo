@@ -4,15 +4,27 @@ import "github.com/Burmuley/ovoo/internal/entities"
 
 // userFromEntity converts an entities.User to a User
 func userFromEntity(e entities.User) User {
-	u := User{}
-	u.ID = e.ID.String()
-	u.FirstName = e.FirstName
-	u.LastName = e.LastName
-	u.Login = e.Login
-	u.Type = int(e.Type)
-	u.PwdHash = e.PasswordHash
-	u.FailedAttempts = e.FailedAttempts
-	u.LockoutUntil = e.LockoutUntil
+	updatedBy := User{}
+	if e.UpdatedBy != nil {
+		updatedBy = userFromEntity(*e.UpdatedBy)
+	}
+
+	u := User{
+		Model: Model{
+			ID:        string(e.ID),
+			UpdatedAt: e.UpdatedAt,
+			CreatedAt: e.UpdatedAt,
+		},
+		FirstName:      e.FirstName,
+		LastName:       e.LastName,
+		Login:          e.Login,
+		Type:           int(e.Type),
+		PwdHash:        e.PasswordHash,
+		FailedAttempts: e.FailedAttempts,
+		LockoutUntil:   e.LockoutUntil,
+		UpdatedBy:      &updatedBy,
+	}
+
 	return u
 }
 
@@ -28,6 +40,11 @@ func userFromEntityList(eusers []entities.User) []User {
 
 // userToEntity converts a User to an entities.User
 func userToEntity(u User) entities.User {
+	updatedBy := entities.User{}
+	if u.UpdatedBy != nil {
+		updatedBy = userToEntity(*u.UpdatedBy)
+	}
+
 	return entities.User{
 		ID:             entities.Id(u.ID),
 		FirstName:      u.FirstName,
@@ -37,13 +54,20 @@ func userToEntity(u User) entities.User {
 		PasswordHash:   u.PwdHash,
 		LockoutUntil:   u.LockoutUntil,
 		FailedAttempts: u.FailedAttempts,
+		UpdatedAt:      u.UpdatedAt,
+		CreatedAt:      u.UpdatedAt,
+		UpdatedBy:      &updatedBy,
 	}
 }
 
 // addressFromEntity converts an entities.Address to an Address
 func addressFromEntity(e entities.Address) Address {
 	addr := Address{
-		Model:          Model{ID: string(e.ID)},
+		Model: Model{
+			ID:        string(e.ID),
+			UpdatedAt: e.UpdatedAt,
+			CreatedAt: e.UpdatedAt,
+		},
 		Email:          e.Email.String(),
 		ForwardAddress: nil,
 		Owner:          userFromEntity(e.Owner),
@@ -52,6 +76,7 @@ func addressFromEntity(e entities.Address) Address {
 			Comment:     e.Metadata.Comment,
 			ServiceName: e.Metadata.ServiceName,
 		},
+		UpdatedBy: userFromEntity(e.UpdatedBy),
 	}
 	if e.ForwardAddress != nil {
 		fa := addressFromEntity(*e.ForwardAddress)
@@ -83,6 +108,9 @@ func addressToEntity(a Address) entities.Address {
 			Comment:     a.Metadata.Comment,
 			ServiceName: a.Metadata.ServiceName,
 		},
+		UpdatedAt: a.UpdatedAt,
+		CreatedAt: a.UpdatedAt,
+		UpdatedBy: userToEntity(a.UpdatedBy),
 	}
 
 	if a.ForwardAddress != nil {
@@ -111,6 +139,8 @@ func chainFromEntity(e entities.Chain) Chain {
 		ToAddress:       addressFromEntity(e.ToAddress),
 		OrigFromAddress: addressFromEntity(e.OrigFromAddress),
 		OrigToAddress:   addressFromEntity(e.OrigToAddress),
+		UpdatedAt:       e.UpdatedAt,
+		UpdatedBy:       userFromEntity(e.UpdatedBy),
 	}
 }
 
@@ -132,13 +162,19 @@ func chainToEntity(e Chain) entities.Chain {
 		OrigFromAddress: addressToEntity(e.OrigFromAddress),
 		OrigToAddress:   addressToEntity(e.OrigToAddress),
 		CreatedAt:       e.CreatedAt,
+		UpdatedAt:       e.UpdatedAt,
+		UpdatedBy:       userToEntity(e.UpdatedBy),
 	}
 }
 
 // apiTokenFromEntity converts an entities.ApiToken to an ApiToken
 func apiTokenFromEntity(e entities.ApiToken) ApiToken {
 	return ApiToken{
-		Model:       Model{ID: e.ID.String()},
+		Model: Model{
+			ID:        e.ID.String(),
+			CreatedAt: e.CreatedAt,
+			UpdatedAt: e.UpdatedAt,
+		},
 		Name:        e.Name,
 		TokenHash:   e.TokenHash,
 		Salt:        e.Salt,
@@ -146,6 +182,7 @@ func apiTokenFromEntity(e entities.ApiToken) ApiToken {
 		Owner:       userFromEntity(e.Owner),
 		Expiration:  e.Expiration,
 		Active:      e.Active,
+		UpdatedBy:   userFromEntity(e.UpdatedBy),
 	}
 }
 
@@ -169,5 +206,8 @@ func apiTokenToEntity(t ApiToken) entities.ApiToken {
 		Owner:       userToEntity(t.Owner),
 		Expiration:  t.Expiration,
 		Active:      t.Active,
+		CreatedAt:   t.CreatedAt,
+		UpdatedAt:   t.UpdatedAt,
+		UpdatedBy:   userToEntity(t.UpdatedBy),
 	}
 }

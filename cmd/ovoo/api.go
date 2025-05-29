@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 
 	"github.com/Burmuley/ovoo/internal/applications/rest"
 	"github.com/Burmuley/ovoo/internal/config"
-	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 	"github.com/Burmuley/ovoo/internal/services"
 )
@@ -48,27 +46,27 @@ func makeServices(repoFactory *factory.RepoFactory, domain string, dict []string
 	return svcGw, nil
 }
 
-func makeDefaultAdmin(svcGw *services.ServiceGateway, admin config.ApiDefaultAdminConfig) error {
-	adminUser := entities.User{
-		FirstName:    admin.FirstName,
-		LastName:     admin.LastName,
-		Login:        admin.Login,
-		ID:           entities.NewId(),
-		Type:         entities.AdminUser,
-		PasswordHash: admin.Password,
-	}
-	if _, err := svcGw.Users.CreatePriv(context.Background(), adminUser); err != nil {
-		if errors.Is(err, entities.ErrDuplicateEntry) {
-			slog.Info("default admin user already present in the repository, not creating")
-			return nil
-		} else {
-			return err
-		}
-	}
+// func makeDefaultAdmin(svcGw *services.ServiceGateway, admin config.ApiDefaultAdminConfig) error {
+// 	adminUser := entities.User{
+// 		FirstName:    admin.FirstName,
+// 		LastName:     admin.LastName,
+// 		Login:        admin.Login,
+// 		ID:           entities.NewId(),
+// 		Type:         entities.AdminUser,
+// 		PasswordHash: admin.Password,
+// 	}
+// 	if _, err := svcGw.Users.CreatePriv(context.Background(), adminUser); err != nil {
+// 		if errors.Is(err, entities.ErrDuplicateEntry) {
+// 			slog.Info("default admin user already present in the repository, not creating")
+// 			return nil
+// 		} else {
+// 			return err
+// 		}
+// 	}
 
-	slog.Info("created default admin user")
-	return nil
-}
+// 	slog.Info("created default admin user")
+// 	return nil
+// }
 
 func startApi(cfg config.ApiConfig) error {
 	// logger configuration
@@ -95,7 +93,7 @@ func startApi(cfg config.ApiConfig) error {
 	}
 
 	// initialize repo fabric
-	repoFactory, err := factory.New(db_drv, db_config)
+	repoFactory, err := factory.New(db_drv, db_config, &cfg.DefaultAdmin, logger)
 	if err != nil {
 		return fmt.Errorf("error initializing repository: %w", err)
 	}
@@ -109,11 +107,11 @@ func startApi(cfg config.ApiConfig) error {
 		return fmt.Errorf("error initializing services gateway: %w", err)
 	}
 
-	if len(cfg.DefaultAdmin.Login) > 0 {
-		if err := makeDefaultAdmin(svcGw, cfg.DefaultAdmin); err != nil {
-			return fmt.Errorf("error creating default admin: %w", err)
-		}
-	}
+	// if len(cfg.DefaultAdmin.Login) > 0 {
+	// 	if err := makeDefaultAdmin(svcGw, cfg.DefaultAdmin); err != nil {
+	// 		return fmt.Errorf("error creating default admin: %w", err)
+	// 	}
+	// }
 
 	// initialize REST controller
 	listen_addr := cfg.ListenAddr

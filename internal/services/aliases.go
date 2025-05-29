@@ -12,7 +12,7 @@ import (
 
 // AliasesService handles operations related to alias addresses.
 type AliasesService struct {
-	repoFactory     *factory.RepoFactory
+	repof           *factory.RepoFactory
 	domain          string
 	wordsDictionary []string
 }
@@ -31,7 +31,7 @@ func NewAliasesService(domain string, wordsDict []string, repoFabric *factory.Re
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
-	return &AliasesService{repoFactory: repoFabric, domain: domain, wordsDictionary: wordsDict}, nil
+	return &AliasesService{repof: repoFabric, domain: domain, wordsDictionary: wordsDict}, nil
 }
 
 // Create generates a new alias address and stores it.
@@ -42,7 +42,7 @@ func (als *AliasesService) Create(
 	metadata entities.AddressMetadata,
 ) (entities.Address, error) {
 	if !canCreateAlias(cuser) {
-		return entities.Address{}, fmt.Errorf("creating alias: %w", entities.ErrNotAuthorized)
+		return entities.Address{}, entities.ErrNotAuthorized
 	}
 
 	if err := protAddr.Validate(); err != nil {
@@ -51,7 +51,7 @@ func (als *AliasesService) Create(
 
 	aliasEmail, err := entities.GenAliasEmail(als.domain, als.wordsDictionary)
 	if err != nil {
-		return entities.Address{}, fmt.Errorf("creating alias: %w", err)
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
 	}
 
 	alias := entities.Address{
@@ -61,14 +61,15 @@ func (als *AliasesService) Create(
 		ForwardAddress: &protAddr,
 		Metadata:       metadata,
 		Owner:          cuser,
+		UpdatedBy:      cuser,
 	}
 
 	if err := alias.Validate(); err != nil {
-		return entities.Address{}, fmt.Errorf("creating alias: %w", err)
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	if err := als.repoFactory.Address.Create(ctx, alias); err != nil {
-		return entities.Address{}, fmt.Errorf("creating alias: %w", err)
+	if err := als.repof.Address.Create(ctx, alias); err != nil {
+		return entities.Address{}, err
 	}
 
 	return alias, nil
@@ -77,16 +78,16 @@ func (als *AliasesService) Create(
 // Update modifies an existing alias address.
 func (als *AliasesService) Update(ctx context.Context, cuser entities.User, alias entities.Address) (entities.Address, error) {
 	if !canUpdateAlias(cuser, alias) {
-		return entities.Address{}, fmt.Errorf("updating alias: %w", entities.ErrNotAuthorized)
+		return entities.Address{}, entities.ErrNotAuthorized
 	}
 
 	if err := alias.Validate(); err != nil {
 		return entities.Address{}, err
 	}
 
-	cur, err := als.repoFactory.Address.GetById(ctx, alias.ID)
+	cur, err := als.repof.Address.GetById(ctx, alias.ID)
 	if err != nil {
-		return entities.Address{}, fmt.Errorf("updating alias: %w", err)
+		return entities.Address{}, err
 	}
 
 	// validate fields
@@ -109,8 +110,9 @@ func (als *AliasesService) Update(ctx context.Context, cuser entities.User, alia
 		return entities.Address{}, fmt.Errorf("%w: alias owner can not be changed", entities.ErrValidation)
 	}
 
-	if err := als.repoFactory.Address.Update(ctx, alias); err != nil {
-		return entities.Address{}, fmt.Errorf("updating alias: %w", err)
+	alias.UpdatedBy = cuser
+	if err := als.repof.Address.Update(ctx, alias); err != nil {
+		return entities.Address{}, err
 	}
 
 	return alias, nil
@@ -118,6 +120,10 @@ func (als *AliasesService) Update(ctx context.Context, cuser entities.User, alia
 
 // GetAll retrieves all alias addresses for a given owner.
 func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.Address, error) {
+	if !canGetAliases(cuser) {
+		return []entities.Address{}, entities.ErrNotAuthorized
+	}
+
 	if filters == nil {
 		filters = make(map[string][]string)
 	}
@@ -138,9 +144,9 @@ func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filt
 	}
 
 	filters["type"] = []string{strconv.Itoa(entities.AliasAddress)}
-	aliases, err := als.repoFactory.Address.GetAll(ctx, filters)
+	aliases, err := als.repof.Address.GetAll(ctx, filters)
 	if err != nil {
-		return nil, fmt.Errorf("getting aliases: %w", err)
+		return nil, err
 	}
 
 	return aliases, nil
@@ -149,16 +155,16 @@ func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filt
 // GetById retrieves an alias address by its ID.
 func (als *AliasesService) GetById(ctx context.Context, cuser entities.User, id entities.Id) (entities.Address, error) {
 	if err := id.Validate(); err != nil {
-		return entities.Address{}, fmt.Errorf("getting alias by id: %w", err)
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	alias, err := als.repoFactory.Address.GetById(ctx, id)
+	alias, err := als.repof.Address.GetById(ctx, id)
 	if err != nil {
-		return entities.Address{}, fmt.Errorf("getting alias by id: %w", err)
+		return entities.Address{}, err
 	}
 
 	if !canGetAlias(cuser, alias) {
-		return entities.Address{}, fmt.Errorf("getting alias by id: %w", entities.ErrNotAuthorized)
+		return entities.Address{}, entities.ErrNotAuthorized
 	}
 
 	return alias, nil
@@ -166,20 +172,21 @@ func (als *AliasesService) GetById(ctx context.Context, cuser entities.User, id 
 
 func (als *AliasesService) DeleteById(ctx context.Context, cuser entities.User, id entities.Id) error {
 	if err := id.Validate(); err != nil {
-		return fmt.Errorf("deleting alias by id: %w", err)
+		return fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	alias, err := als.repoFactory.Address.GetById(ctx, id)
+	alias, err := als.repof.Address.GetById(ctx, id)
 	if err != nil {
-		return fmt.Errorf("deleting alias by id: %w", err)
+		return err
 	}
 
 	if !canDeleteAlias(cuser, alias) {
-		return fmt.Errorf("deleting alias by id: %w", entities.ErrNotAuthorized)
+		return entities.ErrNotAuthorized
 	}
 
-	if err := als.repoFactory.Address.DeleteById(ctx, id); err != nil {
-		return fmt.Errorf("deleting alias by id: %w", err)
+	alias.UpdatedBy = cuser
+	if err := als.repof.Address.DeleteById(ctx, id); err != nil {
+		return err
 	}
 
 	return nil
