@@ -1,0 +1,34 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+    # Terminal theme code
+    theme-id: 300
+  }
+}
+
+classes: {
+    email_recipient: {
+        shape: person
+        width: 90
+    }
+}
+
+ext_sender: External Sender
+ext_sender.class: email_recipient
+
+protected: Protected recepient
+protected.class: email_recipient
+
+ovoo_gw: Ovoo Gateway
+ovoo_gw.mta_in: MTA-In
+ovoo_gw.milter: Ovoo Milter
+ovoo_gw.api: Ovoo API
+ovoo_gw.mta_out: MTA-Out
+
+ext_sender -> ovoo_gw.mta_in: from: spam@external.com\nto: alias-q2z@ovoomail.org
+ovoo_gw.mta_in -> ovoo_gw.milter: process mail for\nalias-q2z@ovoomail.org
+ovoo_gw.milter -> ovoo_gw.api: check if chain\n'sender -> alias'\nexists
+ovoo_gw.api -> ovoo_gw.milter: provide new emails\nfor `from` and `to`
+ovoo_gw.milter -> ovoo_gw.mta_in: rewrite email headers
+ovoo_gw.mta_in -> ovoo_gw.mta_out: pass for DKIM\nand delivery
+ovoo_gw.mta_out -> protected: from: spam_at_external_com_abc123@ovoomail.org\nto: protected@mymail.com
