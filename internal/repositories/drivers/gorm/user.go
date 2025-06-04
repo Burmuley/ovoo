@@ -83,27 +83,12 @@ func (u *UserGORMRepo) GetByLogin(ctx context.Context, login string) (entities.U
 }
 
 // GetAll retrieves all users from the database.
-func (u *UserGORMRepo) GetAll(ctx context.Context, filters map[string][]string) ([]entities.User, error) {
+func (u *UserGORMRepo) GetAll(ctx context.Context, filter entities.UserFilter) ([]entities.User, entities.PaginationMetadata, error) {
 	gorm_users := make([]User, 0)
 	stmt := u.db.WithContext(ctx).Model(&User{})
-
-	for filter, vals := range filters {
-		switch filter {
-		case "type":
-			types := make([]int, 0, len(vals))
-			for _, val := range vals {
-				types = append(types, entities.UserTypeAtoi(val))
-			}
-			stmt.Where("type IN ?", types)
-		case "id":
-			stmt.Where("id IN ?", vals)
-		case "login":
-			stmt.Where("login IN ?", vals)
-		}
-	}
-
+	count := applyUserFilter(stmt, filter)
 	if err := stmt.Find(&gorm_users).Error; err != nil {
-		return nil, wrapGormError(err)
+		return nil, entities.PaginationMetadata{}, wrapGormError(err)
 	}
 
 	users := make([]entities.User, 0, len(gorm_users))
@@ -111,5 +96,24 @@ func (u *UserGORMRepo) GetAll(ctx context.Context, filters map[string][]string) 
 		users = append(users, userToEntity(user))
 	}
 
-	return users, nil
+	return users, entities.GetPaginationMetadata(filter.Page, filter.PageSize, *count), nil
+}
+
+func applyUserFilter(stmt *gorm.DB, filter entities.UserFilter) *int64 {
+	if filter.Ids != nil {
+		stmt.Where("id IN ?", filter.Ids)
+	}
+
+	if filter.Types != nil {
+		stmt.Where("type IN ?", filter.Types)
+	}
+
+	if filter.Logins != nil {
+		stmt.Where("login IN ?", filter.Logins)
+	}
+
+	var count int64
+	stmt.Count(&count)
+	stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
+	return &count
 }

@@ -46,10 +46,12 @@ const praddrSelected = ref('')
 const svcname = ref('')
 const comment = ref('')
 const result = ref({})
+const praddrs_data = ref({})
 
 const load = async () => {
     const res = await apiFetch('/api/v1/praddrs')
-    const finalRes = await res.json()
+    praddrs_data.value = await res.json()
+    const finalRes = praddrs_data.value.protected_addresses
     for (let idx in finalRes) {
         praddrs.value.push({ id: finalRes[idx].id, text: finalRes[idx].email })
     }
@@ -57,7 +59,6 @@ const load = async () => {
 
 const onPraddrSelected = (selected) => {
     praddrSelected.value = selected
-    console.log("selected: ", selected)
 }
 
 const createAlias = async () => {

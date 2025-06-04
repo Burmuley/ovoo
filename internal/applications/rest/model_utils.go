@@ -137,3 +137,25 @@ func tokenTApiTokenDataOnCreate(token entities.ApiToken) ApiTokenDataOnCreate {
 		ApiToken:    token.Token,
 	}
 }
+
+/*
+pgmTMetadata converts an entities.PaginationMetadata object to a PaginationMetadata response object.
+
+Parameters:
+  - pgm: entities.PaginationMetadata
+    The internal pagination metadata from the entities package.
+
+Returns:
+  - PaginationMetadata
+    The API-ready pagination metadata, with all numeric fields
+    converted to float32.
+*/
+func pgmTMetadata(pgm entities.PaginationMetadata) PaginationMetadata {
+	return PaginationMetadata{
+		CurrentPage:  float32(pgm.CurrentPage),
+		FirstPage:    float32(pgm.FirstPage),
+		LastPage:     float32(pgm.LastPage),
+		PageSize:     float32(pgm.PageSize),
+		TotalRecords: float32(pgm.TotalRecords),
+	}
+}

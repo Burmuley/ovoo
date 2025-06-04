@@ -248,3 +248,8 @@ div {
     display: flex;
     width: 70%;
 }
+
+.page-button {
+    background: #f9f9f9;
+    border: 0;
+}

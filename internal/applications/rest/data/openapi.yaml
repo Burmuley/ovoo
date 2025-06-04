@@ -811,6 +811,25 @@ components:
       required:
         - user
         - password
+    paginationMetadata:
+      type: object
+      properties:
+        current_page:
+          type: number
+        page_size:
+          type: number
+        first_page:
+          type: number
+        last_page:
+          type: number
+        total_records:
+          type: number
+      required:
+        - current_page
+        - page_size
+        - first_page
+        - last_page
+        - total_records
   securitySchemes:
     ApiToken:
       type: apiKey
@@ -1020,9 +1039,17 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/aliasData"
+            type: object
+            properties:
+              pagination_metadata:
+                $ref: "#/components/schemas/paginationMetadata"
+              aliases:
+                type: array
+                items:
+                  $ref: "#/components/schemas/aliasData"
+            required:
+              - pagination_metadata
+              - aliases
       description: A list of aliases
     getAliasDetailsResponse:
       description: Response containing detailed alias address data
@@ -1050,9 +1077,18 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/userData"
+            schema:
+            type: object
+            properties:
+              pagination_metadata:
+                $ref: "#/components/schemas/paginationMetadata"
+              users:
+                type: array
+                items:
+                  $ref: "#/components/schemas/userData"
+            required:
+              - pagination_metadata
+              - users
       description: A list of users
     getUserDetailsResponse:
       description: Response containing detailed user data
@@ -1081,9 +1117,18 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/protectedAddressData"
+            schema:
+            type: object
+            properties:
+              pagination_metadata:
+                $ref: "#/components/schemas/paginationMetadata"
+              protected_addresses:
+                type: array
+                items:
+                  $ref: "#/components/schemas/protectedAddressData"
+            required:
+              - pagination_metadata
+              - protected_addresses
     getPrAddrDetailsResponse:
       description: Response containing detailed protected address data
       headers: {}

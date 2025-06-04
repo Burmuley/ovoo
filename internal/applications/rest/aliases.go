@@ -19,24 +19,9 @@ func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filling filters
-	filters := make(map[string][]string)
-	if owners, ok := r.URL.Query()["id"]; ok {
-		filters["owner"] = owners
-	}
+	filters := readFilters(r, []string{"owner", "id", "service_name", "email", "page_size", "page"})
 
-	if ids, ok := r.URL.Query()["id"]; ok {
-		filters["id"] = ids
-	}
-
-	if service_names, ok := r.URL.Query()["service_name"]; ok {
-		filters["service_name"] = service_names
-	}
-
-	if emails, ok := r.URL.Query()["email"]; ok {
-		filters["email"] = emails
-	}
-
-	aliases, err := a.svcGw.Aliases.GetAll(a.context, cuser, filters)
+	aliases, pgm, err := a.svcGw.Aliases.GetAll(a.context, cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting aliases", err)
 		return
@@ -47,7 +32,10 @@ func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 		aliasData = append(aliasData, addressTAliasData(alias))
 	}
 
-	resp := GetAliasesResponse(aliasData)
+	resp := GetAliasesResponse{
+		Aliases:            aliasData,
+		PaginationMetadata: pgmTMetadata(pgm),
+	}
 	a.successResponse(w, resp, http.StatusOK)
 }
 

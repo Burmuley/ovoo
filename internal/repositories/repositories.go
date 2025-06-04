@@ -15,7 +15,7 @@ type RepositoryConfig interface {
 type AddressReader interface {
 	GetById(ctx context.Context, id entities.Id) (entities.Address, error)
 	GetByEmail(ctx context.Context, email entities.Email) ([]entities.Address, error)
-	GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error)
+	GetAll(ctx context.Context, filter entities.AddressFilter) ([]entities.Address, entities.PaginationMetadata, error)
 }
 
 // AddressWriter defines methods for writing address data.
@@ -52,7 +52,7 @@ type ChainReadWriter interface {
 
 // UsersReader defines methods for reading user data.
 type UsersReader interface {
-	GetAll(ctx context.Context, filters map[string][]string) ([]entities.User, error)
+	GetAll(ctx context.Context, filter entities.UserFilter) ([]entities.User, entities.PaginationMetadata, error)
 	GetById(ctx context.Context, id entities.Id) (entities.User, error)
 	GetByLogin(ctx context.Context, login string) (entities.User, error)
 }
@@ -74,7 +74,7 @@ type UsersReadWriter interface {
 // TokensReader defines methods for reading token data.
 type TokensReader interface {
 	GetById(ctx context.Context, tokenId entities.Id) (entities.ApiToken, error)
-	GetAllForUser(ctx context.Context, userId entities.Id) ([]entities.ApiToken, error)
+	GetAllForUser(ctx context.Context, userId entities.Id, filter entities.ApiTokenFilter) ([]entities.ApiToken, error)
 }
 
 // TokensWriter defines methods for writing token data.

@@ -76,3 +76,36 @@ func statusFErr(err error) int {
 
 	return http.StatusInternalServerError
 }
+
+/*
+readFilters extracts specified filters from the URL query parameters of an HTTP request.
+
+Parameters:
+  - r: The HTTP request containing query parameters.
+  - filterNames: A slice of filter names (strings) to extract from the query.
+
+Returns:
+
+	A map[string][]string, where each key is a filter name present in the query and its corresponding value is a slice of strings from the query parameters.
+
+Example usage:
+
+	If the request URL is /users?role=admin&status=active&status=inactive
+	and filterNames = []string{"role", "status"}
+
+	Then the result will be:
+	map[string][]string{
+		"role":   {"admin"},
+		"status": {"active", "inactive"},
+	}
+*/
+func readFilters(r *http.Request, filterNames []string) map[string][]string {
+	filters := make(map[string][]string)
+	for _, name := range filterNames {
+		if value, ok := r.URL.Query()[name]; ok {
+			filters[name] = value
+		}
+	}
+
+	return filters
+}

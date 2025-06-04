@@ -16,28 +16,22 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filling filters
-	filters := make(map[string][]string)
-	if ids, ok := r.URL.Query()["id"]; ok {
-		filters["id"] = ids
-	}
+	filters := readFilters(r, []string{"login", "id", "type", "page_size", "page"})
 
-	if types, ok := r.URL.Query()["type"]; ok {
-		filters["type"] = types
-	}
-
-	if logins, ok := r.URL.Query()["login"]; ok {
-		filters["login"] = logins
-	}
-
-	users, err := a.svcGw.Users.GetAll(a.context, cuser, filters)
+	users, pgm, err := a.svcGw.Users.GetAll(a.context, cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "gettings users", err)
 		return
 	}
 
-	resp := make(GetUsersResponse, 0, len(users))
+	usersData := make([]UserData, 0, len(users))
 	for _, user := range users {
-		resp = append(resp, userTResponse(user))
+		usersData = append(usersData, userTResponse(user))
+	}
+
+	resp := GetUsersResponse{
+		PaginationMetadata: pgmTMetadata(pgm),
+		Users:              usersData,
 	}
 
 	a.successResponse(w, resp, http.StatusOK)

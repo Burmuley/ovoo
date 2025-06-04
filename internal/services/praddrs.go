@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strconv"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
@@ -100,33 +99,23 @@ func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User
 }
 
 // GetAll retrieves all protected addresses for a given owner
-func (prs *ProtectedAddrService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.Address, error) {
-	if filters == nil {
-		filters = make(map[string][]string)
-	}
-
-	// by default all requests with no 'owner' filter set are limited to the current user
-	if len(filters["owner"]) == 0 {
-		filters["owner"] = []string{string(cuser.ID)}
-	} else {
-		// if 'owner' filter has entry 'all' - remove filter to retrieve all entries for admin user
-		if cuser.Type == entities.AdminUser && slices.Contains(filters["owner"], "all") {
-			delete(filters, "owner")
-		}
-
-		// reset 'owner' filter to the current user for non-admins
-		if cuser.Type != entities.AdminUser {
-			filters["owner"] = []string{string(cuser.ID)}
-		}
-	}
-
-	filters["type"] = []string{strconv.Itoa(entities.ProtectedAddress)}
-	praddrs, err := prs.repof.Address.GetAll(ctx, filters)
+func (prs *ProtectedAddrService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.Address, entities.PaginationMetadata, error) {
+	filter, err := entities.NewAddressFilter(filters)
 	if err != nil {
-		return nil, err
+		return nil, entities.PaginationMetadata{}, err
+	}
+	filter.Types = []entities.AddressType{entities.ProtectedAddress}
+
+	// reset Owners filter for non-admins
+	if cuser.Type != entities.AdminUser {
+		filter.Owners = []entities.Id{cuser.ID}
+	} else if slices.Contains(filter.Owners, "all") && cuser.Type == entities.AdminUser {
+		filter.Owners = nil
+	} else if filter.Owners == nil {
+		filter.Owners = []entities.Id{cuser.ID}
 	}
 
-	return praddrs, nil
+	return prs.repof.Address.GetAll(ctx, filter)
 }
 
 // GetById retrieves a protected address by its ID

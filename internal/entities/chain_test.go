@@ -7,11 +7,16 @@ import (
 
 func TestChain_Validate(t *testing.T) {
 	type fields struct {
-		Hash        Hash
-		FromAddress Address
-		ToAddress   Address
-		CreatedAt   time.Time
+		Hash            Hash
+		FromAddress     Address
+		ToAddress       Address
+		OrigFromAddress Address
+		OrigToAddress   Address
+		CreatedAt       time.Time
+		UpdatedAt       time.Time
+		UpdatedBy       User
 	}
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -35,7 +40,19 @@ func TestChain_Validate(t *testing.T) {
 					Type:           ReplyAliasAddress,
 					Owner:          User{ID: NewId(), Login: "test_owner", Type: MilterUser},
 				},
+				OrigFromAddress: Address{
+					ID:    NewId(),
+					Email: "from@address.com",
+					Type:  ExternalAddress,
+				},
+				OrigToAddress: Address{
+					ID:    NewId(),
+					Email: "to@address.com",
+					Type:  ReplyAliasAddress,
+				},
 				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+				UpdatedBy: User{ID: NewId(), Login: "test_updater", Type: MilterUser},
 			},
 		},
 		{
@@ -49,6 +66,16 @@ func TestChain_Validate(t *testing.T) {
 					ForwardAddress: &Address{ID: NewId(), Email: "from@address.com", Type: ProtectedAddress, Owner: User{ID: NewId()}},
 					Type:           ReplyAliasAddress,
 					Owner:          User{ID: NewId(), Login: "test_owner", Type: MilterUser},
+				},
+				OrigFromAddress: Address{
+					ID:    NewId(),
+					Email: "from@address.com",
+					Type:  ExternalAddress,
+				},
+				OrigToAddress: Address{
+					ID:    NewId(),
+					Email: "to@address.com",
+					Type:  ReplyAliasAddress,
 				},
 				CreatedAt: time.Now(),
 			},
@@ -64,30 +91,19 @@ func TestChain_Validate(t *testing.T) {
 					Type:  ExternalAddress,
 					Owner: User{ID: NewId(), Login: "test_owner", Type: MilterUser},
 				},
+				OrigFromAddress: Address{
+					ID:    NewId(),
+					Email: "from@address.com",
+					Type:  ExternalAddress,
+				},
+				OrigToAddress: Address{
+					ID:    NewId(),
+					Email: "to@address.com",
+					Type:  ReplyAliasAddress,
+				},
 				CreatedAt: time.Now(),
 			},
 		},
-		// {
-		// 	name:    "invalid chain - wrong emails",
-		// 	wantErr: true,
-		// 	fields: fields{
-		// 		Hash: NewHash("from@address.com", "to@address.com"),
-		// 		FromAddress: Address{
-		// 			ID:    NewId(),
-		// 			Email: "other@address.com",
-		// 			Type:  ExternalAddress,
-		// 			Owner: User{ID: NewId(), Login: "test_owner", Type: MilterUser},
-		// 		},
-		// 		ToAddress: Address{
-		// 			ID:             NewId(),
-		// 			Email:          "to@address.com",
-		// 			ForwardAddress: &Address{ID: NewId(), Email: "from@address.com", Type: ProtectedAddress, Owner: User{ID: NewId()}},
-		// 			Type:           ReplyAliasAddress,
-		// 			Owner:          User{ID: NewId(), Login: "test_owner", Type: MilterUser},
-		// 		},
-		// 		CreatedAt: time.Now(),
-		// 	},
-		// },
 		{
 			name:    "invalid chain - wrong hash",
 			wantErr: true,
@@ -106,6 +122,16 @@ func TestChain_Validate(t *testing.T) {
 					Type:           ReplyAliasAddress,
 					Owner:          User{ID: NewId(), Login: "test_owner", Type: MilterUser},
 				},
+				OrigFromAddress: Address{
+					ID:    NewId(),
+					Email: "other@address.com",
+					Type:  ExternalAddress,
+				},
+				OrigToAddress: Address{
+					ID:    NewId(),
+					Email: "to@address.com",
+					Type:  ReplyAliasAddress,
+				},
 				CreatedAt: time.Now(),
 			},
 		},
@@ -113,10 +139,14 @@ func TestChain_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := Chain{
-				Hash:        tt.fields.Hash,
-				FromAddress: tt.fields.FromAddress,
-				ToAddress:   tt.fields.ToAddress,
-				CreatedAt:   tt.fields.CreatedAt,
+				Hash:            tt.fields.Hash,
+				FromAddress:     tt.fields.FromAddress,
+				ToAddress:       tt.fields.ToAddress,
+				OrigFromAddress: tt.fields.OrigFromAddress,
+				OrigToAddress:   tt.fields.OrigToAddress,
+				CreatedAt:       tt.fields.CreatedAt,
+				UpdatedAt:       tt.fields.UpdatedAt,
+				UpdatedBy:       tt.fields.UpdatedBy,
 			}
 			if err := c.Validate(); (err != nil) != tt.wantErr {
 				t.Errorf("Chain.Validate() error = %v, wantErr %v", err, tt.wantErr)

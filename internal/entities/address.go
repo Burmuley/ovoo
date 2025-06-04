@@ -8,7 +8,7 @@ import (
 type AddressType int8
 
 const (
-	AliasAddress = iota
+	AliasAddress AddressType = iota
 	ReplyAliasAddress
 	ProtectedAddress
 	ExternalAddress

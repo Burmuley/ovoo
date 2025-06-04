@@ -3,7 +3,6 @@ package gorm
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories"
@@ -88,47 +87,22 @@ func (a *AddressGORMRepo) GetByEmail(ctx context.Context, email entities.Email) 
 	return addressToEntityList(addrs), nil
 }
 
-// GetAll retrieves all addresses from the database, with optional filters.
-// Filters can be applied using the following keys:
-// - "type": filter by address type (integer values)
-// - "owner": filter by owner ID
-// - "id": filter by address ID
-// - "email": filter by email address
-// - "service_name": filter by service_name metadata field
+// GetAll retrieves all addresses from the database with pagination and filtering support.
+// The entities.AddressFilter struct allows filtering by:
+// - Ids: slice of address IDs to include
+// - Emails: slice of email addresses to include
+// - Types: slice of address types to include
+// - Owners: slice of owner IDs to include
+// - ServiceNames: slice of service names to match in metadata
+// - Page: page number for pagination (1-based)
+// - PageSize: number of items per page
 // Returns a slice of entities.Address and an error, if any.
-func (a *AddressGORMRepo) GetAll(ctx context.Context, filters map[string][]string) ([]entities.Address, error) {
+func (a *AddressGORMRepo) GetAll(ctx context.Context, filter entities.AddressFilter) ([]entities.Address, entities.PaginationMetadata, error) {
 	gorm_addrs := make([]Address, 0)
 	stmt := a.db.WithContext(ctx).Model(&Address{})
-
-	for filter, vals := range filters {
-		switch filter {
-		case "type":
-			atypes := make([]int, 0, len(vals))
-			for _, val := range vals {
-				atype, err := strconv.Atoi(val)
-				if err != nil {
-					return nil, fmt.Errorf("%w: unsupported address type '%s'", entities.ErrValidation, val)
-				}
-				atypes = append(atypes, atype)
-			}
-			stmt.Where("type IN ?", atypes)
-		case "owner":
-			stmt.Where("owner_id IN ?", vals)
-		case "id":
-			stmt.Where("id IN ?", vals)
-		case "email":
-			stmt.Where("email IN ?", vals)
-		case "service_name":
-			for _, val := range vals {
-				stmt.Or(datatypes.JSONQuery("metadata").Likes(val, "service_name"))
-			}
-		default:
-			return nil, fmt.Errorf("%w: unsupported filter '%s'", entities.ErrValidation, filter)
-		}
-	}
-
+	count := applyAddressFilter(stmt, filter)
 	if err := stmt.Preload("ForwardAddress").Preload("Owner").Find(&gorm_addrs).Error; err != nil {
-		return nil, wrapGormError(err)
+		return nil, entities.PaginationMetadata{}, wrapGormError(err)
 	}
 
 	addrs := make([]entities.Address, 0, len(gorm_addrs))
@@ -136,5 +110,33 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filters map[string][]strin
 		addrs = append(addrs, addressToEntity(addr))
 	}
 
-	return addrs, nil
+	return addrs, entities.GetPaginationMetadata(filter.Page, filter.PageSize, *count), nil
+}
+
+func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
+	if filter.Ids != nil {
+		stmt.Where("id IN ?", filter.Ids)
+	}
+
+	if filter.Emails != nil {
+		stmt.Where("email IN ?", filter.Emails)
+	}
+
+	if filter.Types != nil {
+		stmt.Where("type IN ?", filter.Types)
+	}
+
+	if filter.Owners != nil {
+		stmt.Where("owner_id IN ?", filter.Owners)
+	}
+
+	if filter.ServiceNames != nil {
+		for _, val := range filter.ServiceNames {
+			stmt.Or(datatypes.JSONQuery("metadata").Likes(val, "service_name"))
+		}
+	}
+	var count int64
+	stmt.Count(&count)
+	stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
+	return &count
 }

@@ -15,28 +15,10 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filters := map[string][]string{"owner": []string{user.ID.String()}}
-	if ids, ok := r.URL.Query()["id"]; ok {
-		filters["id"] = ids
-		for _, id := range ids {
-			if err := entities.Id(id).Validate(); err != nil {
-				a.errorLogNResponse(w, "getting protected addresses: parsing id", err)
-				return
-			}
-		}
-	}
+	// filling filters
+	filters := readFilters(r, []string{"owner", "id", "email", "page_size", "page"})
 
-	if emails, ok := r.URL.Query()["email"]; ok {
-		filters["email"] = emails
-		for _, email := range emails {
-			if err := entities.Email(email).Validate(); err != nil {
-				a.errorLogNResponse(w, "getting protected addresses: parsing email", err)
-				return
-			}
-		}
-	}
-
-	praddrs, err := a.svcGw.PrAddrs.GetAll(a.context, user, filters)
+	praddrs, pgm, err := a.svcGw.PrAddrs.GetAll(a.context, user, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses", err)
 		return
@@ -47,7 +29,10 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 		prAddrsData = append(prAddrsData, addressTPrAddrData(praddr))
 	}
 
-	resp := GetPrAddrsResponse(prAddrsData)
+	resp := GetPrAddrsResponse{
+		ProtectedAddresses: prAddrsData,
+		PaginationMetadata: pgmTMetadata(pgm),
+	}
 	a.successResponse(w, resp, http.StatusOK)
 }
 

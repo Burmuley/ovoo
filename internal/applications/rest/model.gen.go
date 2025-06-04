@@ -106,6 +106,15 @@ type Error struct {
 	Status string `json:"status"`
 }
 
+// PaginationMetadata defines model for paginationMetadata.
+type PaginationMetadata struct {
+	CurrentPage  float32 `json:"current_page"`
+	FirstPage    float32 `json:"first_page"`
+	LastPage     float32 `json:"last_page"`
+	PageSize     float32 `json:"page_size"`
+	TotalRecords float32 `json:"total_records"`
+}
+
 // ProtectedAddressData defines model for protectedAddressData.
 type ProtectedAddressData struct {
 	Email    openapi_types.Email `json:"email"`
@@ -189,7 +198,10 @@ type ErrorResponse struct {
 type GetAliasDetailsResponse = AliasData
 
 // GetAliasesResponse defines model for getAliasesResponse.
-type GetAliasesResponse = []AliasData
+type GetAliasesResponse struct {
+	Aliases            []AliasData        `json:"aliases"`
+	PaginationMetadata PaginationMetadata `json:"pagination_metadata"`
+}
 
 // GetApiTokenDetailsResponse defines model for getApiTokenDetailsResponse.
 type GetApiTokenDetailsResponse = ApiTokenData
@@ -204,13 +216,19 @@ type GetEmailChainDetailsResponse = ChainData
 type GetPrAddrDetailsResponse = ProtectedAddressData
 
 // GetPrAddrsResponse defines model for getPrAddrsResponse.
-type GetPrAddrsResponse = []ProtectedAddressData
+type GetPrAddrsResponse struct {
+	PaginationMetadata PaginationMetadata     `json:"pagination_metadata"`
+	ProtectedAddresses []ProtectedAddressData `json:"protected_addresses"`
+}
 
 // GetUserDetailsResponse defines model for getUserDetailsResponse.
 type GetUserDetailsResponse = UserData
 
 // GetUsersResponse defines model for getUsersResponse.
-type GetUsersResponse = []UserData
+type GetUsersResponse struct {
+	PaginationMetadata PaginationMetadata `json:"pagination_metadata"`
+	Users              []UserData         `json:"users"`
+}
 
 // UpdateAliasResponse Address of type "alias" data structure
 type UpdateAliasResponse = AliasData

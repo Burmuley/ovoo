@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strconv"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
@@ -119,37 +118,27 @@ func (als *AliasesService) Update(ctx context.Context, cuser entities.User, alia
 }
 
 // GetAll retrieves all alias addresses for a given owner.
-func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.Address, error) {
+func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.Address, entities.PaginationMetadata, error) {
 	if !canGetAliases(cuser) {
-		return []entities.Address{}, entities.ErrNotAuthorized
+		return []entities.Address{}, entities.PaginationMetadata{}, entities.ErrNotAuthorized
 	}
 
-	if filters == nil {
-		filters = make(map[string][]string)
-	}
-
-	// by default all requests with no 'owner' filter set are limited to the current user
-	if len(filters["owner"]) == 0 {
-		filters["owner"] = []string{string(cuser.ID)}
-	} else {
-		// if 'owner' filter has entry 'all' - remove filter to retrieve all entries for admin user
-		if cuser.Type == entities.AdminUser && slices.Contains(filters["owner"], "all") {
-			delete(filters, "owner")
-		}
-
-		// reset 'owner' filter to the current user for non-admins
-		if cuser.Type != entities.AdminUser {
-			filters["owner"] = []string{string(cuser.ID)}
-		}
-	}
-
-	filters["type"] = []string{strconv.Itoa(entities.AliasAddress)}
-	aliases, err := als.repof.Address.GetAll(ctx, filters)
+	filter, err := entities.NewAddressFilter(filters)
 	if err != nil {
-		return nil, err
+		return nil, entities.PaginationMetadata{}, err
+	}
+	filter.Types = []entities.AddressType{entities.AliasAddress}
+
+	// reset Owners filter for non-admins
+	if cuser.Type != entities.AdminUser {
+		filter.Owners = []entities.Id{cuser.ID}
+	} else if slices.Contains(filter.Owners, "all") && cuser.Type == entities.AdminUser {
+		filter.Owners = nil
+	} else if filter.Owners == nil {
+		filter.Owners = []entities.Id{cuser.ID}
 	}
 
-	return aliases, nil
+	return als.repof.Address.GetAll(ctx, filter)
 }
 
 // GetById retrieves an alias address by its ID.

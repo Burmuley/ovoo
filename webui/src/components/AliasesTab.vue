@@ -2,7 +2,8 @@
     <div class="ovoo-items-list">
         <div class="ovoo-item header">
             <button @click="addAlias">Add new Alias</button>
-
+            <Paginator v-if="paginationMetadata.last_page > 1" current_page="1"
+                :total_pages="paginationMetadata.last_page" @page-changed=onPageChanged />
         </div>
         <div v-for="(alias, index) in aliases" :key="alias.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">
             <div class="ovoo-item-content">
@@ -24,13 +25,19 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { apiFetch } from '../utils/api'
+import Paginator from './Paginator.vue'
 
 const emit = defineEmits(['add-alias-clicked'])
+const data = ref({})
 const aliases = ref([])
+const paginationMetadata = ref({})
+const currentPage = ref(1)
 
 const load = async () => {
-    const res = await apiFetch('/api/v1/aliases')
-    aliases.value = await res.json()
+    const res = await apiFetch('/api/v1/aliases?page=' + currentPage.value)
+    data.value = await res.json()
+    aliases.value = data.value.aliases
+    paginationMetadata.value = data.value.pagination_metadata
 }
 
 const edit = (alias) => {
@@ -44,6 +51,11 @@ const deleteAlias = async (id) => {
 
 const addAlias = () => {
     emit('add-alias-clicked')
+}
+
+const onPageChanged = async (page) => {
+    currentPage.value = page
+    await load()
 }
 
 onMounted(load)
