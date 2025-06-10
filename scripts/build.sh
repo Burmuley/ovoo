@@ -16,6 +16,7 @@ OVOO_API_DATA_DIR="$PWD/internal/applications/rest/data/webui"
 function build_webui () {
     npm install -C "$WEBUI_DIR"
     npm run build -C "$WEBUI_DIR"
+    rm -rf "${OVOO_API_DATA_DIR:?}/*"
     cp -Rf "$WEBUI_DIR"/dist/* "$OVOO_API_DATA_DIR"
 }
 
