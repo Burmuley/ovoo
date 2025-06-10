@@ -58,8 +58,26 @@ func (a *AddressGORMRepo) DeleteById(ctx context.Context, id entities.Id) error 
 		return wrapGormError(err)
 	}
 
-	if err := a.db.WithContext(ctx).Model(&Address{}).Where("id = ?", id).Unscoped().
-		Delete(&Address{Model: Model{ID: id.String()}}).Error; err != nil {
+	if err := a.db.WithContext(ctx).Model(&Address{}).Unscoped().
+		Delete(&Address{}, "id = ?", id.String()).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
+}
+
+/*
+BatchDeleteById deletes multiple addresses from the database by their IDs.
+
+Parameters:
+- ctx: Context for the database operation.
+- ids: Slice of entities.Id representing the IDs of the addresses to delete.
+
+The function performs a hard delete (unscoped) of all Address records matching the given IDs.
+It returns an error if the deletion fails; otherwise, it returns nil.
+*/
+func (a *AddressGORMRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
+	if err := a.db.WithContext(ctx).Model(&Address{}).Unscoped().Delete(&Address{}, "id IN ?", ids).Error; err != nil {
 		return wrapGormError(err)
 	}
 
@@ -114,29 +132,37 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filter entities.AddressFil
 }
 
 func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
-	if filter.Ids != nil {
+	if len(filter.Ids) > 0 {
 		stmt.Where("id IN ?", filter.Ids)
 	}
 
-	if filter.Emails != nil {
+	if len(filter.Emails) > 0 {
 		stmt.Where("email IN ?", filter.Emails)
 	}
 
-	if filter.Types != nil {
+	if len(filter.Types) > 0 {
 		stmt.Where("type IN ?", filter.Types)
 	}
 
-	if filter.Owners != nil {
+	if len(filter.Owners) > 0 {
 		stmt.Where("owner_id IN ?", filter.Owners)
 	}
 
-	if filter.ServiceNames != nil {
+	if len(filter.ServiceNames) > 0 {
 		for _, val := range filter.ServiceNames {
 			stmt.Or(datatypes.JSONQuery("metadata").Likes(val, "service_name"))
 		}
 	}
-	var count int64
+
+	if len(filter.ForwardAddressIds) > 0 {
+		stmt.Where("forward_address_id IN ?", filter.ForwardAddressIds)
+	}
+
+	var count int64 = 0
 	stmt.Count(&count)
-	stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
+	if filter.Page != 0 && filter.PageSize != 0 {
+		stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
+	}
+
 	return &count
 }

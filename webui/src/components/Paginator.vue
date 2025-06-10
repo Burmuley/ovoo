@@ -1,7 +1,7 @@
 <template>
     <div>
-        <button class="page-button" @click=prevPage>&larr;</button> Page {{ current_page }} of {{
-            total_pages }} <button class="page-button" @click=nextPage>&rarr;</button>
+        <button class="page-button" @click=prevPage>&#9204;</button> Page {{ current_page }} of {{
+            total_pages }} <button class="page-button" @click=nextPage>&#9205;</button>
     </div>
 </template>>
 <script setup>

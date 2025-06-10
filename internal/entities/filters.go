@@ -16,6 +16,14 @@ type Filter struct {
 	Ids      []Id
 }
 
+// NewFilter parses and returns a Filter from the given input map.
+// The input map is expected to contain string slices for filter keys like "id", "page", and "page_size".
+// "id": a list of string ids (will be converted to Id type)
+// "page": page number (only the first element is used if slice contains more items)
+// "page_size": size of the page (only the first element is used)
+//
+// Defaults are assigned for Page and PageSize if not present or set to zero.
+// Returns an error if "page" or "page_size" values are invalid.
 func NewFilter(input map[string][]string) (Filter, error) {
 	filter := Filter{}
 	for key, vals := range input {
@@ -54,12 +62,17 @@ func NewFilter(input map[string][]string) (Filter, error) {
 
 type AddressFilter struct {
 	Filter
-	Types        []AddressType
-	Emails       []Email
-	Owners       []Id
-	ServiceNames []string
+	Types             []AddressType
+	Emails            []Email
+	Owners            []Id
+	ServiceNames      []string
+	ForwardAddressIds []Id
 }
 
+// NewAddressFilter parses and returns an AddressFilter from the given input map.
+// Populates AddressFilter fields such as Types, Emails, Owners, and ServiceNames
+// based on the corresponding filter keys provided in input. Returns an error
+// if any validation fails (e.g., unsupported address type).
 func NewAddressFilter(input map[string][]string) (AddressFilter, error) {
 	af := AddressFilter{}
 	filter, err := NewFilter(input)
@@ -111,6 +124,9 @@ type UserFilter struct {
 	Logins []string
 }
 
+// NewUserFilter parses and returns a UserFilter from the given input map.
+// Populates UserFilter fields like Types and Logins based on filter keys.
+// Returns an error if the user type value is not supported or invalid.
 func NewUserFilter(input map[string][]string) (UserFilter, error) {
 	uf := UserFilter{}
 	filter, err := NewFilter(input)
@@ -147,6 +163,9 @@ type ApiTokenFilter struct {
 	Filter
 }
 
+// NewApiTokensFilter constructs an ApiTokenFilter using the provided input map.
+// Only the generic Filter fields are considered; no additional fields are set.
+// Returns an error if any value in the input filter causes validation to fail.
 func NewApiTokensFilter(input map[string][]string) (ApiTokenFilter, error) {
 	af := ApiTokenFilter{}
 	filter, err := NewFilter(input)
@@ -155,4 +174,12 @@ func NewApiTokensFilter(input map[string][]string) (ApiTokenFilter, error) {
 	}
 	af.Filter = filter
 	return af, nil
+}
+
+type ChainFilter struct {
+	Filter
+	OrigFromAddrIds []Id
+	OrigToAddrIds   []Id
+	FromAddrsIds    []Id
+	ToAddrIds       []Id
 }

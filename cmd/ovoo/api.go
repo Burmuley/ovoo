@@ -46,28 +46,6 @@ func makeServices(repoFactory *factory.RepoFactory, domain string, dict []string
 	return svcGw, nil
 }
 
-// func makeDefaultAdmin(svcGw *services.ServiceGateway, admin config.ApiDefaultAdminConfig) error {
-// 	adminUser := entities.User{
-// 		FirstName:    admin.FirstName,
-// 		LastName:     admin.LastName,
-// 		Login:        admin.Login,
-// 		ID:           entities.NewId(),
-// 		Type:         entities.AdminUser,
-// 		PasswordHash: admin.Password,
-// 	}
-// 	if _, err := svcGw.Users.CreatePriv(context.Background(), adminUser); err != nil {
-// 		if errors.Is(err, entities.ErrDuplicateEntry) {
-// 			slog.Info("default admin user already present in the repository, not creating")
-// 			return nil
-// 		} else {
-// 			return err
-// 		}
-// 	}
-
-// 	slog.Info("created default admin user")
-// 	return nil
-// }
-
 func startApi(cfg config.ApiConfig) error {
 	// logger configuration
 	logger := slog.New(slog.NewTextHandler(
@@ -90,6 +68,7 @@ func startApi(cfg config.ApiConfig) error {
 	db_config := map[string]string{
 		"driver":            cfg.Database.Config.Driver,
 		"connection_string": cfg.Database.Config.ConnectionString,
+		"log_level":         cfg.Database.LogLevel,
 	}
 
 	// initialize repo fabric
@@ -99,19 +78,13 @@ func startApi(cfg config.ApiConfig) error {
 	}
 
 	// global context
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	// initialize services
 	svcGw, err := makeServices(repoFactory, cfg.Domain, dict)
 	if err != nil {
 		return fmt.Errorf("error initializing services gateway: %w", err)
 	}
-
-	// if len(cfg.DefaultAdmin.Login) > 0 {
-	// 	if err := makeDefaultAdmin(svcGw, cfg.DefaultAdmin); err != nil {
-	// 		return fmt.Errorf("error creating default admin: %w", err)
-	// 	}
-	// }
 
 	// initialize REST controller
 	listen_addr := cfg.ListenAddr

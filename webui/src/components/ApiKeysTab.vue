@@ -1,7 +1,7 @@
 <template>
     <div class="ovoo-items-list">
         <div class="ovoo-item header">
-            <button @click="addApiKey">Add new API key</button>
+            <button title="Add new API key" @click="addApiKey">+</button>
 
         </div>
         <div v-for="(api_key, index) in api_keys" :key="api_key.id" class="ovoo-item"
@@ -12,7 +12,7 @@
                 <p><small>Expiration: {{ moment(api_key.expiration).format('LLL') }}</small></p>
             </div>
             <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
-                <button @click="deleteApiKey(api_key.id)" title="Delete API key">Delete</button>
+                <button @click="deleteApiKey(api_key.id)" title="Delete API key">&#9932;</button>
             </div>
         </div>
     </div>

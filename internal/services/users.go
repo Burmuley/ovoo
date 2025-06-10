@@ -95,10 +95,6 @@ func (u *UsersService) Update(ctx context.Context, cuser entities.User, user ent
 
 // Delete removes a user by their ID
 func (u *UsersService) Delete(ctx context.Context, cuser entities.User, id entities.Id) (entities.User, error) {
-	if !canDeleteUser(cuser) {
-		return entities.User{}, entities.ErrNotAuthorized
-	}
-
 	if err := id.Validate(); err != nil {
 		return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
@@ -108,6 +104,21 @@ func (u *UsersService) Delete(ctx context.Context, cuser entities.User, id entit
 		return entities.User{}, err
 	}
 
+	if !canDeleteUser(cuser, user) {
+		return entities.User{}, entities.ErrNotAuthorized
+	}
+
+	// delete protected addressed and related aliases/chains/reply_aliases
+	if err := deletePrAddrsForUser(ctx, u.repof, user.ID); err != nil {
+		return entities.User{}, err
+	}
+
+	// delete API tokens
+	if err := u.repof.ApiTokens.BatchDeleteForUser(ctx, user.ID); err != nil {
+		return entities.User{}, err
+	}
+
+	// delete user
 	if err := u.repof.Users.Delete(ctx, user.ID); err != nil {
 		return entities.User{}, err
 	}
@@ -173,9 +184,9 @@ func (u *UsersService) GetAll(ctx context.Context, cuser entities.User, filters 
 		}
 	} else {
 		userFilters := map[string][]string{
-			// "page":      filters["page"],
-			// "page_size": filters["page_size"],
-			"id": {cuser.ID.String()},
+			"page":      filters["page"],
+			"page_size": filters["page_size"],
+			"id":        {cuser.ID.String()},
 		}
 		var err error
 		if filter, err = entities.NewUserFilter(userFilters); err != nil {

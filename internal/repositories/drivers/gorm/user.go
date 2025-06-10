@@ -58,8 +58,11 @@ func (u *UserGORMRepo) Delete(ctx context.Context, id entities.Id) error {
 		return wrapGormError(err)
 	}
 
-	return wrapGormError(u.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).Unscoped().
-		Delete(&User{Model: Model{ID: id.String()}}).Error)
+	if err := u.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).Unscoped().
+		Delete(&User{Model: Model{ID: id.String()}}).Error; err != nil {
+		return wrapGormError(err)
+	}
+	return nil
 }
 
 // GetById retrieves a user from the database by ID.
@@ -100,15 +103,15 @@ func (u *UserGORMRepo) GetAll(ctx context.Context, filter entities.UserFilter) (
 }
 
 func applyUserFilter(stmt *gorm.DB, filter entities.UserFilter) *int64 {
-	if filter.Ids != nil {
+	if len(filter.Ids) > 0 {
 		stmt.Where("id IN ?", filter.Ids)
 	}
 
-	if filter.Types != nil {
+	if len(filter.Types) > 0 {
 		stmt.Where("type IN ?", filter.Types)
 	}
 
-	if filter.Logins != nil {
+	if len(filter.Logins) > 0 {
 		stmt.Where("login IN ?", filter.Logins)
 	}
 

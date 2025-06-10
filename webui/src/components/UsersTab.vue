@@ -1,7 +1,7 @@
 <template>
     <div class="ovoo-items-list">
         <div class="ovoo-item header">
-            <button @click="addUser">Add new user</button>
+            <button title="Add new user" @click="addUser">+</button>
             <Paginator v-if="paginationMetadata.last_page > 1" current_page="1"
                 :total_pages="paginationMetadata.last_page" @page-changed=onPageChanged />
         </div>
@@ -12,7 +12,7 @@
             </div>
             <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
                 <!-- <button @click="edit(user)" title="Edit user" style="margin-right: 5px;">Edit</button> -->
-                <button @click="deleteUser(user.id)" title="Delete user">Delete</button>
+                <button @click="deleteUser(user.id)" title="Delete user">&#9932;</button>
             </div>
         </div>
     </div>

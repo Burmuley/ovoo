@@ -173,8 +173,7 @@ func (als *AliasesService) DeleteById(ctx context.Context, cuser entities.User, 
 		return entities.ErrNotAuthorized
 	}
 
-	alias.UpdatedBy = cuser
-	if err := als.repof.Address.DeleteById(ctx, id); err != nil {
+	if err := deleteAliasIds(ctx, als.repof, []entities.Id{alias.ID}); err != nil {
 		return err
 	}
 

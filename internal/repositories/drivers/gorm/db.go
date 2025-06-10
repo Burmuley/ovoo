@@ -22,8 +22,20 @@ func NewGORMDatabase(config Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("%w: unknown database driver '%s'", entities.ErrConfiguration, config.Driver)
 	}
 
+	var logLevel logger.LogLevel
+
+	// Set GORM logger log level based on configuration.
+	// Supported levels: "error" (shows errors), "debug" (shows info), default is silent.
+	switch config.LogLevel {
+	case "error":
+		logLevel = logger.Error
+	case "debug":
+		logLevel = logger.Info
+	default:
+		logLevel = logger.Silent
+	}
 	gdb, err := gorm.Open(dialect, &gorm.Config{
-		Logger:         logger.Default.LogMode(logger.Silent),
+		Logger:         logger.Default.LogMode(logLevel),
 		TranslateError: true,
 	})
 

@@ -95,14 +95,16 @@ func NewApiOIDCConfig(clientid string, clientsecret string, issuer string) *ApiO
 }
 
 type ApiDBConfig struct {
-	Config ApiDBGormConfig `json:"config,required"`
-	DBType string          `json:"type,required"`
+	Config   ApiDBGormConfig `json:"config,required"`
+	DBType   string          `json:"type,required"`
+	LogLevel string          `json:"log_level,required"`
 }
 
-func NewApiDBConfig(config ApiDBGormConfig, dbtype string) *ApiDBConfig {
+func NewApiDBConfig(config ApiDBGormConfig, dbtype string, loglevel string) *ApiDBConfig {
 	return &ApiDBConfig{
-		Config: config,
-		DBType: dbtype,
+		Config:   config,
+		DBType:   dbtype,
+		LogLevel: loglevel,
 	}
 }
 

@@ -24,6 +24,7 @@ type AddressWriter interface {
 	BatchCreate(ctx context.Context, addresses []entities.Address) error
 	Update(ctx context.Context, address entities.Address) error
 	DeleteById(ctx context.Context, id entities.Id) error
+	BatchDeleteById(ctx context.Context, ids []entities.Id) error
 }
 
 // AddressReadWriter combines AddressReader and AddressWriter interfaces.
@@ -35,6 +36,7 @@ type AddressReadWriter interface {
 // ChainReader defines methods for reading chain data.
 type ChainReader interface {
 	GetByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error)
+	GetByFilters(ctx context.Context, filter entities.ChainFilter) ([]entities.Chain, error)
 }
 
 // ChainWriter defines methods for writing chain data.
@@ -42,6 +44,7 @@ type ChainWriter interface {
 	Create(ctx context.Context, chain entities.Chain) error
 	BatchCreate(ctx context.Context, chains []entities.Chain) error
 	Delete(ctx context.Context, hash entities.Hash) (entities.Chain, error)
+	BatchDelete(ctx context.Context, hashes []entities.Hash) error
 }
 
 // ChainReadWriter combines ChainReader and ChainWriter interfaces.
@@ -83,6 +86,8 @@ type TokensWriter interface {
 	Update(ctx context.Context, token entities.ApiToken) (entities.ApiToken, error)
 	BatchCreate(ctx context.Context, tokens []entities.ApiToken) error
 	Delete(ctx context.Context, tokenId entities.Id) error
+	BatchDeleteById(ctx context.Context, ids []entities.Id) error
+	BatchDeleteForUser(ctx context.Context, id entities.Id) error
 }
 
 // TokensReadWriter combines TokensReader and TokensWriter interfaces.

@@ -140,6 +140,7 @@ div {
 .main-div {
     margin: auto;
     width: 85%;
+    max-width: 1300px;
     padding: 10px;
     display: flex;
     flex-direction: row;

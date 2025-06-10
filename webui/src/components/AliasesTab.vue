@@ -1,7 +1,7 @@
 <template>
     <div class="ovoo-items-list">
         <div class="ovoo-item header">
-            <button @click="addAlias">Add new Alias</button>
+            <button title="Add new Alias" @click="addAlias">+</button>
             <Paginator v-if="paginationMetadata.last_page > 1" current_page="1"
                 :total_pages="paginationMetadata.last_page" @page-changed=onPageChanged />
         </div>
@@ -16,7 +16,7 @@
             </div>
             <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
                 <!-- <button @click="edit(alias)" title="Edit alias" style="margin-right: 5px;">Edit</button> -->
-                <button @click="deleteAlias(alias.id)" title="Delete alias">Delete</button>
+                <button @click="deleteAlias(alias.id)" title="Delete alias">&#9932;</button>
             </div>
         </div>
     </div>

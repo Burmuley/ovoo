@@ -172,6 +172,12 @@ func (prs *ProtectedAddrService) DeleteById(ctx context.Context, cuser entities.
 		return entities.ErrNotAuthorized
 	}
 
+	// first - retrieve all aliases and delete them
+	if err := deleteAliasesForPrAddr(ctx, prs.repof, praddr); err != nil {
+		return err
+	}
+
+	// delete protected address after all referencing entities (aliases) has been deleted successfully
 	if err := prs.repof.Address.DeleteById(ctx, id); err != nil {
 		return err
 	}

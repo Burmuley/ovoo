@@ -167,6 +167,25 @@ func chainToEntity(e Chain) entities.Chain {
 	}
 }
 
+// chainToEntityList converts slice of []Chain to []entities.Chain
+func chainToEntityList(chains []Chain) []entities.Chain {
+	echains := make([]entities.Chain, 0, len(chains))
+	for _, chain := range chains {
+		echains = append(echains, entities.Chain{
+			Hash:            entities.Hash(chain.Hash),
+			FromAddress:     addressToEntity(chain.FromAddress),
+			ToAddress:       addressToEntity(chain.ToAddress),
+			OrigFromAddress: addressToEntity(chain.OrigFromAddress),
+			OrigToAddress:   addressToEntity(chain.OrigToAddress),
+			CreatedAt:       chain.CreatedAt,
+			UpdatedAt:       chain.UpdatedAt,
+			UpdatedBy:       userToEntity(chain.UpdatedBy),
+		})
+	}
+
+	return echains
+}
+
 // apiTokenFromEntity converts an entities.ApiToken to an ApiToken
 func apiTokenFromEntity(e entities.ApiToken) ApiToken {
 	return ApiToken{

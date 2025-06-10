@@ -137,6 +137,10 @@
       "Config": {
         "type": "ApiDBGormConfig",
         "required": true
+      },
+      "LogLevel": {
+        "type": "string",
+        "required": true
       }
     }
   },

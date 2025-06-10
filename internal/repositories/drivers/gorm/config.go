@@ -8,8 +8,9 @@ import (
 
 // Config represents the configuration for the GORM database connection.
 type Config struct {
-	Driver  string
-	ConnStr string
+	Driver   string
+	ConnStr  string
+	LogLevel string
 }
 
 // ImportMap imports configuration from a map and sets the Driver and ConnStr fields.
