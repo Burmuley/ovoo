@@ -30,9 +30,13 @@ type OvooChainCreateRequestBody struct {
 	ToEmail   string `json:"to_email"`
 }
 
+type OvooErrorBody struct {
+	Status string `json:"status"`
+	Detail string `json:"detail"`
+}
+
 type OvooError struct {
-	Id  float32 `json:"id"`
-	Msg string  `json:"msg"`
+	Error []OvooErrorBody
 }
 
 type OvooClient struct {
@@ -108,7 +112,12 @@ func (o OvooClient) parseError(resp *http.Response) error {
 		return err
 	}
 
-	return fmt.Errorf("ovoo api error: id=%d message=%s", int(ovooError.Id), ovooError.Msg)
+	cliErrs := make([]OvooErrorBody, 0, len(ovooError.Error))
+	for _, err := range ovooError.Error {
+		cliErrs = append(cliErrs, OvooErrorBody{err.Status, err.Detail})
+	}
+
+	return fmt.Errorf("ovoo api errors: %v", cliErrs)
 }
 
 func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) (*OvooChainData, error) {

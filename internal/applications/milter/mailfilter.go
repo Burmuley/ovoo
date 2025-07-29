@@ -54,6 +54,10 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 			trx.ChangeMailFrom(chain.FromEmail, trx.MailFrom().Args)
 			trx.Headers().Set("from", nfrom.String())
 			trx.Headers().Set("to", nto.String())
+			// if reply-to header is set - reset it to masquaraded "from" value
+			if replyto, err := trx.Headers().Text("reply-to"); err != nil || len(replyto) != 0 {
+				trx.Headers().Set("reply-to", nfrom.String())
+			}
 
 			// delete DKIM headers belong to different domain
 			trx.Headers().Set("dkim-signature", "")

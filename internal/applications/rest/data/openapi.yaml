@@ -832,9 +832,8 @@ components:
         - total_records
   securitySchemes:
     ApiToken:
-      type: apiKey
-      in: header
-      name: X-OVOO-KEY
+      type: http
+      scheme: bearer
     OAuth2:
       type: oauth2
       flows:
