@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
+	"github.com/Burmuley/ovoo/internal/services"
 )
 
 // GetApiTokens retrieves all API tokens associated with the authenticated user.
@@ -80,11 +81,14 @@ func (a *Application) CreateApiToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	description := ""
-	if req.Description != nil {
-		description = *req.Description
+	cmd := services.ApiTokenCreateCmd{
+		ExpireIn: int(req.ExpireIn),
+		Name:     req.Name,
 	}
-	token, err := a.svcGw.Tokens.Create(r.Context(), cuser, req.Name, description, int(req.ExpireIn))
+	if req.Description != nil {
+		cmd.Description = *req.Description
+	}
+	token, err := a.svcGw.Tokens.Create(r.Context(), cuser, cmd)
 	if err != nil {
 		a.errorLogNResponse(w, "creating new api token", err)
 		return
@@ -119,18 +123,18 @@ func (a *Application) UpdateApiToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenId := entities.Id(r.PathValue("id"))
-	if _, err := a.svcGw.Tokens.GetByIdCurUser(r.Context(), cuser, tokenId); err != nil {
-		a.errorLogNResponse(w, "updating token by id: validating token id", err)
-		return
-	}
-
-	updToken, err := a.svcGw.Tokens.Update(r.Context(), cuser, tokenId, req.Name, req.Description, req.Active)
+	token, err := a.svcGw.Tokens.Update(r.Context(), cuser, services.ApiTokenUpdateCmd{
+		TokenId:     tokenId,
+		Active:      req.Active,
+		Description: req.Description,
+		Name:        req.Name,
+	})
 	if err != nil {
 		a.errorLogNResponse(w, "updating token by id", err)
 		return
 	}
 
-	resp := UpdateApiTokenResponse(tokenTApiTokenData(updToken))
+	resp := UpdateApiTokenResponse(tokenTApiTokenData(token))
 	a.successResponse(w, resp, http.StatusOK)
 }
 
@@ -147,13 +151,8 @@ func (a *Application) DeleteApiToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenId := entities.Id(r.PathValue("id"))
-	token, err := a.svcGw.Tokens.GetByIdCurUser(r.Context(), cuser, tokenId)
+	token, err := a.svcGw.Tokens.Delete(r.Context(), cuser, tokenId)
 	if err != nil {
-		a.errorLogNResponse(w, "deleting token by id: validating token id", err)
-		return
-	}
-
-	if err := a.svcGw.Tokens.Delete(r.Context(), cuser, tokenId); err != nil {
 		a.errorLogNResponse(w, "deleting token by id", err)
 		return
 	}

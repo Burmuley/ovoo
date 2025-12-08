@@ -74,8 +74,8 @@ func addressTAliasData(alias entities.Address) AliasData {
 		ForwardEmail: types.Email(alias.ForwardAddress.Email),
 		Id:           alias.ID.String(),
 		Metadata: AddressMetadata{
-			Comment:     alias.Metadata.Comment,
-			ServiceName: alias.Metadata.ServiceName,
+			Comment:     &alias.Metadata.Comment,
+			ServiceName: &alias.Metadata.ServiceName,
 		},
 		Owner: userTResponse(alias.Owner),
 	}
@@ -87,9 +87,9 @@ func addressTPrAddrData(praddr entities.Address) ProtectedAddressData {
 	return ProtectedAddressData{
 		Email: types.Email(praddr.Email),
 		Id:    praddr.ID.String(),
-		Metadata: AddressMetadata{
-			Comment:     praddr.Metadata.Comment,
-			ServiceName: praddr.Metadata.ServiceName,
+		Metadata: &AddressMetadata{
+			Comment:     &praddr.Metadata.Comment,
+			ServiceName: &praddr.Metadata.ServiceName,
 		},
 		Owner: userTResponse(praddr.Owner),
 	}
@@ -119,7 +119,7 @@ func tokenTApiTokenData(token entities.ApiToken) ApiTokenData {
 	return ApiTokenData{
 		Id:          (*string)(&token.ID),
 		Active:      token.Active,
-		Description: token.Description,
+		Description: &token.Description,
 		Expiration:  token.Expiration,
 		Name:        token.Name,
 	}
@@ -131,7 +131,7 @@ func tokenTApiTokenDataOnCreate(token entities.ApiToken) ApiTokenDataOnCreate {
 	return ApiTokenDataOnCreate{
 		Id:          (*string)(&token.ID),
 		Active:      token.Active,
-		Description: token.Description,
+		Description: &token.Description,
 		Expiration:  token.Expiration,
 		Name:        token.Name,
 		ApiToken:    token.Token,

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
+	"github.com/Burmuley/ovoo/internal/services"
 )
 
 // GetAllPrAddrs retrieves all protected addresses for the current user.
@@ -17,7 +18,6 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 
 	// filling filters
 	filters := readFilters(r, []string{"owner", "id", "email", "page_size", "page"})
-
 	praddrs, pgm, err := a.svcGw.PrAddrs.GetAll(a.context, user, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses", err)
@@ -63,14 +63,23 @@ func (a *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rb := CreateProtectedAddressRequest{}
-	if err := readBody(r.Body, &rb); err != nil {
+	req := CreateProtectedAddressRequest{}
+	if err := readBody(r.Body, &req); err != nil {
 		a.errorLogNResponse(w, "parsing protected address create request", err)
 		return
 	}
 
 	praddr, err := a.svcGw.PrAddrs.Create(
-		a.context, user, entities.Email(rb.Email), entities.AddressMetadata(rb.Metadata),
+		a.context, user, services.PrAddrCreateCmd{
+			Email: "",
+			Metadata: struct {
+				Comment     *string
+				ServiceName *string
+			}{
+				Comment:     req.Metadata.Comment,
+				ServiceName: req.Metadata.ServiceName,
+			},
+		},
 	)
 	if err != nil {
 		a.errorLogNResponse(w, "creating protected address", err)
@@ -89,30 +98,29 @@ func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	prAddrId := entities.Id(r.PathValue("id"))
-	prAddr, err := a.svcGw.PrAddrs.GetById(a.context, user, prAddrId)
-	if err != nil {
-		a.errorLogNResponse(w, "updating protected address: retrieving alias by id", err)
-		return
-	}
-
-	rb := UpdateProtectedAddressRequest{}
-	if err := readBody(r.Body, &rb); err != nil {
+	praddrId := entities.Id(r.PathValue("id"))
+	req := UpdateProtectedAddressRequest{}
+	if err := readBody(r.Body, &req); err != nil {
 		a.errorLogNResponse(w, "parsing protected address update request", err)
 		return
 	}
 
-	if rb.Metadata != nil {
-		prAddr.Metadata = entities.AddressMetadata(*rb.Metadata)
-	}
-
-	prAddr, err = a.svcGw.PrAddrs.Update(a.context, user, prAddr)
+	praddr, err := a.svcGw.PrAddrs.Update(a.context, user, services.PrAddrUpdateCmd{
+		PrAddrId: praddrId,
+		Metadata: struct {
+			Comment     *string
+			ServiceName *string
+		}{
+			Comment:     req.Metadata.Comment,
+			ServiceName: req.Metadata.ServiceName,
+		},
+	})
 	if err != nil {
 		a.errorLogNResponse(w, "updating protected address", err)
 		return
 	}
 
-	resp := UpdatePrAddrResponse(addressTPrAddrData(prAddr))
+	resp := UpdatePrAddrResponse(addressTPrAddrData(praddr))
 	a.successResponse(w, resp, http.StatusOK)
 }
 

@@ -2,12 +2,30 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 )
+
+type PrAddrCreateCmd struct {
+	Email    entities.Email
+	Metadata struct {
+		Comment     *string
+		ServiceName *string
+	}
+}
+
+type PrAddrUpdateCmd struct {
+	PrAddrId entities.Id
+	Metadata struct {
+		Comment     *string
+		ServiceName *string
+	}
+}
 
 // ProtectedAddrService handles operations related to protected addresses
 type ProtectedAddrService struct {
@@ -24,31 +42,43 @@ func NewProtectedAddrService(repoFactory *factory.RepoFactory) (*ProtectedAddrSe
 }
 
 // Create creates a new protected address
-func (prs *ProtectedAddrService) Create(ctx context.Context, cuser entities.User, protEmail entities.Email, metadata entities.AddressMetadata) (entities.Address, error) {
+func (prs *ProtectedAddrService) Create(ctx context.Context, cuser entities.User, cmd PrAddrCreateCmd) (entities.Address, error) {
 	if !canCreatePrAddr(cuser) {
 		return entities.Address{}, entities.ErrNotAuthorized
 	}
 
-	if err := protEmail.Validate(); err != nil {
+	if err := cmd.Email.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
 	// check if protected address with the email already exists
-	if addrs, err := prs.repof.Address.GetByEmail(ctx, protEmail); err == nil {
+	if addrs, err := prs.repof.Address.GetByEmail(ctx, cmd.Email); err == nil {
 		for _, addr := range addrs {
 			if addr.Type == entities.ProtectedAddress {
-				return entities.Address{}, fmt.Errorf("%w: %s", entities.ErrDuplicateEntry, protEmail)
+				return entities.Address{}, fmt.Errorf("%w: %s", entities.ErrDuplicateEntry, cmd.Email)
 			}
 		}
 	}
 
+	metadata := entities.AddressMetadata{}
+	if cmd.Metadata.Comment != nil {
+		metadata.Comment = strings.TrimSpace(*cmd.Metadata.Comment)
+	}
+
+	if cmd.Metadata.ServiceName != nil {
+		metadata.ServiceName = strings.TrimSpace(*cmd.Metadata.ServiceName)
+	}
 	praddr := entities.Address{
 		Type:      entities.ProtectedAddress,
 		ID:        entities.NewId(),
-		Email:     protEmail,
+		Email:     cmd.Email,
 		Metadata:  metadata,
 		Owner:     cuser,
 		UpdatedBy: cuser,
+	}
+
+	if err := praddr.Validate(); err != nil {
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
 	if err := prs.repof.Address.Create(ctx, praddr); err != nil {
@@ -59,38 +89,32 @@ func (prs *ProtectedAddrService) Create(ctx context.Context, cuser entities.User
 }
 
 // Update updates an existing protected address
-func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User, praddr entities.Address) (entities.Address, error) {
+func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User, cmd PrAddrUpdateCmd) (entities.Address, error) {
+	praddr, err := prs.repof.Address.GetById(ctx, cmd.PrAddrId)
+	if err != nil {
+		if errors.Is(err, entities.ErrNotFound) {
+			return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+		}
+
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
+	}
+
 	if !canUpdatePrAddr(cuser, praddr) {
 		return entities.Address{}, entities.ErrNotAuthorized
+	}
+
+	praddr.UpdatedBy = cuser
+	if cmd.Metadata.Comment != nil {
+		praddr.Metadata.Comment = *cmd.Metadata.Comment
+	}
+	if cmd.Metadata.ServiceName != nil {
+		praddr.Metadata.ServiceName = *cmd.Metadata.ServiceName
 	}
 
 	if err := praddr.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	cur, err := prs.repof.Address.GetById(ctx, praddr.ID)
-	if err != nil {
-		return entities.Address{}, err
-	}
-
-	// validate fields
-	if cur.Type != praddr.Type {
-		return entities.Address{}, fmt.Errorf("%w: address type can not be changed", entities.ErrValidation)
-	}
-
-	if cur.Email != praddr.Email {
-		return entities.Address{}, fmt.Errorf("%w: alias email can not be changed", entities.ErrValidation)
-	}
-
-	if cur.ForwardAddress != praddr.ForwardAddress {
-		return entities.Address{}, fmt.Errorf("%w: forward address can not be changed for alias address", entities.ErrValidation)
-	}
-
-	if cur.Owner != praddr.Owner {
-		return entities.Address{}, fmt.Errorf("%w: address owner can not be changed", entities.ErrValidation)
-	}
-
-	praddr.UpdatedBy = cuser
 	if err := prs.repof.Address.Update(ctx, praddr); err != nil {
 		return entities.Address{}, err
 	}

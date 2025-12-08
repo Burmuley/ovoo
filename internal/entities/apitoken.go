@@ -63,6 +63,10 @@ func (t *ApiToken) Validate() error {
 		return fmt.Errorf("validating token owner: %w", err)
 	}
 
+	if len(t.Name) == 0 {
+		return fmt.Errorf("token name can not be empty")
+	}
+
 	if len(t.TokenHash) == 0 {
 		return fmt.Errorf("token value can not be empty")
 	}

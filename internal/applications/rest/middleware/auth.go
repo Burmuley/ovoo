@@ -28,7 +28,7 @@ const (
 var oidcConfigs map[string]OIDCProvider
 var oidcProviderNames []string
 
-type UserContextKey string
+const UserContextKey string = "user"
 
 // Authentication creates a middleware adapter for handling user authentication.
 // It supports multiple authentication methods:
@@ -112,7 +112,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 					return
 				}
 
-				r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
+				r = r.WithContext(context.WithValue(r.Context(), UserContextKey, user))
 				h.ServeHTTP(w, r)
 				return
 			}
@@ -126,7 +126,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 					return
 				}
 
-				r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
+				r = r.WithContext(context.WithValue(r.Context(), UserContextKey, user))
 				h.ServeHTTP(w, r)
 				return
 			}
@@ -156,7 +156,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 						return
 					}
 
-					r = r.WithContext(context.WithValue(r.Context(), UserContextKey("user"), user))
+					r = r.WithContext(context.WithValue(r.Context(), UserContextKey, user))
 					h.ServeHTTP(w, r)
 					return
 				}

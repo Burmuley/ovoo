@@ -2,12 +2,30 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 )
+
+type AliasCreateCmd struct {
+	ProtectedAddressId string
+	Metadata           struct {
+		Comment     *string
+		ServiceName *string
+	}
+}
+
+type AliasUpdateCmd struct {
+	AliasId  entities.Id
+	Metadata struct {
+		Comment     *string
+		ServiceName *string
+	}
+}
 
 // AliasesService handles operations related to alias addresses.
 type AliasesService struct {
@@ -37,20 +55,39 @@ func NewAliasesService(domain string, wordsDict []string, repoFabric *factory.Re
 func (als *AliasesService) Create(
 	ctx context.Context,
 	cuser entities.User,
-	protAddr entities.Address,
-	metadata entities.AddressMetadata,
+	cmd AliasCreateCmd,
+	// protAddrId entities.Id,
+	// metadata entities.AddressMetadata,
 ) (entities.Address, error) {
 	if !canCreateAlias(cuser) {
 		return entities.Address{}, entities.ErrNotAuthorized
 	}
 
+	protAddr, err := als.repof.Address.GetById(ctx, entities.Id(cmd.ProtectedAddressId))
+	if err != nil {
+		if errors.Is(err, entities.ErrNotFound) {
+			return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+		}
+
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
+	}
+
 	if err := protAddr.Validate(); err != nil {
-		return entities.Address{}, err
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
 	aliasEmail, err := entities.GenAliasEmail(als.domain, als.wordsDictionary)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
+	}
+
+	metadata := entities.AddressMetadata{}
+	if cmd.Metadata.ServiceName != nil {
+		metadata.ServiceName = strings.TrimSpace(*cmd.Metadata.ServiceName)
+	}
+
+	if cmd.Metadata.Comment != nil {
+		metadata.Comment = strings.TrimSpace(*cmd.Metadata.Comment)
 	}
 
 	alias := entities.Address{
@@ -75,41 +112,33 @@ func (als *AliasesService) Create(
 }
 
 // Update modifies an existing alias address.
-func (als *AliasesService) Update(ctx context.Context, cuser entities.User, alias entities.Address) (entities.Address, error) {
+func (als *AliasesService) Update(ctx context.Context, cuser entities.User, cmd AliasUpdateCmd) (entities.Address, error) {
+	alias, err := als.repof.Address.GetById(ctx, cmd.AliasId)
+	if err != nil {
+		if errors.Is(err, entities.ErrNotFound) {
+			return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+		}
+
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
+	}
+
 	if !canUpdateAlias(cuser, alias) {
 		return entities.Address{}, entities.ErrNotAuthorized
 	}
 
-	if err := alias.Validate(); err != nil {
-		return entities.Address{}, err
-	}
-
-	cur, err := als.repof.Address.GetById(ctx, alias.ID)
-	if err != nil {
-		return entities.Address{}, err
-	}
-
-	// validate fields
-	if cur.Type != alias.Type {
-		return entities.Address{}, fmt.Errorf("%w: address type can not be changed", entities.ErrValidation)
-	}
-
-	if cur.Email != alias.Email {
-		return entities.Address{}, fmt.Errorf("%w: alias email can not be changed", entities.ErrValidation)
-	}
-
-	if cur.ForwardAddress != alias.ForwardAddress {
-		return entities.Address{}, fmt.Errorf(
-			"%w: forward address can not be changed for alias address",
-			entities.ErrValidation,
-		)
-	}
-
-	if cur.Owner != alias.Owner {
-		return entities.Address{}, fmt.Errorf("%w: alias owner can not be changed", entities.ErrValidation)
-	}
-
 	alias.UpdatedBy = cuser
+	if cmd.Metadata.Comment != nil {
+		alias.Metadata.Comment = strings.TrimSpace(*cmd.Metadata.Comment)
+	}
+
+	if cmd.Metadata.ServiceName != nil {
+		alias.Metadata.ServiceName = strings.TrimSpace(*cmd.Metadata.ServiceName)
+	}
+
+	if err := alias.Validate(); err != nil {
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+	}
+
 	if err := als.repof.Address.Update(ctx, alias); err != nil {
 		return entities.Address{}, err
 	}

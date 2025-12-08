@@ -33,7 +33,7 @@ func readBody(body io.ReadCloser, data any) error {
 // Returns the user entity and nil if successful, or an empty user and error if the user
 // cannot be found in the context.
 func userFromContext(r *http.Request) (entities.User, error) {
-	user := r.Context().Value(middleware.UserContextKey("user"))
+	user := r.Context().Value(middleware.UserContextKey)
 	if user == nil {
 		return entities.User{}, fmt.Errorf("%w: no user info in headers", entities.ErrNotAuthorized)
 	}

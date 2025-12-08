@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
+	"github.com/Burmuley/ovoo/internal/services"
 )
 
 // GetUsers retrieves all users and returns them as a response.
@@ -17,7 +18,6 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	// filling filters
 	filters := readFilters(r, []string{"login", "id", "type", "page_size", "page"})
-
 	users, pgm, err := a.svcGw.Users.GetAll(a.context, cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "gettings users", err)
@@ -73,23 +73,18 @@ func (a *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req_body := CreateUserRequest{}
-	if err := readBody(r.Body, &req_body); err != nil {
+	req := CreateUserRequest{}
+	if err := readBody(r.Body, &req); err != nil {
 		a.errorLogNResponse(w, "parsing user create request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
 		return
 	}
 
-	var password string = ""
-	if req_body.Password != nil {
-		password = *req_body.Password
-	}
-
-	user, err := a.svcGw.Users.Create(a.context, cuser, entities.User{
-		Login:        req_body.Login,
-		FirstName:    req_body.FirstName,
-		LastName:     req_body.LastName,
-		Type:         entities.UserType(userTypeFStr(req_body.Type)),
-		PasswordHash: password,
+	user, err := a.svcGw.Users.Create(a.context, cuser, services.UserCreateCmd{
+		Login:     req.Login,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Type:      entities.UserType(userTypeFStr(req.Type)),
+		Password:  req.Password,
 	})
 
 	if err != nil {
@@ -109,22 +104,22 @@ func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := r.PathValue("id")
-	user, err := a.svcGw.Users.GetById(a.context, cuser, entities.Id(userId))
-	if err != nil {
-		a.errorLogNResponse(w, "updating user by id", err)
-		return
-	}
-
-	req_body := UpdateUserRequest{}
-	if err := readBody(r.Body, &req_body); err != nil {
+	req := UpdateUserRequest{}
+	if err := readBody(r.Body, &req); err != nil {
 		a.errorLogNResponse(w, "parsing user update request", fmt.Errorf("%w: %w", entities.ErrValidation, err))
 		return
 	}
 
-	user.FirstName = *req_body.FirstName
-	user.LastName = *req_body.LastName
-	user.Type = userTypeFStr(*req_body.Type)
-	user, err = a.svcGw.Users.Update(a.context, cuser, user)
+	cmd := services.UserUpdateCmd{
+		UserID:    entities.Id(userId),
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+	}
+	if req.Type != nil {
+		utyp := userTypeFStr(*req.Type)
+		cmd.Type = &utyp
+	}
+	user, err := a.svcGw.Users.Update(a.context, cuser, cmd)
 	if err != nil {
 		a.errorLogNResponse(w, "updating user by id", fmt.Errorf("updating user: %w", err))
 		return

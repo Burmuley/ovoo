@@ -1,11 +1,10 @@
 package rest
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/Burmuley/ovoo/internal/entities"
+	"github.com/Burmuley/ovoo/internal/services"
 )
 
 // GetAliases retrieves a list of aliases based on optional filters for id and service name.
@@ -20,7 +19,6 @@ func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 
 	// filling filters
 	filters := readFilters(r, []string{"owner", "id", "service_name", "email", "page_size", "page"})
-
 	aliases, pgm, err := a.svcGw.Aliases.GetAll(a.context, cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting aliases", err)
@@ -71,27 +69,25 @@ func (a *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rb := CreateAliasRequest{}
-	if err := readBody(r.Body, &rb); err != nil {
+	req := CreateAliasRequest{}
+	if err := readBody(r.Body, &req); err != nil {
 		a.errorLogNResponse(w, "parsing chain create request", err)
 		return
 	}
 
-	prot_addr, err := a.svcGw.PrAddrs.GetById(a.context, cuser, entities.Id(rb.ProtectedAddressId))
-	if err != nil {
-		a.errorLogNResponse(w, "getting new alias forward address", err)
-		return
-	}
-
-	alias, err := a.svcGw.Aliases.Create(a.context, cuser, prot_addr,
-		entities.AddressMetadata{
-			Comment:     rb.Metadata.Comment,
-			ServiceName: rb.Metadata.ServiceName,
+	alias, err := a.svcGw.Aliases.Create(a.context, cuser, services.AliasCreateCmd{
+		Metadata: struct {
+			Comment     *string
+			ServiceName *string
+		}{
+			Comment:     req.Metadata.Comment,
+			ServiceName: req.Metadata.ServiceName,
 		},
-	)
+		ProtectedAddressId: req.ProtectedAddressId,
+	})
 
 	if err != nil {
-		a.errorLogNResponse(w, "creating alias", err)
+		a.errorLogNResponse(w, "create alias", err)
 		return
 	}
 
@@ -111,38 +107,22 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 	}
 
 	aliasId := entities.Id(r.PathValue("id"))
-	alias, err := a.svcGw.Aliases.GetById(a.context, cuser, aliasId)
-	if err != nil {
-		a.errorLogNResponse(w, "updating alias: retrieving alias by id", err)
-		return
-	}
-
-	rraw, err := io.ReadAll(r.Body)
-	if err != nil {
-		a.errorLogNResponse(w, "reading alias update request", err)
-		return
-	}
-
-	rb := UpdateAliasRequest{}
-	if err := json.Unmarshal(rraw, &rb); err != nil {
+	req := UpdateAliasRequest{}
+	if err := readBody(r.Body, &req); err != nil {
 		a.errorLogNResponse(w, "parsing alias update request", err)
 		return
 	}
 
-	if rb.ProtectedAddressId != nil {
-		newFwd, err := a.svcGw.PrAddrs.GetById(a.context, cuser, entities.Id(*rb.ProtectedAddressId))
-		if err != nil {
-			a.errorLogNResponse(w, "updating alias: retrieving protected address", err)
-			return
-		}
-		alias.ForwardAddress = &newFwd
-	}
-
-	if rb.Metadata != nil {
-		alias.Metadata = entities.AddressMetadata(*rb.Metadata)
-	}
-
-	alias, err = a.svcGw.Aliases.Update(a.context, cuser, alias)
+	alias, err := a.svcGw.Aliases.Update(a.context, cuser, services.AliasUpdateCmd{
+		AliasId: aliasId,
+		Metadata: struct {
+			Comment     *string
+			ServiceName *string
+		}{
+			Comment:     req.Metadata.Comment,
+			ServiceName: req.Metadata.ServiceName,
+		},
+	})
 	if err != nil {
 		a.errorLogNResponse(w, "updating alias", err)
 		return

@@ -17,8 +17,8 @@ const (
 
 // AddressMetadata defines model for addressMetadata.
 type AddressMetadata struct {
-	Comment     string `json:"comment"`
-	ServiceName string `json:"service_name"`
+	Comment     *string `json:"comment,omitempty"`
+	ServiceName *string `json:"service_name,omitempty"`
 }
 
 // AliasData Address of type "alias" data structure
@@ -41,7 +41,7 @@ type ApiTokenData struct {
 	Active bool `json:"active"`
 
 	// Description Optional details about the API token
-	Description string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// Expiration Time of expiration of the API token
 	Expiration time.Time `json:"expiration"`
@@ -62,7 +62,7 @@ type ApiTokenDataOnCreate struct {
 	ApiToken string `json:"api_token"`
 
 	// Description Optional details about the API token
-	Description string `json:"description"`
+	Description *string `json:"description,omitempty"`
 
 	// Expiration Time of expiration of the API token
 	Expiration time.Time `json:"expiration"`
@@ -119,7 +119,7 @@ type PaginationMetadata struct {
 type ProtectedAddressData struct {
 	Email    openapi_types.Email `json:"email"`
 	Id       string              `json:"id"`
-	Metadata AddressMetadata     `json:"metadata"`
+	Metadata *AddressMetadata    `json:"metadata,omitempty"`
 	Owner    UserData            `json:"owner"`
 }
 
@@ -278,8 +278,7 @@ type CreateUserRequest struct {
 
 // UpdateAliasRequest defines model for updateAliasRequest.
 type UpdateAliasRequest struct {
-	Metadata           *AddressMetadata `json:"metadata,omitempty"`
-	ProtectedAddressId *string          `json:"protected_address_id,omitempty"`
+	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
 // UpdateApiToken defines model for updateApiToken.
@@ -324,8 +323,7 @@ type CreateAliasJSONBody struct {
 
 // UpdateAliasJSONBody defines parameters for UpdateAlias.
 type UpdateAliasJSONBody struct {
-	Metadata           *AddressMetadata `json:"metadata,omitempty"`
-	ProtectedAddressId *string          `json:"protected_address_id,omitempty"`
+	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
 // GetPrAddrsParams defines parameters for GetPrAddrs.

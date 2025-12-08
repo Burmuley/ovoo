@@ -718,7 +718,6 @@ components:
           description: Indicates whether the API token is active and can be used
       required:
         - name
-        - description
         - expiration
         - active
     apiTokenDataOnCreate:
@@ -747,7 +746,6 @@ components:
       required:
         - email
         - owner
-        - metadata
         - id
     chainAddressData:
       type: object
@@ -785,9 +783,6 @@ components:
           type: string
         service_name:
           type: string
-      required:
-        - comment
-        - service_name
     error:
       type: object
       properties:
@@ -867,8 +862,6 @@ components:
           schema:
             type: object
             properties:
-              protected_address_id:
-                type: string
               metadata:
                 $ref: "#/components/schemas/addressMetadata"
     createUserRequest:

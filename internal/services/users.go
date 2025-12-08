@@ -2,11 +2,27 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 )
+
+type UserCreateCmd struct {
+	FirstName string
+	LastName  string
+	Login     string
+	Password  *string
+	Type      entities.UserType
+}
+
+type UserUpdateCmd struct {
+	UserID    entities.Id
+	FirstName *string
+	LastName  *string
+	Type      *entities.UserType
+}
 
 // UsersService represents the use case for user operations
 type UsersService struct {
@@ -22,9 +38,16 @@ func NewUsersService(repoFactory *factory.RepoFactory) (*UsersService, error) {
 }
 
 // Create creates a new user
-func (u *UsersService) Create(ctx context.Context, cuser entities.User, user entities.User) (entities.User, error) {
+func (u *UsersService) Create(ctx context.Context, cuser entities.User, cmd UserCreateCmd) (entities.User, error) {
 	if !canCreateUser(cuser) {
 		return entities.User{}, entities.ErrNotAuthorized
+	}
+
+	user := entities.User{
+		Login:     cmd.Login,
+		FirstName: cmd.FirstName,
+		LastName:  cmd.LastName,
+		Type:      cmd.Type,
 	}
 
 	user.ID = entities.NewId()
@@ -33,10 +56,12 @@ func (u *UsersService) Create(ctx context.Context, cuser entities.User, user ent
 	}
 
 	{
-		var err error
-		user.PasswordHash, err = entities.NewPasswordHash(user.PasswordHash)
-		if err != nil {
-			return entities.User{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
+		if cmd.Password != nil {
+			var err error
+			user.PasswordHash, err = entities.NewPasswordHash(user.PasswordHash)
+			if err != nil {
+				return entities.User{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
+			}
 		}
 	}
 
@@ -66,6 +91,10 @@ func (u *UsersService) CreatePriv(ctx context.Context, user entities.User) (enti
 		}
 	}
 
+	if err := user.Validate(); err != nil {
+		return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+	}
+
 	err := u.repof.Users.Create(ctx, user)
 	if err != nil {
 		return entities.User{}, err
@@ -75,18 +104,38 @@ func (u *UsersService) CreatePriv(ctx context.Context, user entities.User) (enti
 }
 
 // Update updates an existing user
-func (u *UsersService) Update(ctx context.Context, cuser entities.User, user entities.User) (entities.User, error) {
+func (u *UsersService) Update(ctx context.Context, cuser entities.User, cmd UserUpdateCmd) (entities.User, error) {
+	user, err := u.repof.Users.GetById(ctx, cmd.UserID)
+	if err != nil {
+		if errors.Is(err, entities.ErrNotFound) {
+			return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+		}
+
+		return entities.User{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
+	}
+
 	if !canUpdateUser(cuser, user.ID) {
 		return entities.User{}, entities.ErrNotAuthorized
+	}
+
+	user.UpdatedBy = &cuser
+	if cmd.FirstName != nil {
+		user.FirstName = *cmd.FirstName
+	}
+
+	if cmd.LastName != nil {
+		user.LastName = *cmd.LastName
+	}
+
+	if cmd.Type != nil {
+		user.Type = *cmd.Type
 	}
 
 	if err := user.Validate(); err != nil {
 		return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	user.UpdatedBy = &cuser
-	err := u.repof.Users.Update(ctx, user)
-	if err != nil {
+	if err := u.repof.Users.Update(ctx, user); err != nil {
 		return entities.User{}, err
 	}
 

@@ -65,7 +65,7 @@ func checkNilServices(gw *ServiceGateway) error {
 	val := reflect.ValueOf(gw).Elem()
 	typ := val.Type()
 
-	for i := 0; i < val.NumField(); i++ {
+	for i := range val.NumField() {
 		field := val.Field(i)
 		fieldName := typ.Field(i).Name
 
