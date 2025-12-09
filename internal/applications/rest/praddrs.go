@@ -71,7 +71,7 @@ func (a *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 
 	praddr, err := a.svcGw.PrAddrs.Create(
 		a.context, user, services.PrAddrCreateCmd{
-			Email: "",
+			Email: entities.Email(req.Email),
 			Metadata: struct {
 				Comment     *string
 				ServiceName *string
