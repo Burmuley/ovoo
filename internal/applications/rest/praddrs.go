@@ -18,7 +18,7 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 
 	// filling filters
 	filters := readFilters(r, []string{"owner", "id", "email", "page_size", "page"})
-	praddrs, pgm, err := a.svcGw.PrAddrs.GetAll(a.context, user, filters)
+	praddrs, pgm, err := a.svcGw.PrAddrs.GetAll(r.Context(), user, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses", err)
 		return
@@ -45,7 +45,7 @@ func (a *Application) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	prAddrId := entities.Id(r.PathValue("id"))
-	prAddr, err := a.svcGw.Aliases.GetById(a.context, user, entities.Id(prAddrId))
+	prAddr, err := a.svcGw.Aliases.GetById(r.Context(), user, entities.Id(prAddrId))
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected address by id", err)
 		return
@@ -70,7 +70,7 @@ func (a *Application) CreatePrAddr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	praddr, err := a.svcGw.PrAddrs.Create(
-		a.context, user, services.PrAddrCreateCmd{
+		r.Context(), user, services.PrAddrCreateCmd{
 			Email: entities.Email(req.Email),
 			Metadata: struct {
 				Comment     *string
@@ -105,7 +105,7 @@ func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	praddr, err := a.svcGw.PrAddrs.Update(a.context, user, services.PrAddrUpdateCmd{
+	praddr, err := a.svcGw.PrAddrs.Update(r.Context(), user, services.PrAddrUpdateCmd{
 		PrAddrId: praddrId,
 		Metadata: struct {
 			Comment     *string
@@ -133,7 +133,7 @@ func (a *Application) DeletePrAddr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	prAddrId := entities.Id(r.PathValue("id"))
-	if err := a.svcGw.PrAddrs.DeleteById(a.context, user, prAddrId); err != nil {
+	if err := a.svcGw.PrAddrs.DeleteById(r.Context(), user, prAddrId); err != nil {
 		a.errorLogNResponse(w, "getting alias by id: parsing id", err)
 		return
 	}

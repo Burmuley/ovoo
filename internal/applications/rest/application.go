@@ -42,7 +42,6 @@ var webuiData embed.FS
 type Application struct {
 	svcGw           *services.ServiceGateway
 	listenAddr      string
-	context         context.Context
 	logger          *slog.Logger
 	authSkipURIs    []string
 	tls_cert        string
@@ -138,7 +137,6 @@ func (a *Application) Start() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	a.context = ctx
 	mux := http.NewServeMux()
 
 	// docs

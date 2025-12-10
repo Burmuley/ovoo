@@ -14,7 +14,7 @@ func (a *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chainHash := entities.Hash(r.PathValue("hash"))
-	chain, err := a.svcGw.Chains.GetByHash(a.context, cuser, chainHash)
+	chain, err := a.svcGw.Chains.GetByHash(r.Context(), cuser, chainHash)
 	if err != nil {
 		a.errorLogNResponse(w, "getting chain by hash", err)
 		return
@@ -38,7 +38,7 @@ func (a *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chain, err := a.svcGw.Chains.Create(
-		a.context,
+		r.Context(),
 		cuser,
 		string(rb.FromEmail),
 		string(rb.ToEmail),

@@ -18,7 +18,7 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	// filling filters
 	filters := readFilters(r, []string{"login", "id", "type", "page_size", "page"})
-	users, pgm, err := a.svcGw.Users.GetAll(a.context, cuser, filters)
+	users, pgm, err := a.svcGw.Users.GetAll(r.Context(), cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "gettings users", err)
 		return
@@ -55,7 +55,7 @@ func (a *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := r.PathValue("id")
-	user, err := a.svcGw.Users.GetById(a.context, cuser, entities.Id(userId))
+	user, err := a.svcGw.Users.GetById(r.Context(), cuser, entities.Id(userId))
 	if err != nil {
 		a.errorLogNResponse(w, "getting user by id", err)
 		return
@@ -79,7 +79,7 @@ func (a *Application) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := a.svcGw.Users.Create(a.context, cuser, services.UserCreateCmd{
+	user, err := a.svcGw.Users.Create(r.Context(), cuser, services.UserCreateCmd{
 		Login:     req.Login,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
@@ -119,7 +119,7 @@ func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		utyp := userTypeFStr(*req.Type)
 		cmd.Type = &utyp
 	}
-	user, err := a.svcGw.Users.Update(a.context, cuser, cmd)
+	user, err := a.svcGw.Users.Update(r.Context(), cuser, cmd)
 	if err != nil {
 		a.errorLogNResponse(w, "updating user by id", fmt.Errorf("updating user: %w", err))
 		return
@@ -137,7 +137,7 @@ func (a *Application) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId := r.PathValue("id")
-	user, err := a.svcGw.Users.Delete(a.context, cuser, entities.Id(userId))
+	user, err := a.svcGw.Users.Delete(r.Context(), cuser, entities.Id(userId))
 	if err != nil {
 		a.errorLogNResponse(w, "deleting user by id", err)
 		return

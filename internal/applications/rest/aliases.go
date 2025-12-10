@@ -19,7 +19,7 @@ func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 
 	// filling filters
 	filters := readFilters(r, []string{"owner", "id", "service_name", "email", "page_size", "page"})
-	aliases, pgm, err := a.svcGw.Aliases.GetAll(a.context, cuser, filters)
+	aliases, pgm, err := a.svcGw.Aliases.GetAll(r.Context(), cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting aliases", err)
 		return
@@ -48,7 +48,7 @@ func (a *Application) GetAliaseById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	aliasId := entities.Id(r.PathValue("id"))
-	alias, err := a.svcGw.Aliases.GetById(a.context, cuser, entities.Id(aliasId))
+	alias, err := a.svcGw.Aliases.GetById(r.Context(), cuser, entities.Id(aliasId))
 	if err != nil {
 		a.errorLogNResponse(w, "getting alias by id", err)
 		return
@@ -75,7 +75,7 @@ func (a *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alias, err := a.svcGw.Aliases.Create(a.context, cuser, services.AliasCreateCmd{
+	alias, err := a.svcGw.Aliases.Create(r.Context(), cuser, services.AliasCreateCmd{
 		Metadata: struct {
 			Comment     *string
 			ServiceName *string
@@ -113,7 +113,7 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alias, err := a.svcGw.Aliases.Update(a.context, cuser, services.AliasUpdateCmd{
+	alias, err := a.svcGw.Aliases.Update(r.Context(), cuser, services.AliasUpdateCmd{
 		AliasId: aliasId,
 		Metadata: struct {
 			Comment     *string
@@ -142,7 +142,7 @@ func (a *Application) DeleteAlias(w http.ResponseWriter, r *http.Request) {
 	}
 
 	aliasId := entities.Id(r.PathValue("id"))
-	if err := a.svcGw.Aliases.DeleteById(a.context, cuser, aliasId); err != nil {
+	if err := a.svcGw.Aliases.DeleteById(r.Context(), cuser, aliasId); err != nil {
 		a.errorLogNResponse(w, "deleting alias by id", err)
 		return
 	}
