@@ -1,7 +1,6 @@
 package milter
 
 import (
-	"context"
 	"log/slog"
 
 	"github.com/d--j/go-milter/mailfilter"
@@ -25,7 +24,7 @@ func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Applicati
 	return ctrl, nil
 }
 
-func (m *Application) Start(ctx context.Context) error {
+func (m *Application) Start() error {
 	server, err := mailfilter.New(
 		"tcp",
 		m.listenAddr,

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -37,5 +36,5 @@ func startMilter(cfg config.MilterConfig) error {
 		return fmt.Errorf("error creating Ovoo API client: %w", err)
 	}
 	ctrl, _ := milter.New(listen_addr, logger, ovooClient)
-	return ctrl.Start(context.Background())
+	return ctrl.Start()
 }

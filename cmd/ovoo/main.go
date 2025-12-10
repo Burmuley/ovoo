@@ -44,6 +44,7 @@ func main() {
 		if err := startApi(config.Api); err != nil {
 			slog.Error(err.Error())
 		}
+
 	case "milter":
 		milterCmd.Parse(os.Args[2:])
 		config, err := config.LoadConfig(*milterCfgName)

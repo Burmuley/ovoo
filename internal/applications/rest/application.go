@@ -8,8 +8,13 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"regexp"
+	"syscall"
+	"time"
 
 	"github.com/Burmuley/ovoo/internal/applications"
 	"github.com/Burmuley/ovoo/internal/applications/rest/middleware"
@@ -128,7 +133,11 @@ func New(
 //
 // Returns:
 //   - error: Non-nil if server fails to start or encounters fatal error
-func (a *Application) Start(ctx context.Context) error {
+func (a *Application) Start() error {
+	// global context
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	a.context = ctx
 	mux := http.NewServeMux()
 
@@ -182,8 +191,34 @@ func (a *Application) Start(ctx context.Context) error {
 		middleware.Logging(a.logger),
 		middleware.Authentication(a.authSkipURIs, a.svcGw),
 	)
-	a.logger.Info("started Ovoo API server", "addr", a.listenAddr)
-	return http.ListenAndServeTLS(a.listenAddr, a.tls_cert, a.tls_key, handler)
+	srv := &http.Server{
+		Addr:                         a.listenAddr,
+		Handler:                      handler,
+		DisableGeneralOptionsHandler: false,
+		ReadTimeout:                  10 * time.Second,
+		WriteTimeout:                 15 * time.Second,
+		IdleTimeout:                  60 * time.Second,
+		BaseContext:                  func(net.Listener) context.Context { return ctx },
+	}
+
+	go func() {
+		a.logger.Info("started Ovoo API server", "addr", a.listenAddr)
+		if err := srv.ListenAndServeTLS(a.tls_cert, a.tls_key); err != nil && err != http.ErrServerClosed {
+			a.logger.Error("error starting Ovoo API server", "err", err.Error())
+			stop() // call cancel func in case of error
+			return
+		}
+	}()
+
+	<-ctx.Done()
+	a.logger.Info("shutting down Ovoo API server")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		a.logger.Error("server shutdown failed", "err", err.Error())
+	}
+	return nil
 }
 
 // handleDocs serves the API documentation HTML page

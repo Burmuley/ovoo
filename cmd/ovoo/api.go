@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -77,9 +76,6 @@ func startApi(cfg config.ApiConfig) error {
 		return fmt.Errorf("error initializing repository: %w", err)
 	}
 
-	// global context
-	ctx := context.Background()
-
 	// initialize services
 	svcGw, err := makeServices(repoFactory, cfg.Domain, dict)
 	if err != nil {
@@ -97,5 +93,5 @@ func startApi(cfg config.ApiConfig) error {
 		return fmt.Errorf("error initializing rest api: %w", err)
 	}
 
-	return restApi.Start(ctx)
+	return restApi.Start()
 }
