@@ -9,7 +9,7 @@ require (
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.44.0
+	golang.org/x/crypto v0.46.0
 	golang.org/x/oauth2 v0.28.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/gorm v1.31.1
@@ -49,7 +49,7 @@ require (
 	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
 	golang.org/x/tools v0.39.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

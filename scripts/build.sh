@@ -25,10 +25,10 @@ go generate "$PWD/internal/config"
 
 if [[ "${TARGET}" == "local" ]]; then
     build_webui
-    go build -o "bin/ovoo_${TARGET}" ./cmd/ovoo
+    go build -x -o "bin/ovoo_${TARGET}" ./cmd/ovoo
 elif [[ "${TARGET}" == "linux" ]]; then
     build_webui
-    GOOS=linux GOARCH=amd64 go build -o bin/ovoo_linux ./cmd/ovoo
+    GOOS=linux GOARCH=amd64 go build -x -o bin/ovoo_linux ./cmd/ovoo
 elif [[ "${TARGET}" == "webui" ]]; then
     build_webui
 fi
