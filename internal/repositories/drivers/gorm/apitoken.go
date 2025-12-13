@@ -121,7 +121,7 @@ func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, userId entities.Id, f
 
 func (t *TokenGORMRepo) Update(ctx context.Context, token entities.ApiToken) (entities.ApiToken, error) {
 	gorm_token := apiTokenFromEntity(token)
-	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Select("*").Updates(&gorm_token).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Select("*").Where("id = ?", token.ID.String()).Updates(&gorm_token).Error; err != nil {
 		return entities.ApiToken{}, wrapGormError(err)
 	}
 

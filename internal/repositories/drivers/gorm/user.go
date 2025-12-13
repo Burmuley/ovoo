@@ -45,7 +45,7 @@ func (u *UserGORMRepo) BatchCreate(ctx context.Context, users []entities.User) e
 // Update modifies an existing user in the database.
 func (u *UserGORMRepo) Update(ctx context.Context, user entities.User) error {
 	gorm_user := userFromEntity(user)
-	if err := u.db.WithContext(ctx).Model(&User{}).Select("*").Updates(&gorm_user).Error; err != nil {
+	if err := u.db.WithContext(ctx).Model(&User{}).Select("*").Where("id = ?", user.ID.String()).Updates(&gorm_user).Error; err != nil {
 		return wrapGormError(err)
 	}
 

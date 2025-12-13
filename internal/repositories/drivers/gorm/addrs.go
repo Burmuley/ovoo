@@ -45,7 +45,7 @@ func (a *AddressGORMRepo) BatchCreate(ctx context.Context, addresses []entities.
 // Update modifies an existing address in the database.
 func (a *AddressGORMRepo) Update(ctx context.Context, address entities.Address) error {
 	gorm_addr := addressFromEntity(address)
-	if err := a.db.WithContext(ctx).Model(&Address{}).Select("*").Updates(&gorm_addr).Error; err != nil {
+	if err := a.db.WithContext(ctx).Model(&Address{}).Select("*").Where("id = ?", address.ID).Updates(&gorm_addr).Error; err != nil {
 		return wrapGormError(err)
 	}
 

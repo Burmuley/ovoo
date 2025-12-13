@@ -4,11 +4,6 @@ import "github.com/Burmuley/ovoo/internal/entities"
 
 // userFromEntity converts an entities.User to a User
 func userFromEntity(e entities.User) User {
-	updatedBy := User{}
-	if e.UpdatedBy != nil {
-		updatedBy = userFromEntity(*e.UpdatedBy)
-	}
-
 	u := User{
 		Model: Model{
 			ID:        string(e.ID),
@@ -22,7 +17,11 @@ func userFromEntity(e entities.User) User {
 		PwdHash:        e.PasswordHash,
 		FailedAttempts: e.FailedAttempts,
 		LockoutUntil:   e.LockoutUntil,
-		UpdatedBy:      &updatedBy,
+	}
+
+	if e.UpdatedBy != nil {
+		updatedBy := userFromEntity(*e.UpdatedBy)
+		u.UpdatedBy = &updatedBy
 	}
 
 	return u
@@ -40,12 +39,7 @@ func userFromEntityList(eusers []entities.User) []User {
 
 // userToEntity converts a User to an entities.User
 func userToEntity(u User) entities.User {
-	updatedBy := entities.User{}
-	if u.UpdatedBy != nil {
-		updatedBy = userToEntity(*u.UpdatedBy)
-	}
-
-	return entities.User{
+	eu := entities.User{
 		ID:             entities.Id(u.ID),
 		FirstName:      u.FirstName,
 		LastName:       u.LastName,
@@ -56,8 +50,14 @@ func userToEntity(u User) entities.User {
 		FailedAttempts: u.FailedAttempts,
 		UpdatedAt:      u.UpdatedAt,
 		CreatedAt:      u.UpdatedAt,
-		UpdatedBy:      &updatedBy,
 	}
+
+	if u.UpdatedBy != nil {
+		updatedBy := userToEntity(*u.UpdatedBy)
+		eu.UpdatedBy = &updatedBy
+	}
+
+	return eu
 }
 
 // addressFromEntity converts an entities.Address to an Address
