@@ -8,6 +8,7 @@ import (
 func TestApiToken_Validate(t *testing.T) {
 	type fields struct {
 		ID          Id
+		Name        string
 		TokenHash   string
 		Salt        string
 		Description string
@@ -28,6 +29,7 @@ func TestApiToken_Validate(t *testing.T) {
 				rawToken, _ := RandString(32)
 				return fields{
 					ID:          NewId(),
+					Name:        "Test token",
 					TokenHash:   HashApiToken(salt, rawToken),
 					Salt:        salt,
 					Description: "test token",
@@ -49,6 +51,7 @@ func TestApiToken_Validate(t *testing.T) {
 				rawToken, _ := RandString(32)
 				return fields{
 					ID:          NewId(),
+					Name:        "Test token",
 					TokenHash:   HashApiToken(salt, rawToken),
 					Salt:        salt,
 					Description: "",
@@ -65,6 +68,7 @@ func TestApiToken_Validate(t *testing.T) {
 				rawToken, _ := RandString(32)
 				return fields{
 					ID:          NewId(),
+					Name:        "Test token",
 					TokenHash:   HashApiToken(salt, rawToken),
 					Salt:        salt,
 					Description: "",
@@ -85,6 +89,7 @@ func TestApiToken_Validate(t *testing.T) {
 				salt, _ := RandString(16)
 				return fields{
 					ID:          NewId(),
+					Name:        "Test token",
 					Salt:        salt,
 					Description: "",
 					Owner: User{
@@ -104,6 +109,28 @@ func TestApiToken_Validate(t *testing.T) {
 				salt, _ := RandString(16)
 				rawToken, _ := RandString(32)
 				return fields{
+					Name:        "Test token",
+					TokenHash:   HashApiToken(salt, rawToken),
+					Salt:        salt,
+					Description: "test token",
+					Owner: User{
+						ID:    NewId(),
+						Login: "test_user",
+						Type:  MilterUser,
+					},
+					Expiration: time.Now().Add(time.Hour * 2),
+					Active:     true,
+				}
+			}(),
+		},
+		{
+			name:    "empty name",
+			wantErr: true,
+			fields: func() fields {
+				salt, _ := RandString(16)
+				rawToken, _ := RandString(32)
+				return fields{
+					ID:          NewId(),
 					TokenHash:   HashApiToken(salt, rawToken),
 					Salt:        salt,
 					Description: "test token",
@@ -121,9 +148,9 @@ func TestApiToken_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Log("blah blah")
 			tr := &ApiToken{
 				ID:          tt.fields.ID,
+				Name:        tt.fields.Name,
 				TokenHash:   tt.fields.TokenHash,
 				Salt:        tt.fields.Salt,
 				Description: tt.fields.Description,
