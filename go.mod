@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/coreos/go-oidc/v3 v3.14.1
-	github.com/d--j/go-milter v0.8.5
+	github.com/d--j/go-milter v0.10.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/oklog/ulid/v2 v2.1.0

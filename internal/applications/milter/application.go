@@ -1,7 +1,12 @@
 package milter
 
 import (
+	"context"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/d--j/go-milter/mailfilter"
 )
@@ -25,6 +30,10 @@ func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Applicati
 }
 
 func (m *Application) Start() error {
+	// global context
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	server, err := mailfilter.New(
 		"tcp",
 		m.listenAddr,
@@ -37,9 +46,21 @@ func (m *Application) Start() error {
 		return err
 	}
 
-	m.logger.Info("started Ovoo Milter", server.Addr().Network(), server.Addr().String())
+	go func() {
+		m.logger.Info("starting Ovoo Milter server", server.Addr().Network(), server.Addr().String())
+		server.Wait()
+		stop()
+	}()
 
-	// quit when milter quits
-	server.Wait()
+	<-ctx.Done()
+	m.logger.Info("shutting down Ovoo Milter server")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		m.logger.Error("Ovoo Milter server shutdown failed", "err", err.Error())
+		return err
+	}
+	server.Close()
 	return nil
 }

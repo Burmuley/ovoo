@@ -215,6 +215,7 @@ func (a *Application) Start() error {
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		a.logger.Error("server shutdown failed", "err", err.Error())
+		return err
 	}
 	return nil
 }
