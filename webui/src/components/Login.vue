@@ -1,8 +1,11 @@
 <template>
+    <!-- <div class="main-div"> -->
+    <center>
+        <h2>Ovoo Privacy Mail Gateway</h2>
+    </center>
+    <!-- </div> -->
     <div class="login-div">
-        <center>
-            <h2>Ovoo Privacy Mail Gateway</h2>
-        </center>
+
         <div class="login-div">
             <button v-for="provider in providers" @click="login(provider)" class="button">
                 Login with {{ provider }}

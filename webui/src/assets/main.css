@@ -148,10 +148,11 @@ div {
 
 .login-div {
     margin: auto;
+    gap: 10px;
     width: 85%;
     padding: 10px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
 }

@@ -6,6 +6,13 @@
         Last name: {{ props.user_info.last_name }}<br>
         Type: {{ props.user_info.type }}<br>
     </div>
+    <div class="user-info-div">
+        <p>
+            <a href="/auth/logout">
+                <button title="LOGOUT" role="link">LOGOUT</button>
+            </a>
+        </p>
+    </div>
 </template>
 
 <script setup>

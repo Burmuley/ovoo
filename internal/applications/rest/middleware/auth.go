@@ -22,6 +22,7 @@ const (
 	// ApiKey constants
 	apiTokenCookieName = "ovoo_key"
 	authProvidersUrl   = "/auth/providers"
+	authLogoutUrl      = "/auth/logout"
 )
 
 // var providerConfig *OIDCProvider
@@ -63,7 +64,12 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 				return
 			}
 
-			// return auth providers list
+			if r.URL.Path == authLogoutUrl {
+				logout(w, r)
+				return
+			}
+
+			// allow access to auth providers list
 			if r.URL.Path == authProvidersUrl {
 				resp, err := json.Marshal(oidcProviderNames)
 				if err != nil {
@@ -102,9 +108,8 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 				return
 			}
 
-			// Process Basic authentication (username/password)
-			username, password, ok := r.BasicAuth()
-			if ok {
+			// Process Basic authentication (username/password) header
+			if username, password, ok := r.BasicAuth(); ok {
 				user, err := validateBasicAuth(r.Context(), username, password, svcGw)
 				if err != nil {
 					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr, "msg", err.Error())
@@ -117,6 +122,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 				return
 			}
 
+			// process ApiToken authorization header
 			apiToken := getApiToken(r)
 			if apiToken != "" {
 				user, err := validateApiToken(r.Context(), svcGw, apiToken)
@@ -168,7 +174,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 				return
 			}
 
-			http.Error(w, "missing correct authentication data", http.StatusUnauthorized)
+			http.Error(w, "missing valid authentication headers", http.StatusUnauthorized)
 		})
 	}
 }
