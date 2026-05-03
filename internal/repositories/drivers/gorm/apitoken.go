@@ -56,7 +56,7 @@ func (t *TokenGORMRepo) BatchCreate(ctx context.Context, tokens []entities.ApiTo
 // Returns an error if the token doesn't exist or if the delete operation fails.
 func (t *TokenGORMRepo) Delete(ctx context.Context, id entities.Id) error {
 	if _, err := t.GetById(ctx, id); err != nil {
-		return wrapGormError(err)
+		return err
 	}
 
 	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Unscoped().
@@ -104,10 +104,16 @@ func (t *TokenGORMRepo) GetById(ctx context.Context, token_id entities.Id) (enti
 // It takes a context and a user ID, finds all tokens associated with that user,
 // and preloads the Owner relation for each token.
 // Returns a slice of API token entities and an error if the query fails.
-func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, userId entities.Id, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
+func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
 	gorm_tokens := make([]ApiToken, 0)
-
-	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id = ?", userId).Preload("Owner").Find(&gorm_tokens).Error; err != nil {
+	if len(filter.UserIds) == 0 {
+		return nil, fmt.Errorf("%w: at least one user id has to be defined", entities.ErrValidation)
+	}
+	uids := make([]string, 0, len(filter.UserIds))
+	for _, val := range filter.UserIds {
+		uids = append(uids, val.String())
+	}
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id IN ?", uids).Preload("Owner").Find(&gorm_tokens).Error; err != nil {
 		return nil, wrapGormError(err)
 	}
 

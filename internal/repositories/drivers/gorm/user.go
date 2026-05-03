@@ -55,7 +55,7 @@ func (u *UserGORMRepo) Update(ctx context.Context, user entities.User) error {
 // Delete removes a user from the database by ID.
 func (u *UserGORMRepo) Delete(ctx context.Context, id entities.Id) error {
 	if _, err := u.GetById(ctx, id); err != nil {
-		return wrapGormError(err)
+		return err
 	}
 
 	if err := u.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).Unscoped().
@@ -117,6 +117,8 @@ func applyUserFilter(stmt *gorm.DB, filter entities.UserFilter) *int64 {
 
 	var count int64
 	stmt.Count(&count)
-	stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
+	if filter.Page != 0 && filter.PageSize != 0 {
+		stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
+	}
 	return &count
 }

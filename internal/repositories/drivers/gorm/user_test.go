@@ -357,6 +357,101 @@ func TestUserGORMRepo_GetAll_WithFilter(t *testing.T) {
 	assert.Equal(t, 1, metadata.TotalRecords)
 }
 
+func TestUserGORMRepo_GetAll_NoPagination(t *testing.T) {
+	repo := setupUserTestDB(t)
+	ctx := context.Background()
+
+	users := make([]entities.User, 5)
+	for i := 0; i < 5; i++ {
+		users[i] = entities.User{
+			ID:           entities.NewId(),
+			Login:        "user" + string(rune('0'+i)) + "@example.com",
+			Type:         entities.RegularUser,
+			PasswordHash: "hash",
+		}
+	}
+
+	err := repo.BatchCreate(ctx, users)
+	require.NoError(t, err)
+
+	filter := entities.UserFilter{}
+
+	retrieved, _, err := repo.GetAll(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 5)
+}
+
+func TestUserGORMRepo_GetAll_FilterByIds(t *testing.T) {
+	repo := setupUserTestDB(t)
+	ctx := context.Background()
+
+	users := make([]entities.User, 3)
+	for i := 0; i < 3; i++ {
+		users[i] = entities.User{
+			ID:           entities.NewId(),
+			Login:        "user" + string(rune('0'+i)) + "@example.com",
+			Type:         entities.RegularUser,
+			PasswordHash: "hash",
+		}
+	}
+
+	err := repo.BatchCreate(ctx, users)
+	require.NoError(t, err)
+
+	filter := entities.UserFilter{
+		Filter: entities.Filter{
+			Page:     1,
+			PageSize: 10,
+			Ids:      []entities.Id{users[0].ID, users[2].ID},
+		},
+	}
+
+	retrieved, metadata, err := repo.GetAll(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 2)
+	assert.Equal(t, 2, metadata.TotalRecords)
+}
+
+func TestUserGORMRepo_GetAll_FilterByLogins(t *testing.T) {
+	repo := setupUserTestDB(t)
+	ctx := context.Background()
+
+	users := []entities.User{
+		{
+			ID:           entities.NewId(),
+			Login:        "alice@example.com",
+			Type:         entities.RegularUser,
+			PasswordHash: "hash1",
+		},
+		{
+			ID:           entities.NewId(),
+			Login:        "bob@example.com",
+			Type:         entities.RegularUser,
+			PasswordHash: "hash2",
+		},
+	}
+
+	err := repo.BatchCreate(ctx, users)
+	require.NoError(t, err)
+
+	filter := entities.UserFilter{
+		Filter: entities.Filter{
+			Page:     1,
+			PageSize: 10,
+		},
+		Logins: []string{"alice@example.com"},
+	}
+
+	retrieved, metadata, err := repo.GetAll(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.Equal(t, "alice@example.com", retrieved[0].Login)
+	assert.Equal(t, 1, metadata.TotalRecords)
+}
+
 func TestUserGORMRepo_GetAll_Pagination(t *testing.T) {
 	repo := setupUserTestDB(t)
 	ctx := context.Background()

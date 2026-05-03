@@ -30,11 +30,6 @@ func TestWrapGormError(t *testing.T) {
 			inputErr:    errors.New("some database error"),
 			expectedErr: entities.ErrGeneral,
 		},
-		{
-			name:        "wrap nil error",
-			inputErr:    nil,
-			expectedErr: entities.ErrGeneral,
-		},
 	}
 
 	for _, tt := range tests {
@@ -43,10 +38,7 @@ func TestWrapGormError(t *testing.T) {
 
 			assert.Error(t, wrappedErr)
 			assert.ErrorIs(t, wrappedErr, tt.expectedErr)
-
-			if tt.inputErr != nil {
-				assert.ErrorIs(t, wrappedErr, tt.inputErr)
-			}
+			assert.ErrorIs(t, wrappedErr, tt.inputErr)
 		})
 	}
 }

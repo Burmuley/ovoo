@@ -49,6 +49,8 @@ func TestUserFromEntity(t *testing.T) {
 	assert.Equal(t, int(user.Type), gormUser.Type)
 	assert.Equal(t, user.PasswordHash, gormUser.PwdHash)
 	assert.Equal(t, user.FailedAttempts, gormUser.FailedAttempts)
+	assert.True(t, user.CreatedAt.Equal(gormUser.CreatedAt))
+	assert.True(t, user.UpdatedAt.Equal(gormUser.UpdatedAt))
 }
 
 func TestUserFromEntity_WithUpdatedBy(t *testing.T) {
@@ -91,6 +93,8 @@ func TestUserToEntity(t *testing.T) {
 	assert.Equal(t, entities.UserType(gormUser.Type), user.Type)
 	assert.Equal(t, gormUser.PwdHash, user.PasswordHash)
 	assert.Equal(t, gormUser.FailedAttempts, user.FailedAttempts)
+	assert.True(t, gormUser.CreatedAt.Equal(user.CreatedAt))
+	assert.True(t, gormUser.UpdatedAt.Equal(user.UpdatedAt))
 }
 
 func TestUserFromEntityList(t *testing.T) {
@@ -120,6 +124,8 @@ func TestAddressFromEntity(t *testing.T) {
 	assert.Equal(t, address.Metadata.Comment, gormAddr.Metadata.Comment)
 	assert.Equal(t, address.Metadata.ServiceName, gormAddr.Metadata.ServiceName)
 	assert.Equal(t, string(owner.ID), gormAddr.Owner.ID)
+	assert.True(t, address.CreatedAt.Equal(gormAddr.CreatedAt))
+	assert.True(t, address.UpdatedAt.Equal(gormAddr.UpdatedAt))
 }
 
 func TestAddressFromEntity_WithForwardAddress(t *testing.T) {
@@ -167,6 +173,8 @@ func TestAddressToEntity(t *testing.T) {
 	assert.Equal(t, entities.AddressType(gormAddr.Type), address.Type)
 	assert.Equal(t, gormAddr.Metadata.Comment, address.Metadata.Comment)
 	assert.Equal(t, gormAddr.Metadata.ServiceName, address.Metadata.ServiceName)
+	assert.True(t, gormAddr.CreatedAt.Equal(address.CreatedAt))
+	assert.True(t, gormAddr.UpdatedAt.Equal(address.UpdatedAt))
 }
 
 func TestAddressFromEntityList(t *testing.T) {
@@ -401,6 +409,8 @@ func TestApiTokenFromEntity(t *testing.T) {
 	assert.Equal(t, token.Description, gormToken.Description)
 	assert.Equal(t, token.Active, gormToken.Active)
 	assert.Equal(t, string(owner.ID), gormToken.Owner.ID)
+	assert.True(t, token.CreatedAt.Equal(gormToken.CreatedAt))
+	assert.True(t, token.UpdatedAt.Equal(gormToken.UpdatedAt))
 }
 
 func TestApiTokenToEntity(t *testing.T) {
@@ -433,6 +443,8 @@ func TestApiTokenToEntity(t *testing.T) {
 	assert.Equal(t, gormToken.Salt, token.Salt)
 	assert.Equal(t, gormToken.Description, token.Description)
 	assert.Equal(t, gormToken.Active, token.Active)
+	assert.True(t, gormToken.CreatedAt.Equal(token.CreatedAt))
+	assert.True(t, gormToken.UpdatedAt.Equal(token.UpdatedAt))
 }
 
 func TestApiTokenFromEntityList(t *testing.T) {

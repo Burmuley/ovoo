@@ -31,6 +31,8 @@ func NewGORMDatabase(config Config) (*gorm.DB, error) {
 		logLevel = logger.Error
 	case "debug":
 		logLevel = logger.Info
+	case "info":
+		logLevel = logger.Info
 	default:
 		logLevel = logger.Silent
 	}
@@ -42,13 +44,6 @@ func NewGORMDatabase(config Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// tables := []any{&User{}, &ApiToken{}, &Address{}, &Chain{}}
-	// for _, t := range tables {
-	// 	if err := gdb.AutoMigrate(t); err != nil {
-	// 		return nil, err
-	// 	}
-	// }
 
 	if err := gdb.AutoMigrate(&User{}, &ApiToken{}, &Address{}, &Chain{}); err != nil {
 		return nil, err

@@ -55,7 +55,7 @@ func (a *AddressGORMRepo) Update(ctx context.Context, address entities.Address) 
 // DeleteById removes an address from the database by its ID.
 func (a *AddressGORMRepo) DeleteById(ctx context.Context, id entities.Id) error {
 	if _, err := a.GetById(ctx, id); err != nil {
-		return wrapGormError(err)
+		return err
 	}
 
 	if err := a.db.WithContext(ctx).Model(&Address{}).Unscoped().

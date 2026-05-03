@@ -11,7 +11,7 @@ type Model struct {
 	ID        string         `gorm:"column:id;primaryKey"`
 	CreatedAt time.Time      `gorm:"column:created_at"`
 	UpdatedAt time.Time      `gorm:"column:updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"columnt:deleted_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
 }
 
 // User represents a user in the system
@@ -71,7 +71,7 @@ type Chain struct {
 	OrigToAddress     Address        `gorm:"foreignKey:OrigToAddressID"`
 	CreatedAt         time.Time      `gorm:"column:created_at"`
 	UpdatedAt         time.Time      `gorm:"column:updated_at"`
-	DeletedAt         gorm.DeletedAt `gorm:"columnt:deleted_at"`
+	DeletedAt         gorm.DeletedAt `gorm:"column:deleted_at"`
 	UpdatedByID       string         `gorm:"column:updated_by_id"`
 	UpdatedBy         User           `gorm:"foreignKey:UpdatedByID"`
 }

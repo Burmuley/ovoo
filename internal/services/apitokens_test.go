@@ -195,7 +195,7 @@ func TestApiTokensService_GetAll_Success(t *testing.T) {
 		{ID: entities.NewId(), Name: "Token 2", Owner: user},
 	}
 
-	tokensRepo.On("GetAllForUser", ctx, userId, mock.AnythingOfType("entities.ApiTokenFilter")).Return(expectedTokens, nil)
+	tokensRepo.On("GetAllForUser", ctx, mock.AnythingOfType("entities.ApiTokenFilter")).Return(expectedTokens, nil)
 
 	tokens, err := service.GetAll(ctx, user)
 

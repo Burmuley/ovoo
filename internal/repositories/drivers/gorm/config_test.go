@@ -62,6 +62,29 @@ func TestConfig_ImportMap(t *testing.T) {
 				assert.Equal(t, ":memory:", c.ConnStr)
 			},
 		},
+		{
+			name: "log_level explicitly set",
+			input: map[string]string{
+				"driver":            "sqlite",
+				"connection_string": ":memory:",
+				"log_level":         "debug",
+			},
+			wantErr: false,
+			validate: func(t *testing.T, c *Config) {
+				assert.Equal(t, "debug", c.LogLevel)
+			},
+		},
+		{
+			name: "log_level missing defaults to info",
+			input: map[string]string{
+				"driver":            "sqlite",
+				"connection_string": ":memory:",
+			},
+			wantErr: false,
+			validate: func(t *testing.T, c *Config) {
+				assert.Equal(t, "info", c.LogLevel)
+			},
+		},
 	}
 
 	for _, tt := range tests {

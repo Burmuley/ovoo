@@ -65,7 +65,7 @@ func (c *ChainsGORMRepo) GetByFilters(ctx context.Context, filter entities.Chain
 		Preload("FromAddress").
 		Preload("ToAddress").
 		Find(&chains).Error; err != nil {
-		return nil, err
+		return nil, wrapGormError(err)
 	}
 
 	return chainToEntityList(chains), nil
@@ -96,7 +96,7 @@ func (c *ChainsGORMRepo) BatchCreate(ctx context.Context, chains []entities.Chai
 func (c *ChainsGORMRepo) Delete(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
 	chain, err := c.GetByHash(ctx, hash)
 	if err != nil {
-		return entities.Chain{}, wrapGormError(err)
+		return entities.Chain{}, err
 	}
 	if err := c.db.WithContext(ctx).Unscoped().Delete(&Chain{}, "hash = ?", hash.String()).Error; err != nil {
 		return entities.Chain{}, wrapGormError(err)
@@ -113,7 +113,7 @@ func (c *ChainsGORMRepo) BatchDelete(ctx context.Context, hashes []entities.Hash
 	return nil
 }
 
-func applyChainFilter(stmt *gorm.DB, filter entities.ChainFilter) *int64 {
+func applyChainFilter(stmt *gorm.DB, filter entities.ChainFilter) {
 	if len(filter.OrigFromAddrIds) > 0 {
 		stmt.Where("orig_from_address_id IN ?", filter.OrigFromAddrIds)
 	}
@@ -129,12 +129,4 @@ func applyChainFilter(stmt *gorm.DB, filter entities.ChainFilter) *int64 {
 	if len(filter.ToAddrIds) > 0 {
 		stmt.Where("to_address_id IN ?", filter.ToAddrIds)
 	}
-
-	var count int64 = 0
-	stmt.Count(&count)
-	if filter.Page != 0 && filter.PageSize != 0 {
-		stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
-	}
-
-	return &count
 }

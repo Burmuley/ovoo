@@ -66,8 +66,9 @@ func (t *ApiTokensService) GetByIdCurUser(ctx context.Context, cuser entities.Us
 // GetAll retrieves all API tokens belonging to the specified owner.
 // Returns an error if owner ID validation fails.
 func (t *ApiTokensService) GetAll(ctx context.Context, cuser entities.User) ([]entities.ApiToken, error) {
-	// TODO: pass real filter
-	tokens, err := t.repof.ApiTokens.GetAllForUser(ctx, cuser.ID, entities.ApiTokenFilter{})
+	tokens, err := t.repof.ApiTokens.GetAllForUser(
+		ctx, entities.ApiTokenFilter{UserIds: []entities.Id{cuser.ID}},
+	)
 	if err != nil {
 		return nil, err
 	}

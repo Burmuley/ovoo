@@ -496,7 +496,130 @@ func TestAddressGORMRepo_GetAll_FilterByServiceName(t *testing.T) {
 	retrieved, _, err := repo.GetAll(ctx, filter)
 
 	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(retrieved), 1)
+	assert.Len(t, retrieved, 1)
+	assert.Equal(t, entities.Email("service1@example.com"), retrieved[0].Email)
+	assert.Equal(t, "Service1", retrieved[0].Metadata.ServiceName)
+}
+
+func TestAddressGORMRepo_GetAll_FilterByEmails(t *testing.T) {
+	repo, user := setupAddressTestDB(t)
+	ctx := context.Background()
+
+	addresses := []entities.Address{
+		{
+			ID:        entities.NewId(),
+			Type:      entities.AliasAddress,
+			Email:     entities.Email("alpha@example.com"),
+			Owner:     user,
+			UpdatedBy: user,
+		},
+		{
+			ID:        entities.NewId(),
+			Type:      entities.AliasAddress,
+			Email:     entities.Email("beta@example.com"),
+			Owner:     user,
+			UpdatedBy: user,
+		},
+	}
+
+	err := repo.BatchCreate(ctx, addresses)
+	require.NoError(t, err)
+
+	filter := entities.AddressFilter{
+		Filter: entities.Filter{
+			Page:     1,
+			PageSize: 10,
+		},
+		Emails: []entities.Email{entities.Email("alpha@example.com")},
+	}
+
+	retrieved, metadata, err := repo.GetAll(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.Equal(t, entities.Email("alpha@example.com"), retrieved[0].Email)
+	assert.Equal(t, 1, metadata.TotalRecords)
+}
+
+func TestAddressGORMRepo_GetAll_FilterByIds(t *testing.T) {
+	repo, user := setupAddressTestDB(t)
+	ctx := context.Background()
+
+	addresses := make([]entities.Address, 3)
+	for i := 0; i < 3; i++ {
+		addresses[i] = entities.Address{
+			ID:        entities.NewId(),
+			Type:      entities.AliasAddress,
+			Email:     entities.Email("addr" + string(rune('0'+i)) + "@example.com"),
+			Owner:     user,
+			UpdatedBy: user,
+		}
+	}
+
+	err := repo.BatchCreate(ctx, addresses)
+	require.NoError(t, err)
+
+	filter := entities.AddressFilter{
+		Filter: entities.Filter{
+			Page:     1,
+			PageSize: 10,
+			Ids:      []entities.Id{addresses[0].ID, addresses[2].ID},
+		},
+	}
+
+	retrieved, metadata, err := repo.GetAll(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 2)
+	assert.Equal(t, 2, metadata.TotalRecords)
+}
+
+func TestAddressGORMRepo_GetAll_FilterByForwardAddressIds(t *testing.T) {
+	repo, user := setupAddressTestDB(t)
+	ctx := context.Background()
+
+	forward := entities.Address{
+		ID:        entities.NewId(),
+		Type:      entities.ProtectedAddress,
+		Email:     entities.Email("forward@example.com"),
+		Owner:     user,
+		UpdatedBy: user,
+	}
+	require.NoError(t, repo.Create(ctx, forward))
+
+	alias := entities.Address{
+		ID:             entities.NewId(),
+		Type:           entities.AliasAddress,
+		Email:          entities.Email("alias@example.com"),
+		Owner:          user,
+		ForwardAddress: &forward,
+		UpdatedBy:      user,
+	}
+	require.NoError(t, repo.Create(ctx, alias))
+
+	other := entities.Address{
+		ID:        entities.NewId(),
+		Type:      entities.AliasAddress,
+		Email:     entities.Email("other@example.com"),
+		Owner:     user,
+		UpdatedBy: user,
+	}
+	require.NoError(t, repo.Create(ctx, other))
+
+	filter := entities.AddressFilter{
+		Filter: entities.Filter{
+			Page:     1,
+			PageSize: 10,
+		},
+		ForwardAddressIds: []entities.Id{forward.ID},
+	}
+
+	retrieved, metadata, err := repo.GetAll(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.Equal(t, alias.ID, retrieved[0].ID)
+	assert.Equal(t, 1, metadata.TotalRecords)
 }
 
 func TestAddressGORMRepo_GetAll_Pagination(t *testing.T) {

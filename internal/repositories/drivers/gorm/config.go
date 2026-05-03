@@ -28,5 +28,10 @@ func (c *Config) ImportMap(m map[string]string) error {
 
 	c.Driver = driver
 	c.ConnStr = connStr
+	if logLvlStr, ok := m["log_level"]; ok {
+		c.LogLevel = logLvlStr
+	} else {
+		c.LogLevel = "info"
+	}
 	return nil
 }

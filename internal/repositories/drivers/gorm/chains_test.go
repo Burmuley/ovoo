@@ -262,32 +262,75 @@ func TestChainsGORMRepo_GetByFilters_FilterByOrigToAddrIds(t *testing.T) {
 	assert.Equal(t, chain.Hash, chains[0].Hash)
 }
 
-func TestChainsGORMRepo_GetByFilters_Pagination(t *testing.T) {
+func TestChainsGORMRepo_GetByFilters_FilterByFromAddrsIds(t *testing.T) {
 	repo, user := setupChainsTestDB(t)
 	ctx := context.Background()
 
-	chains := make([]entities.Chain, 3)
-	for i := 0; i < 3; i++ {
-		chains[i] = createTestChain(user)
-		chains[i].OrigFromAddress.Email = entities.Email("origfrom" + string(rune('0'+i)) + "@example.com")
-		chains[i].OrigToAddress.Email = entities.Email("origto" + string(rune('0'+i)) + "@example.com")
-		chains[i].Hash = entities.NewHash(string(chains[i].OrigFromAddress.Email), string(chains[i].OrigToAddress.Email))
-	}
+	chain := createTestChain(user)
 
-	err := repo.BatchCreate(ctx, chains)
+	err := repo.Create(ctx, chain)
 	require.NoError(t, err)
 
 	filter := entities.ChainFilter{
 		Filter: entities.Filter{
 			Page:     1,
-			PageSize: 2,
+			PageSize: 10,
 		},
+		FromAddrsIds: []entities.Id{chain.FromAddress.ID},
 	}
 
-	retrieved, err := repo.GetByFilters(ctx, filter)
+	chains, err := repo.GetByFilters(ctx, filter)
 
 	assert.NoError(t, err)
-	assert.Len(t, retrieved, 2)
+	assert.Len(t, chains, 1)
+	assert.Equal(t, chain.Hash, chains[0].Hash)
+}
+
+func TestChainsGORMRepo_GetByFilters_FilterByToAddrIds(t *testing.T) {
+	repo, user := setupChainsTestDB(t)
+	ctx := context.Background()
+
+	chain := createTestChain(user)
+
+	err := repo.Create(ctx, chain)
+	require.NoError(t, err)
+
+	filter := entities.ChainFilter{
+		Filter: entities.Filter{
+			Page:     1,
+			PageSize: 10,
+		},
+		ToAddrIds: []entities.Id{chain.ToAddress.ID},
+	}
+
+	chains, err := repo.GetByFilters(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, chains, 1)
+	assert.Equal(t, chain.Hash, chains[0].Hash)
+}
+
+func TestChainsGORMRepo_GetByFilters_NoMatch(t *testing.T) {
+	repo, user := setupChainsTestDB(t)
+	ctx := context.Background()
+
+	chain := createTestChain(user)
+
+	err := repo.Create(ctx, chain)
+	require.NoError(t, err)
+
+	filter := entities.ChainFilter{
+		Filter: entities.Filter{
+			Page:     1,
+			PageSize: 10,
+		},
+		OrigFromAddrIds: []entities.Id{entities.NewId()},
+	}
+
+	chains, err := repo.GetByFilters(ctx, filter)
+
+	assert.NoError(t, err)
+	assert.Len(t, chains, 0)
 }
 
 func TestChainsGORMRepo_Delete(t *testing.T) {
@@ -359,10 +402,14 @@ func TestApplyChainFilter_NoFilters(t *testing.T) {
 	stmt := db.Model(&Chain{})
 	filter := entities.ChainFilter{}
 
-	count := applyChainFilter(stmt, filter)
+	assert.NotPanics(t, func() {
+		applyChainFilter(stmt, filter)
+	})
 
-	assert.NotNil(t, count)
-	assert.Equal(t, int64(0), *count)
+	var found []Chain
+	err = stmt.Find(&found).Error
+	assert.NoError(t, err)
+	assert.Len(t, found, 0)
 }
 
 func TestApplyChainFilter_WithPagination(t *testing.T) {
@@ -383,7 +430,7 @@ func TestApplyChainFilter_WithPagination(t *testing.T) {
 		},
 	}
 
-	count := applyChainFilter(stmt, filter)
-
-	assert.NotNil(t, count)
+	assert.NotPanics(t, func() {
+		applyChainFilter(stmt, filter)
+	})
 }

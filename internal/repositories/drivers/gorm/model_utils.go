@@ -8,7 +8,7 @@ func userFromEntity(e entities.User) User {
 		Model: Model{
 			ID:        string(e.ID),
 			UpdatedAt: e.UpdatedAt,
-			CreatedAt: e.UpdatedAt,
+			CreatedAt: e.CreatedAt,
 		},
 		FirstName:      e.FirstName,
 		LastName:       e.LastName,
@@ -49,7 +49,7 @@ func userToEntity(u User) entities.User {
 		LockoutUntil:   u.LockoutUntil,
 		FailedAttempts: u.FailedAttempts,
 		UpdatedAt:      u.UpdatedAt,
-		CreatedAt:      u.UpdatedAt,
+		CreatedAt:      u.CreatedAt,
 	}
 
 	if u.UpdatedBy != nil {
@@ -66,7 +66,7 @@ func addressFromEntity(e entities.Address) Address {
 		Model: Model{
 			ID:        string(e.ID),
 			UpdatedAt: e.UpdatedAt,
-			CreatedAt: e.UpdatedAt,
+			CreatedAt: e.CreatedAt,
 		},
 		Email:          e.Email.String(),
 		ForwardAddress: nil,
@@ -109,7 +109,7 @@ func addressToEntity(a Address) entities.Address {
 			ServiceName: a.Metadata.ServiceName,
 		},
 		UpdatedAt: a.UpdatedAt,
-		CreatedAt: a.UpdatedAt,
+		CreatedAt: a.CreatedAt,
 		UpdatedBy: userToEntity(a.UpdatedBy),
 	}
 

@@ -161,6 +161,7 @@ func NewUserFilter(input map[string][]string) (UserFilter, error) {
 
 type ApiTokenFilter struct {
 	Filter
+	UserIds []Id
 }
 
 // NewApiTokensFilter constructs an ApiTokenFilter using the provided input map.
@@ -172,7 +173,18 @@ func NewApiTokensFilter(input map[string][]string) (ApiTokenFilter, error) {
 	if err != nil {
 		return ApiTokenFilter{}, err
 	}
+
 	af.Filter = filter
+	for filter, vals := range input {
+		switch filter {
+		case "user_ids":
+			ids := make([]Id, 0, len(vals))
+			for _, val := range vals {
+				ids = append(ids, Id(val))
+			}
+			af.UserIds = ids
+		}
+	}
 	return af, nil
 }
 
