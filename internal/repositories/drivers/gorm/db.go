@@ -3,23 +3,24 @@ package gorm
 import (
 	"fmt"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-// NewGORMDatabase creates a new GORM database connection based on the provided configuration.
+// NewDatabase creates a new GORM database connection based on the provided configuration.
 // It supports SQLite as the database driver and automatically migrates the necessary tables.
 // Returns a pointer to gorm.DB and an error if any occurred during the process.
-func NewGORMDatabase(config Config) (*gorm.DB, error) {
+func NewDatabase(config config.APIDBConfig) (*gorm.DB, error) {
 	var dialect gorm.Dialector
 
-	switch config.Driver {
+	switch config.Config.Driver {
 	case "sqlite":
-		dialect = sqlite.Open(config.ConnStr)
+		dialect = sqlite.Open(config.Config.ConnectionString)
 	default:
-		return nil, fmt.Errorf("%w: unknown database driver '%s'", entities.ErrConfiguration, config.Driver)
+		return nil, fmt.Errorf("%w: unknown database driver '%s'", entities.ErrConfiguration, config.Config.Driver)
 	}
 
 	var logLevel logger.LogLevel

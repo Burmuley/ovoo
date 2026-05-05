@@ -5,7 +5,7 @@
     "optionals": false,
     "fields": {
       "Api": {
-        "type": "ApiConfig",
+        "type": "APIConfig",
         "required": true
       },
       "Milter": {
@@ -15,9 +15,9 @@
     }
   },
   {
-    "struct_name": "ApiConfig",
+    "struct_name": "APIConfig",
     "json_tags": true,
-    "optionals": true,
+    "optionals": false,
     "fields": {
       "ListenAddr": {
         "type": "string",
@@ -29,11 +29,11 @@
         "required": true
       },
       "Tls": {
-        "type": "ApiTLSConfig",
+        "type": "APITLSConfig",
         "required": true
       },
       "DefaultAdmin": {
-        "type": "ApiDefaultAdminConfig",
+        "type": "APIDefaultAdminConfig",
         "required": true
       },
       "Domain": {
@@ -41,12 +41,17 @@
         "required": true
       },
       "OIDC": {
-        "type": "map[string]ApiOIDCConfig",
+        "type": "map[string]APIOIDCConfig",
         "required": true
       },
       "Database": {
-        "type": "ApiDBConfig",
+        "type": "APIDBConfig",
         "required": true
+      },
+      "Cache": {
+        "type": "*APICacheConfig",
+        "required": false,
+        "default": null
       }
     }
   },
@@ -68,7 +73,7 @@
     }
   },
   {
-    "struct_name": "ApiTLSConfig",
+    "struct_name": "APITLSConfig",
     "json_tags": true,
     "optionals": false,
     "fields": {
@@ -83,7 +88,7 @@
     }
   },
   {
-    "struct_name": "ApiDefaultAdminConfig",
+    "struct_name": "APIDefaultAdminConfig",
     "json_tags": true,
     "optionals": false,
     "fields": {
@@ -106,7 +111,7 @@
     }
   },
   {
-    "struct_name": "ApiOIDCConfig",
+    "struct_name": "APIOIDCConfig",
     "json_tags": true,
     "optionals": false,
     "fields": {
@@ -125,7 +130,77 @@
     }
   },
   {
-    "struct_name": "ApiDBConfig",
+    "struct_name": "APICacheConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "CacheDriver": {
+        "type": "string",
+        "required": true,
+        "override_json_tag": "driver"
+      },
+      "SingleItemTTL": {
+        "type": "int",
+        "required": true,
+        "override_json_tag": "single_item_ttl"
+      },
+      "ListTTL": {
+        "type": "int",
+        "required": true,
+        "override_json_tag": "list_ttl"
+      },
+      "Config": {
+        "type": "APICacheDriverConfig",
+        "required": true
+      }
+    }
+  },
+  {
+    "struct_name": "APICacheDriverConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Redis": {
+        "type": "*APICacheDriverRedisConfig",
+        "required": false,
+        "default": null
+      }
+    }
+  },
+  {
+    "struct_name": "APICacheDriverRedisConfig",
+    "json_tags": true,
+    "optionals": false,
+    "fields": {
+      "Addr": {
+        "type": "*string",
+        "required": false,
+        "default": null
+      },
+      "Protocol": {
+        "type": "int",
+        "required": false,
+        "default": 3
+      },
+      "Username": {
+        "type": "*string",
+        "required": false,
+        "default": null
+      },
+      "Password": {
+        "type": "*string",
+        "required": true,
+        "default": null
+      },
+      "DB": {
+        "type": "int",
+        "required": false,
+        "default": 0
+      }
+    }
+  },
+  {
+    "struct_name": "APIDBConfig",
     "json_tags": true,
     "optionals": false,
     "fields": {
@@ -135,7 +210,7 @@
         "override_json_tag": "type"
       },
       "Config": {
-        "type": "ApiDBGormConfig",
+        "type": "APIDBDriverConfig",
         "required": true
       },
       "LogLevel": {
@@ -145,7 +220,7 @@
     }
   },
   {
-    "struct_name": "ApiDBGormConfig",
+    "struct_name": "APIDBDriverConfig",
     "json_tags": true,
     "optionals": false,
     "fields": {
@@ -170,7 +245,7 @@
         "default": "127.0.0.1:6785"
       },
       "Api": {
-        "type": "MilterApiConfig",
+        "type": "MilterAPIConfig",
         "required": true
       },
       "Log": {
@@ -184,7 +259,7 @@
     }
   },
   {
-    "struct_name": "MilterApiConfig",
+    "struct_name": "MilterAPIConfig",
     "json_tags": true,
     "optionals": false,
     "fields": {

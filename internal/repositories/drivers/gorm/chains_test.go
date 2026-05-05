@@ -5,19 +5,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setupChainsTestDB(t *testing.T) (*ChainsGORMRepo, entities.User) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	// Create a user for addresses
@@ -90,13 +94,16 @@ func createTestChain(user entities.User) entities.Chain {
 }
 
 func TestNewChainsGORMRepo(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	repo, err := NewChainsGORMRepo(db)
@@ -390,13 +397,16 @@ func TestChainsGORMRepo_BatchDelete(t *testing.T) {
 }
 
 func TestApplyChainFilter_NoFilters(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	stmt := db.Model(&Chain{})
@@ -413,13 +423,16 @@ func TestApplyChainFilter_NoFilters(t *testing.T) {
 }
 
 func TestApplyChainFilter_WithPagination(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	stmt := db.Model(&Chain{})

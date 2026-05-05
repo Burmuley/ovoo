@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-//go:generate go tool github.com/Burmuley/dysconfig -schema=config_schema.json -output=config.gen.go -package=config
+//go:generate go tool github.com/Burmuley/dysconfig -config=config_schema.json -output=config.gen.go -package=config
 
 func LoadConfig(path string) (OvooConfig, error) {
 	f, err := os.Open(path)

@@ -3,19 +3,23 @@ package gorm
 import (
 	"testing"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewGORMDatabase_SQLite(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 
 	require.NoError(t, err)
 	assert.NotNil(t, db)
@@ -28,39 +32,48 @@ func TestNewGORMDatabase_SQLite(t *testing.T) {
 }
 
 func TestNewGORMDatabase_ErrorLogLevel(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
-		LogLevel: "error",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
+		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 
 	require.NoError(t, err)
 	assert.NotNil(t, db)
 }
 
 func TestNewGORMDatabase_DebugLogLevel(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
-		LogLevel: "debug",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
+		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 
 	require.NoError(t, err)
 	assert.NotNil(t, db)
 }
 
 func TestNewGORMDatabase_UnknownDriver(t *testing.T) {
-	config := Config{
-		Driver:   "unknown",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "unknown",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 
 	assert.Error(t, err)
 	assert.Nil(t, db)
@@ -69,15 +82,18 @@ func TestNewGORMDatabase_UnknownDriver(t *testing.T) {
 }
 
 func TestNewGORMDatabase_InvalidConnectionString(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  "/invalid/path/to/database.db",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
 	// SQLite might still open the database, but let's test with an explicitly invalid path
 	// On some systems this may or may not fail, so we just verify the function executes
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 
 	// The behavior depends on the system and SQLite permissions
 	// We just ensure the function doesn't panic
@@ -87,13 +103,16 @@ func TestNewGORMDatabase_InvalidConnectionString(t *testing.T) {
 }
 
 func TestNewGORMDatabase_DefaultLogLevel(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
-		LogLevel: "",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
+		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 
 	require.NoError(t, err)
 	assert.NotNil(t, db)

@@ -45,7 +45,7 @@ func makeServices(repoFactory *factory.RepoFactory, domain string, dict []string
 	return svcGw, nil
 }
 
-func startApi(cfg config.ApiConfig) error {
+func startApi(cfg config.APIConfig) error {
 	// logger configuration
 	logger := slog.New(slog.NewTextHandler(
 		os.Stdout,
@@ -62,16 +62,8 @@ func startApi(cfg config.ApiConfig) error {
 		os.Exit(1)
 	}
 
-	// database configuration
-	db_drv := cfg.Database.DBType
-	db_config := map[string]string{
-		"driver":            cfg.Database.Config.Driver,
-		"connection_string": cfg.Database.Config.ConnectionString,
-		"log_level":         cfg.Database.LogLevel,
-	}
-
 	// initialize repo fabric
-	repoFactory, err := factory.New(db_drv, db_config, &cfg.DefaultAdmin, logger)
+	repoFactory, err := factory.New(cfg.Database, cfg.Cache, &cfg.DefaultAdmin, logger)
 	if err != nil {
 		return fmt.Errorf("error initializing repository: %w", err)
 	}

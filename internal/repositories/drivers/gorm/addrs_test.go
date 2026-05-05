@@ -5,19 +5,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setupAddressTestDB(t *testing.T) (*AddressGORMRepo, entities.User) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	// Create a user for addresses
@@ -43,13 +47,16 @@ func setupAddressTestDB(t *testing.T) (*AddressGORMRepo, entities.User) {
 }
 
 func TestNewAddressGORMRepo(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	repo, err := NewAddressGORMRepo(db)
@@ -657,13 +664,16 @@ func TestAddressGORMRepo_GetAll_Pagination(t *testing.T) {
 }
 
 func TestApplyAddressFilter_NoFilters(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	stmt := db.Model(&Address{})
@@ -676,13 +686,16 @@ func TestApplyAddressFilter_NoFilters(t *testing.T) {
 }
 
 func TestApplyAddressFilter_WithPagination(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	stmt := db.Model(&Address{})

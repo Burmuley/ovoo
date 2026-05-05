@@ -68,7 +68,7 @@ func New(
 	logger *slog.Logger,
 	svcGw *services.ServiceGateway,
 	tls_key, tls_cert string,
-	providersConfig map[string]config.ApiOIDCConfig,
+	providersConfig map[string]config.APIOIDCConfig,
 ) (applications.Application, error) {
 	ctrl := &Application{
 		svcGw:      svcGw,
@@ -239,7 +239,7 @@ func (a *Application) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 // Returns:
 //   - map[string]middleware.OIDCProvider: Configured providers mapped by name
 //   - error: Non-nil if provider initialization fails
-func parseProvidersCfg(cfg map[string]config.ApiOIDCConfig) (map[string]middleware.OIDCProvider, error) {
+func parseProvidersCfg(cfg map[string]config.APIOIDCConfig) (map[string]middleware.OIDCProvider, error) {
 	providers := make(map[string]middleware.OIDCProvider)
 	nameReg := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	for name, config := range cfg {

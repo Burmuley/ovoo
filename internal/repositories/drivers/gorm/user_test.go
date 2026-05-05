@@ -5,19 +5,23 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func setupUserTestDB(t *testing.T) *UserGORMRepo {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	repo, err := NewUserGORMRepo(db)
@@ -27,13 +31,16 @@ func setupUserTestDB(t *testing.T) *UserGORMRepo {
 }
 
 func TestNewUserGORMRepo(t *testing.T) {
-	config := Config{
-		Driver:   "sqlite",
-		ConnStr:  ":memory:",
+	config := config.APIDBConfig{
+		DBType:   "gorm",
 		LogLevel: "silent",
+		Config: config.APIDBDriverConfig{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	}
 
-	db, err := NewGORMDatabase(config)
+	db, err := NewDatabase(config)
 	require.NoError(t, err)
 
 	repo, err := NewUserGORMRepo(db)
