@@ -5500,8 +5500,6 @@ blowholes
 blowier
 blowiest
 blowing
-blowjob
-blowjobs
 blowlamp
 blowlamps
 blowout
@@ -9771,7 +9769,6 @@ cockier
 cockiest
 cockily
 cockiness
-cocking
 cockles
 cockleshell
 cockleshells
@@ -12735,11 +12732,9 @@ crinkling
 crinkly
 crinoline
 crinolines
-cripple
 crippled
 crippler
 cripplers
-cripples
 crippling
 cripplingly
 crispbread
@@ -13103,7 +13098,6 @@ cumbersomeness
 cumbrous
 cummerbund
 cummerbunds
-cumming
 cumquat
 cumquats
 cumulative
@@ -22467,10 +22461,7 @@ frustum
 frustums
 fuchsia
 fuchsias
-fuckers
-fuckhead
 fuckheads
-fucking
 fuddled
 fuddles
 fuddling
@@ -25942,7 +25933,6 @@ honeysuckle
 honeysuckles
 honkers
 honkeys
-honkies
 honking
 honorable
 honorableness
@@ -25974,7 +25964,6 @@ hoodwinks
 hoofers
 hoofing
 hookahs
-hookers
 hooking
 hookups
 hookworm
@@ -29588,8 +29577,6 @@ jabbing
 jacaranda
 jacarandas
 jackals
-jackass
-jackasses
 jackboot
 jackbooted
 jackboots
@@ -46527,11 +46514,9 @@ retaliatory
 retardant
 retardants
 retardation
-retarded
 retarder
 retarders
 retarding
-retards
 retaught
 retched
 retches
@@ -56142,7 +56127,6 @@ titmouse
 tittered
 tittering
 titters
-titties
 tittivate
 tittivated
 tittivates
@@ -57243,8 +57227,6 @@ trolleybusses
 trolleys
 trollies
 trolling
-trollop
-trollops
 trombone
 trombones
 trombonist
@@ -61112,8 +61094,6 @@ westernmost
 westerns
 westward
 westwards
-wetback
-wetbacks
 wetland
 wetlands
 wetness

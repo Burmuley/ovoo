@@ -46,7 +46,7 @@ type OvooClient struct {
 	domain string
 }
 
-func NewOvooClient(server string, authToken string, tlsSkipVerify bool, domain string) (OvooClient, error) {
+func NewClient(server string, authToken string, tlsSkipVerify bool, domain string) (OvooClient, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify},
