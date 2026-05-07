@@ -21,7 +21,6 @@ function build_webui () {
 }
 
 go generate "$PWD/internal/applications/rest"
-go generate "$PWD/internal/config"
 
 if [[ "${TARGET}" == "local" ]]; then
     build_webui
