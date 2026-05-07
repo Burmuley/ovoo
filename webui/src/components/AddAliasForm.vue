@@ -1,39 +1,33 @@
 <template>
-    <div class="submit-form">
-        <h2 class="submit-form h2">
-            Add new alias
-        </h2>
-        <div class="submit-form row-item">
-            <label style="margin-right: 8px;">Protected address</label>
-            <Dropdown text="Select" title="Protected addresses" :items=praddrs @filter-selected=onPraddrSelected />
-        </div>
-        <div class="submit-form row-item">
-            <label for="svcname" style="margin-right: 8px;">Service name </label>
-            <input id="svcname" v-model=svcname></input>
-        </div>
-        <div class="submit-form row-item">
-            <label for="comment" style="margin-right: 8px;">Comment </label>
-            <input id="comment" v-model=comment></input>
-        </div>
-        <div>
-            <button @click=createAlias>Create</button>
-        </div>
-        <div v-if="Object.hasOwn(result, 'status')">
-            <div v-if="result.status === 201" class="submit-form success-result">
-                <span>
-                    <p>New Alias '{{ result.json.email }}' was successfully created.</p>
-                </span>
-            </div>
-            <div v-else class="submit-form error-result">
-                <span>
-                    <p style="color: darkreded;">Some errors occurred while creating new Alias:</p>
-                    <p v-for="error in result.json.errors" style="color: darkreded;">
-                        - {{ error.detail }}
-                    </p>
-                </span>
-            </div>
-        </div>
-    </div>
+    <CCard style="max-width: 540px;">
+        <CCardHeader class="fw-semibold">Add New Alias</CCardHeader>
+        <CCardBody>
+            <CForm @submit.prevent="createAlias">
+                <div class="mb-3">
+                    <CFormLabel>Protected Address</CFormLabel>
+                    <Dropdown text="Select address" :items="praddrs" @filter-selected="praddrSelected = $event" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="svcname">Service Name</CFormLabel>
+                    <CFormInput id="svcname" v-model="svcname" placeholder="e.g. GitHub" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="comment">Comment</CFormLabel>
+                    <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
+                </div>
+                <div class="d-flex gap-2">
+                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
+                </div>
+            </CForm>
+            <CAlert v-if="result.status === 201" color="success" class="mt-3">
+                Alias <strong>{{ result.json.email }}</strong> was successfully created.
+            </CAlert>
+            <CAlert v-else-if="result.status" color="danger" class="mt-3">
+                <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
+            </CAlert>
+        </CCardBody>
+    </CCard>
 </template>
 
 <script setup>
@@ -41,43 +35,32 @@ import { ref, onMounted } from 'vue'
 import Dropdown from './Dropdown.vue'
 import { apiFetch } from '../utils/api'
 
+const emit = defineEmits(['done'])
+
 const praddrs = ref([])
 const praddrSelected = ref('')
 const svcname = ref('')
 const comment = ref('')
 const result = ref({})
-const praddrs_data = ref({})
 
 const load = async () => {
     const res = await apiFetch('/api/v1/praddrs')
-    praddrs_data.value = await res.json()
-    const finalRes = praddrs_data.value.protected_addresses
-    for (let idx in finalRes) {
-        praddrs.value.push({ id: finalRes[idx].id, text: finalRes[idx].email })
-    }
-}
-
-const onPraddrSelected = (selected) => {
-    praddrSelected.value = selected
+    const data = await res.json()
+    praddrs.value = data.protected_addresses.map(a => ({ id: a.id, text: a.email }))
 }
 
 const createAlias = async () => {
-    const req = JSON.stringify({
-        "protected_address_id": praddrSelected.value.toString(),
-        "metadata": {
-            "service_name": svcname.value.toString(),
-            "comment": comment.value.toString()
-        }
-    })
     const res = await apiFetch('/api/v1/aliases', {
         method: 'POST',
-        body: req
+        body: JSON.stringify({
+            protected_address_id: praddrSelected.value.toString(),
+            metadata: {
+                service_name: svcname.value,
+                comment: comment.value,
+            },
+        }),
     })
-    const jsonRes = await res.json()
-    result.value = {
-        status: res.status,
-        json: jsonRes
-    }
+    result.value = { status: res.status, json: await res.json() }
 }
 
 onMounted(load)

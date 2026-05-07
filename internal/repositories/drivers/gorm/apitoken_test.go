@@ -105,6 +105,8 @@ func TestTokenGORMRepo_Create(t *testing.T) {
 	assert.Equal(t, token.ID, retrieved.ID)
 	assert.Equal(t, token.Name, retrieved.Name)
 	assert.Equal(t, token.TokenHash, retrieved.TokenHash)
+	assert.Equal(t, user.ID, retrieved.Owner.ID)
+	assert.Equal(t, user.ID, retrieved.UpdatedBy.ID)
 }
 
 func TestTokenGORMRepo_BatchCreate(t *testing.T) {
@@ -296,6 +298,8 @@ func TestTokenGORMRepo_GetById(t *testing.T) {
 	assert.Equal(t, token.Salt, retrieved.Salt)
 	assert.Equal(t, token.Description, retrieved.Description)
 	assert.Equal(t, token.Active, retrieved.Active)
+	assert.Equal(t, user.ID, retrieved.Owner.ID)
+	assert.Equal(t, user.ID, retrieved.UpdatedBy.ID)
 }
 
 func TestTokenGORMRepo_GetById_NotFound(t *testing.T) {
@@ -342,6 +346,9 @@ func TestTokenGORMRepo_GetAllForUser(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 2)
+	for _, tok := range retrieved {
+		assert.Equal(t, user.ID, tok.Owner.ID)
+	}
 }
 
 func TestTokenGORMRepo_GetAllForUser_NoTokens(t *testing.T) {

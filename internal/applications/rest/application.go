@@ -162,7 +162,7 @@ func (a *Application) Start() error {
 	mux.HandleFunc("GET /api/v1/aliases", a.GetAliases)
 	mux.HandleFunc("GET /api/v1/aliases/{id}", a.GetAliaseById)
 	mux.HandleFunc("POST /api/v1/aliases", a.CreateAlias)
-	mux.HandleFunc("PATCH /api/v1/alises/{id}", a.UpdateAlias)
+	mux.HandleFunc("PATCH /api/v1/aliases/{id}", a.UpdateAlias)
 	mux.HandleFunc("DELETE /api/v1/aliases/{id}", a.DeleteAlias)
 
 	// protected addresses routes

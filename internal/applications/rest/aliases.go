@@ -102,7 +102,7 @@ func (a *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
 func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
-		a.errorLogNResponse(w, "creating alias: identifying user", err)
+		a.errorLogNResponse(w, "updating alias: identifying user", err)
 		return
 	}
 

@@ -156,12 +156,12 @@ func TestTokensRepo_Update_EvictsCache(t *testing.T) {
 	assert.False(t, fresh.Active)
 
 	// User-list evicted: the cached layer no longer returns the stale [token(active=true)]
-	// slice. Fresh DB data is empty because the GORM Update implementation clears
-	// owner_id when using Select("*") with a struct — a known pre-existing bug.
-	// The important invariant is that we do NOT get the old stale cached value back.
+	// slice. Fresh DB data is returned — 1 token with Active=false proves the cache was
+	// cleared and we are not seeing the old stale value.
 	list, err := e.cachedTokens.GetAllForUser(ctx, filter)
 	assert.NoError(t, err)
-	assert.Empty(t, list)
+	assert.Len(t, list, 1)
+	assert.False(t, list[0].Active)
 }
 
 // --- BatchCreate ---

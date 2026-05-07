@@ -7,6 +7,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ChainsGORMRepo represents a GORM-based repository for managing Chain entities.
@@ -31,10 +32,7 @@ func (c *ChainsGORMRepo) GetByHash(ctx context.Context, hash entities.Hash) (ent
 
 	if err := c.db.WithContext(ctx).Model(&Chain{}).
 		Where("hash = ?", hash).
-		Preload("ToAddress").
-		Preload("FromAddress").
-		Preload("OrigFromAddress").
-		Preload("OrigToAddress").
+		Preload(clause.Associations).
 		First(&chain).Error; err != nil {
 		return entities.Chain{}, wrapGormError(err)
 	}
@@ -60,10 +58,7 @@ func (c *ChainsGORMRepo) GetByFilters(ctx context.Context, filter entities.Chain
 	chains := make([]Chain, 0)
 	stmt := c.db.WithContext(ctx).Model(&Chain{})
 	applyChainFilter(stmt, filter)
-	if err := stmt.Preload("OrigFromAddress").
-		Preload("OrigToAddress").
-		Preload("FromAddress").
-		Preload("ToAddress").
+	if err := stmt.Preload(clause.Associations).
 		Find(&chains).Error; err != nil {
 		return nil, wrapGormError(err)
 	}

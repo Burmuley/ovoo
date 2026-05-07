@@ -7,6 +7,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // TokenGORMRepo implements the TokensReadWriter interface using GORM.
@@ -93,7 +94,7 @@ func (t *TokenGORMRepo) BatchDeleteForUser(ctx context.Context, id entities.Id) 
 // Returns the token as an entity and an error if the token doesn't exist or if the query fails.
 func (t *TokenGORMRepo) GetById(ctx context.Context, token_id entities.Id) (entities.ApiToken, error) {
 	token := ApiToken{}
-	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("id = ?", token_id).Preload("Owner").First(&token).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("id = ?", token_id).Preload(clause.Associations).First(&token).Error; err != nil {
 		return entities.ApiToken{}, wrapGormError(err)
 	}
 
@@ -113,7 +114,7 @@ func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, filter entities.ApiTo
 	for _, val := range filter.UserIds {
 		uids = append(uids, val.String())
 	}
-	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id IN ?", uids).Preload("Owner").Find(&gorm_tokens).Error; err != nil {
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id IN ?", uids).Preload(clause.Associations).Find(&gorm_tokens).Error; err != nil {
 		return nil, wrapGormError(err)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/repositories"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // AddressGORMRepo implements the repositories.AddressReadWriter interface using GORM.
@@ -87,7 +88,7 @@ func (a *AddressGORMRepo) BatchDeleteById(ctx context.Context, ids []entities.Id
 // GetById retrieves an address from the database by its ID.
 func (a *AddressGORMRepo) GetById(ctx context.Context, id entities.Id) (entities.Address, error) {
 	addr := Address{}
-	if err := a.db.WithContext(ctx).Model(&Address{}).Where("id = ?", id).Preload("ForwardAddress").Preload("Owner").First(&addr).Error; err != nil {
+	if err := a.db.WithContext(ctx).Preload(clause.Associations).Preload("ForwardAddress."+clause.Associations).Model(&Address{}).Where("id = ?", id).First(&addr).Error; err != nil {
 		return entities.Address{}, wrapGormError(err)
 	}
 
@@ -98,7 +99,7 @@ func (a *AddressGORMRepo) GetById(ctx context.Context, id entities.Id) (entities
 // It returns the address as an entities.Address and an error, if any.
 func (a *AddressGORMRepo) GetByEmail(ctx context.Context, email entities.Email) ([]entities.Address, error) {
 	addrs := make([]Address, 0)
-	if err := a.db.WithContext(ctx).Model(&Address{}).Where("email = ?", email).Preload("ForwardAddress").Preload("Owner").Find(&addrs).Error; err != nil {
+	if err := a.db.WithContext(ctx).Preload(clause.Associations).Preload("ForwardAddress."+clause.Associations).Model(&Address{}).Where("email = ?", email).Find(&addrs).Error; err != nil {
 		return []entities.Address{}, wrapGormError(err)
 	}
 
@@ -119,7 +120,7 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filter entities.AddressFil
 	gorm_addrs := make([]Address, 0)
 	stmt := a.db.WithContext(ctx).Model(&Address{})
 	count := applyAddressFilter(stmt, filter)
-	if err := stmt.Preload("ForwardAddress").Preload("Owner").Find(&gorm_addrs).Error; err != nil {
+	if err := stmt.Preload(clause.Associations).Preload("ForwardAddress." + clause.Associations).Find(&gorm_addrs).Error; err != nil {
 		return nil, entities.PaginationMetadata{}, wrapGormError(err)
 	}
 

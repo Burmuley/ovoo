@@ -1,36 +1,115 @@
 <template>
-    <center>
-        <h2>Ovoo Privacy Mail Gateway</h2>
-    </center>
-    <div class="main-div">
-        <div class="tabs-div">
+    <div>
+        <CSidebar
+            class="border-end"
+            color-scheme="dark"
+            position="fixed"
+            :unfoldable="false"
+            :visible="sidebarVisible"
+            @visible-change="sidebarVisible = $event"
+        >
+            <CSidebarHeader class="border-bottom">
+                <CSidebarBrand>
+                    <span class="sidebar-brand-full fs-5 fw-semibold">Ovoo</span>
+                </CSidebarBrand>
+            </CSidebarHeader>
+            <CSidebarNav>
+                <CNavItem>
+                    <CNavLink
+                        :active="currentTab === 'aliases'"
+                        @click="currentTab = 'aliases'"
+                    >
+                        <CIcon icon="cilEnvelopeClosed" class="nav-icon" />
+                        Aliases
+                    </CNavLink>
+                </CNavItem>
+                <CNavItem>
+                    <CNavLink
+                        :active="currentTab === 'praddrs'"
+                        @click="currentTab = 'praddrs'"
+                    >
+                        <CIcon icon="cilShieldAlt" class="nav-icon" />
+                        Protected Addresses
+                    </CNavLink>
+                </CNavItem>
+                <CNavItem>
+                    <CNavLink
+                        :active="currentTab === 'apikeys'"
+                        @click="currentTab = 'apikeys'"
+                    >
+                        <CIcon icon="cilCode" class="nav-icon" />
+                        API Keys
+                    </CNavLink>
+                </CNavItem>
+                <CNavItem v-if="userInfo.type === 'admin'">
+                    <CNavLink
+                        :active="currentTab === 'users'"
+                        @click="currentTab = 'users'"
+                    >
+                        <CIcon icon="cilPeople" class="nav-icon" />
+                        Users
+                    </CNavLink>
+                </CNavItem>
+            </CSidebarNav>
+        </CSidebar>
 
-            <button @click="currentTab = 'aliases'" class="tab-button"
-                :class="{ current: currentTab == 'aliases' }">Aliases</button>
-            <button @click="currentTab = 'praddrs'" class="tab-button"
-                :class="{ current: currentTab == 'praddrs' }">Protected Addresses</button>
-            <button @click="currentTab = 'apikeys'" class="tab-button" :class="{ current: currentTab == 'apikeys' }">API
-                Keys</button>
-            <button v-if="user_info.type === 'admin'" @click="currentTab = 'users'" class="tab-button"
-                :class="{ current: currentTab == 'users' }">Users</button>
-            <div>
-                <p><a href="/api/docs">API Documentation</a></p>
+        <div class="wrapper d-flex flex-column min-vh-100">
+            <CHeader position="sticky" class="mb-4 p-0">
+                <CContainer fluid class="border-bottom px-4">
+                    <CHeaderToggler @click="sidebarVisible = !sidebarVisible" style="margin-inline-start: -14px">
+                        <CIcon icon="cilMenu" size="lg" />
+                    </CHeaderToggler>
+                    <span class="fw-semibold ms-2">Ovoo Privacy Mail Gateway</span>
+                    <CHeaderNav class="ms-auto">
+                        <CNavItem>
+                            <CNavLink href="/api/docs" target="_blank">
+                                <CIcon icon="cilBook" /> API Docs
+                            </CNavLink>
+                        </CNavItem>
+                        <CNavItem>
+                            <UserInfo :user-info="userInfo" />
+                        </CNavItem>
+                    </CHeaderNav>
+                </CContainer>
+            </CHeader>
+
+            <div class="body flex-grow-1">
+                <CContainer class="px-4" lg>
+                    <AliasesTab
+                        v-if="currentTab === 'aliases'"
+                        @add-clicked="currentTab = 'addAlias'"
+                    />
+                    <AddAliasForm
+                        v-else-if="currentTab === 'addAlias'"
+                        @done="currentTab = 'aliases'"
+                    />
+                    <PrAddrsTab
+                        v-else-if="currentTab === 'praddrs'"
+                        @add-clicked="currentTab = 'addPrAddr'"
+                    />
+                    <AddPrAddrForm
+                        v-else-if="currentTab === 'addPrAddr'"
+                        @done="currentTab = 'praddrs'"
+                    />
+                    <ApiKeysTab
+                        v-else-if="currentTab === 'apikeys'"
+                        @add-clicked="currentTab = 'addApiKey'"
+                    />
+                    <AddApiKeyForm
+                        v-else-if="currentTab === 'addApiKey'"
+                        @done="currentTab = 'apikeys'"
+                    />
+                    <UsersTab
+                        v-else-if="currentTab === 'users' && userInfo.type === 'admin'"
+                        @add-clicked="currentTab = 'addUser'"
+                    />
+                    <AddUserForm
+                        v-else-if="currentTab === 'addUser'"
+                        @done="currentTab = 'users'"
+                    />
+                </CContainer>
             </div>
-
-            <div>
-                <UserInfo :user_info=user_info />
-            </div>
-
         </div>
-        <AliasesTab v-if="currentTab === 'aliases'" @add-alias-clicked="onAddAliasClicked" />
-        <AddAliasForm v-else-if="currentTab === 'addAlias'" />
-        <AddPrAddrForm v-else-if="currentTab === 'addPrAddr'" />
-        <UsersTab v-else-if="currentTab === 'users' && user_info.type === 'admin'"
-            @add-user-clicked="onAddUserCliked" />
-        <AddUserForm v-else-if="currentTab === 'addUser'" />
-        <ApiKeysTab v-else-if="currentTab === 'apikeys'" @add-apikey-clicked="onAddApikeyClicked" />
-        <AddApiKeyForm v-else-if="currentTab === 'addApiKey'" />
-        <PrAddrsTab v-else @add-praddr-clicked="onAddPrAddrClicked" />
     </div>
 </template>
 
@@ -48,17 +127,13 @@ import AddApiKeyForm from './AddApiKeyForm.vue'
 import UserInfo from './UserInfo.vue'
 
 const currentTab = ref('aliases')
-const user_info = ref([])
+const userInfo = ref({})
+const sidebarVisible = ref(true)
 
 const load = async () => {
     const res = await apiFetch('/api/v1/users/profile')
-    user_info.value = await res.json()
+    userInfo.value = await res.json()
 }
-
-const onAddAliasClicked = () => { currentTab.value = 'addAlias' }
-const onAddPrAddrClicked = () => { currentTab.value = 'addPrAddr' }
-const onAddUserCliked = () => { currentTab.value = 'addUser' }
-const onAddApikeyClicked = () => { currentTab.value = 'addApiKey' }
 
 onMounted(load)
 </script>

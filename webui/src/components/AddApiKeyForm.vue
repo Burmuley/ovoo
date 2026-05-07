@@ -1,46 +1,43 @@
 <template>
-    <div class="submit-form">
-        <h2 class="submit-form h2">
-            Add new API key
-        </h2>
-        <div class="submit-form row-item">
-            <label for="name" style="margin-right: 8px;">Name: </label>
-            <input id="name" v-model=name></input>
-        </div>
-        <div class="submit-form row-item">
-            <label for="description" style="margin-right: 8px;">Description: </label>
-            <input id="description" v-model=description></input>
-        </div>
-        <div class="submit-form row-item">
-            <label for="expire_in" style="margin-right: 8px;">Expire in (days): </label>
-            <input id="expire_in" v-model=expire_in></input>
-        </div>
-        <div>
-            <button @click=createApiKey>Create</button>
-        </div>
-        <div v-if="Object.hasOwn(result, 'status')">
-            <div v-if="result.status === 201" class="submit-form success-result">
-                <span>
-                    <p>New API key successfully created and its value is only visible now. Please make sure you saved it
-                        in a safe place!</p>
-                    <p>API Key: {{ result.json.api_token }}</p>
-                </span>
-            </div>
-            <div v-else class="submit-form error-result">
-                <span>
-                    <p style="color: darkreded;">Some errors occurred while creating new API key:</p>
-                    <p v-for="error in result.json.errors" style="color: darkreded;">
-                        - {{ error.detail }}
-                    </p>
-                </span>
-            </div>
-        </div>
-    </div>
+    <CCard style="max-width: 540px;">
+        <CCardHeader class="fw-semibold">Add New API Key</CCardHeader>
+        <CCardBody>
+            <CForm @submit.prevent="createApiKey">
+                <div class="mb-3">
+                    <CFormLabel for="name">Name</CFormLabel>
+                    <CFormInput id="name" v-model="name" placeholder="My API Key" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="description">Description</CFormLabel>
+                    <CFormInput id="description" v-model="description" placeholder="Optional description" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="expire_in">Expires In (days)</CFormLabel>
+                    <CFormInput id="expire_in" v-model="expire_in" type="number" min="1" />
+                </div>
+                <div class="d-flex gap-2">
+                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
+                </div>
+            </CForm>
+            <CAlert v-if="result.status === 201" color="success" class="mt-3">
+                API key created. Save it now — it will not be shown again.
+                <div class="mt-2">
+                    <code class="user-select-all">{{ result.json.api_token }}</code>
+                </div>
+            </CAlert>
+            <CAlert v-else-if="result.status" color="danger" class="mt-3">
+                <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
+            </CAlert>
+        </CCardBody>
+    </CCard>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { apiFetch } from '../utils/api'
+
+const emit = defineEmits(['done'])
 
 const name = ref('')
 const description = ref('')
@@ -48,23 +45,14 @@ const expire_in = ref(90)
 const result = ref({})
 
 const createApiKey = async () => {
-    const req = JSON.stringify({
-        "name": name.value,
-        "description": description.value,
-        "expire_in": parseFloat(expire_in.value)
-    })
-    console.log("request: ", req)
-
     const res = await apiFetch('/api/v1/users/apitokens', {
         method: 'POST',
-        body: req
+        body: JSON.stringify({
+            name: name.value,
+            description: description.value,
+            expire_in: parseFloat(expire_in.value),
+        }),
     })
-
-    const jsonRes = await res.json()
-    console.log("response: ", res)
-    result.value = {
-        status: res.status,
-        json: jsonRes
-    }
+    result.value = { status: res.status, json: await res.json() }
 }
 </script>

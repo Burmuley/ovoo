@@ -22,6 +22,7 @@ func userFromEntity(e entities.User) User {
 	if e.UpdatedBy != nil {
 		updatedBy := userFromEntity(*e.UpdatedBy)
 		u.UpdatedBy = &updatedBy
+		u.UpdatedByID = e.UpdatedBy.ID.String()
 	}
 
 	return u
@@ -71,16 +72,19 @@ func addressFromEntity(e entities.Address) Address {
 		Email:          e.Email.String(),
 		ForwardAddress: nil,
 		Owner:          userFromEntity(e.Owner),
+		OwnerID:        e.Owner.ID.String(),
 		Type:           int(e.Type),
 		Metadata: AddressMetadata{
 			Comment:     e.Metadata.Comment,
 			ServiceName: e.Metadata.ServiceName,
 		},
-		UpdatedBy: userFromEntity(e.UpdatedBy),
+		UpdatedBy:   userFromEntity(e.UpdatedBy),
+		UpdatedByID: e.UpdatedBy.ID.String(),
 	}
 	if e.ForwardAddress != nil {
 		fa := addressFromEntity(*e.ForwardAddress)
 		addr.ForwardAddress = &fa
+		addr.ForwardAddressID = e.ForwardAddress.ID.String()
 	}
 
 	return addr
@@ -133,14 +137,19 @@ func addressToEntityList(a []Address) []entities.Address {
 // chainFromEntity converts an entities.Chain to a Chain
 func chainFromEntity(e entities.Chain) Chain {
 	return Chain{
-		Hash:            string(e.Hash),
-		CreatedAt:       e.CreatedAt,
-		FromAddress:     addressFromEntity(e.FromAddress),
-		ToAddress:       addressFromEntity(e.ToAddress),
-		OrigFromAddress: addressFromEntity(e.OrigFromAddress),
-		OrigToAddress:   addressFromEntity(e.OrigToAddress),
-		UpdatedAt:       e.UpdatedAt,
-		UpdatedBy:       userFromEntity(e.UpdatedBy),
+		Hash:              string(e.Hash),
+		CreatedAt:         e.CreatedAt,
+		FromAddress:       addressFromEntity(e.FromAddress),
+		FromAddressID:     e.FromAddress.ID.String(),
+		ToAddress:         addressFromEntity(e.ToAddress),
+		ToAddressID:       e.ToAddress.ID.String(),
+		OrigFromAddress:   addressFromEntity(e.OrigFromAddress),
+		OrigFromAddressID: e.OrigFromAddress.ID.String(),
+		OrigToAddress:     addressFromEntity(e.OrigToAddress),
+		OrigToAddressID:   e.OrigToAddress.ID.String(),
+		UpdatedAt:         e.UpdatedAt,
+		UpdatedBy:         userFromEntity(e.UpdatedBy),
+		UpdatedByID:       e.UpdatedBy.ID.String(),
 	}
 }
 
@@ -199,9 +208,11 @@ func apiTokenFromEntity(e entities.ApiToken) ApiToken {
 		Salt:        e.Salt,
 		Description: e.Description,
 		Owner:       userFromEntity(e.Owner),
+		OwnerID:     e.Owner.ID.String(),
 		Expiration:  e.Expiration,
 		Active:      e.Active,
 		UpdatedBy:   userFromEntity(e.UpdatedBy),
+		UpdatedByID: e.UpdatedBy.ID.String(),
 	}
 }
 

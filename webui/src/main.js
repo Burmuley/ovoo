@@ -1,5 +1,12 @@
 import { createApp } from 'vue'
+import CoreuiVue from '@coreui/vue'
+import CIcon from '@coreui/icons-vue'
+import * as icons from '@coreui/icons'
+import './styles/style.scss'
 import App from './App.vue'
-import './assets/main.css'
 
-createApp(App).mount('#app')
+const app = createApp(App)
+app.use(CoreuiVue)
+app.provide('icons', icons)
+app.component('CIcon', CIcon)
+app.mount('#app')

@@ -1,28 +1,44 @@
 <template>
-    <div>
-        <button class="page-button" @click=prevPage>&#9204;</button> Page {{ current_page }} of {{
-            total_pages }} <button class="page-button" @click=nextPage>&#9205;</button>
-    </div>
-</template>>
+    <CPagination aria-label="Page navigation" class="mb-0">
+        <CPaginationItem
+            aria-label="Previous"
+            :disabled="page <= 1"
+            href="#"
+            @click.prevent="changePage(page - 1)"
+        >
+            &laquo;
+        </CPaginationItem>
+        <CPaginationItem disabled>
+            {{ page }} / {{ totalPages }}
+        </CPaginationItem>
+        <CPaginationItem
+            aria-label="Next"
+            :disabled="page >= totalPages"
+            href="#"
+            @click.prevent="changePage(page + 1)"
+        >
+            &raquo;
+        </CPaginationItem>
+    </CPagination>
+</template>
+
 <script setup>
-const props = defineProps(['total_pages', 'current_page'])
+import { ref, watch } from 'vue'
+
+const props = defineProps({
+    currentPage: { type: Number, default: 1 },
+    totalPages: { type: Number, required: true },
+})
+
 const emit = defineEmits(['page-changed'])
 
+const page = ref(props.currentPage)
 
-const prevPage = async () => {
-    if (props.current_page > 1) {
-        props.current_page--
+watch(() => props.currentPage, (val) => { page.value = val })
 
-        emit('page-changed', props.current_page)
-    }
+function changePage(n) {
+    if (n < 1 || n > props.totalPages) return
+    page.value = n
+    emit('page-changed', n)
 }
-
-const nextPage = async () => {
-    if (props.current_page < props.total_pages) {
-        props.current_page++
-
-        emit('page-changed', props.current_page)
-    }
-}
-
 </script>

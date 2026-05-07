@@ -474,7 +474,7 @@ func TestApiTokensService_Update_CannotActivateExpiredToken(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrValidation)
-	assert.Contains(t, err.Error(), "can not activate expired token")
+	assert.Contains(t, err.Error(), "inactive tokens can not be reactivated")
 	assert.Equal(t, entities.ApiToken{}, token)
 }
 

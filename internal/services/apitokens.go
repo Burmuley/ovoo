@@ -134,8 +134,8 @@ func (t *ApiTokensService) Update(ctx context.Context, cuser entities.User, cmd 
 	}
 
 	if cmd.Active != nil {
-		if *cmd.Active == true && token.Expired() {
-			return entities.ApiToken{}, fmt.Errorf("%w: can not activate expired token", entities.ErrValidation)
+		if *cmd.Active == true && token.Active == false {
+			return entities.ApiToken{}, fmt.Errorf("%w: inactive tokens can not be reactivated", entities.ErrValidation)
 		}
 		token.Active = *cmd.Active
 	}

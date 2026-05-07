@@ -1,47 +1,41 @@
 <template>
-    <div class="submit-form">
-        <h2 class="submit-form h2">
-            Add new user
-        </h2>
-        <div class="submit-form row-item">
-            <label style="margin-right: 8px;">Type</label>
-            <Dropdown text="Select" title="User types" :items=user_types @filter-selected=onUserTypeSelected />
-        </div>
-        <div class="submit-form row-item">
-            <label for="login" style="margin-right: 8px;">Login: </label>
-            <input id="login" v-model=login></input></br>
-        </div>
-        <div class="submit-form row-item">
-            <label for="first_name" style="margin-right: 8px;">First name: </label>
-            <input id="first_name" v-model=first_name></input>
-        </div>
-        <div class="submit-form row-item">
-            <label for="last_name" style="margin-right: 8px;">Last name: </label>
-            <input id="last_name" v-model=last_name></input>
-        </div>
-        <div class="submit-form row-item">
-            <label for="password" style="margin-right: 8px;">Password: </label>
-            <input id="password" type="password" v-model=password></input>
-        </div>
-        <div>
-            <button @click=createUser>Create</button>
-        </div>
-        <div v-if="Object.hasOwn(result, 'status')">
-            <div v-if="result.status === 201" class="submit-form success-result">
-                <span>
-                    <p>New user '{{ result.json.login }}' was successfully created.</p>
-                </span>
-            </div>
-            <div v-else class="submit-form error-result">
-                <span>
-                    <p style="color: darkreded;">Some errors occurred while creating new User:</p>
-                    <p v-for="error in result.json.errors" style="color: darkreded;">
-                        - {{ error.detail }}
-                    </p>
-                </span>
-            </div>
-        </div>
-    </div>
+    <CCard style="max-width: 540px;">
+        <CCardHeader class="fw-semibold">Add New User</CCardHeader>
+        <CCardBody>
+            <CForm @submit.prevent="createUser">
+                <div class="mb-3">
+                    <CFormLabel>Type</CFormLabel>
+                    <Dropdown text="Select type" :items="userTypes" @filter-selected="userTypeSelected = $event" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="login">Login</CFormLabel>
+                    <CFormInput id="login" v-model="login" placeholder="username" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="first_name">First Name</CFormLabel>
+                    <CFormInput id="first_name" v-model="first_name" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="last_name">Last Name</CFormLabel>
+                    <CFormInput id="last_name" v-model="last_name" />
+                </div>
+                <div class="mb-3">
+                    <CFormLabel for="password">Password</CFormLabel>
+                    <CFormInput id="password" v-model="password" type="password" />
+                </div>
+                <div class="d-flex gap-2">
+                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
+                </div>
+            </CForm>
+            <CAlert v-if="result.status === 201" color="success" class="mt-3">
+                User <strong>{{ result.json.login }}</strong> was successfully created.
+            </CAlert>
+            <CAlert v-else-if="result.status" color="danger" class="mt-3">
+                <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
+            </CAlert>
+        </CCardBody>
+    </CCard>
 </template>
 
 <script setup>
@@ -49,11 +43,13 @@ import { ref } from 'vue'
 import Dropdown from './Dropdown.vue'
 import { apiFetch } from '../utils/api'
 
-const user_types = ref([
-    { id: "regular", text: "regular" },
-    { id: "admin", text: "admin" },
-    { id: "milter", text: "milter" }
-])
+const emit = defineEmits(['done'])
+
+const userTypes = [
+    { id: 'regular', text: 'regular' },
+    { id: 'admin', text: 'admin' },
+    { id: 'milter', text: 'milter' },
+]
 const userTypeSelected = ref('')
 const login = ref('')
 const first_name = ref('')
@@ -61,27 +57,17 @@ const last_name = ref('')
 const password = ref('')
 const result = ref({})
 
-const onUserTypeSelected = (selected) => {
-    userTypeSelected.value = selected
-}
-
 const createUser = async () => {
-    const req = JSON.stringify({
-        "login": login.value,
-        "first_name": first_name.value,
-        "last_name": last_name.value,
-        "type": userTypeSelected.value,
-        "password": password.value,
-    })
-
     const res = await apiFetch('/api/v1/users', {
         method: 'POST',
-        body: req
+        body: JSON.stringify({
+            login: login.value,
+            first_name: first_name.value,
+            last_name: last_name.value,
+            type: userTypeSelected.value,
+            password: password.value,
+        }),
     })
-    const jsonRes = await res.json()
-    result.value = {
-        status: res.status,
-        json: jsonRes
-    }
+    result.value = { status: res.status, json: await res.json() }
 }
 </script>

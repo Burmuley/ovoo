@@ -1,21 +1,45 @@
 <template>
-    <div class="ovoo-items-list">
-        <div class="ovoo-item header">
-            <button title="Add new user" @click="addUser">+</button>
-            <Paginator v-if="paginationMetadata.last_page > 1" current_page="1"
-                :total_pages="paginationMetadata.last_page" @page-changed=onPageChanged />
-        </div>
-        <div v-for="(user, index) in users" :key="user.id" class="ovoo-item" :class="{ dark: index % 2 !== 0 }">
-            <div class="ovoo-item-content">
-                <p>{{ user.first_name }} {{ user.last_name }} ({{ user.login }})</p>
-                <p v-if="user.type"><small>Type: {{ user.type }}</small></p>
-            </div>
-            <div class="ovoo-item buttons" :class="{ dark: index % 2 !== 0 }">
-                <!-- <button @click="edit(user)" title="Edit user" style="margin-right: 5px;">Edit</button> -->
-                <button @click="deleteUser(user.id)" title="Delete user">&#9932;</button>
-            </div>
-        </div>
-    </div>
+    <CCard>
+        <CCardHeader class="d-flex align-items-center justify-content-between">
+            <span class="fw-semibold">Users</span>
+            <CButton color="primary" size="sm" @click="emit('add-clicked')">
+                <CIcon icon="cilPlus" /> Add
+            </CButton>
+        </CCardHeader>
+        <CCardBody class="p-0">
+            <CTable hover responsive class="mb-0">
+                <CTableHead>
+                    <CTableRow>
+                        <CTableHeaderCell>Name</CTableHeaderCell>
+                        <CTableHeaderCell>Login</CTableHeaderCell>
+                        <CTableHeaderCell>Type</CTableHeaderCell>
+                        <CTableHeaderCell></CTableHeaderCell>
+                    </CTableRow>
+                </CTableHead>
+                <CTableBody>
+                    <CTableRow v-for="user in users" :key="user.id">
+                        <CTableDataCell>{{ user.first_name }} {{ user.last_name }}</CTableDataCell>
+                        <CTableDataCell>{{ user.login }}</CTableDataCell>
+                        <CTableDataCell>
+                            <CBadge :color="typeBadgeColor(user.type)">{{ user.type }}</CBadge>
+                        </CTableDataCell>
+                        <CTableDataCell class="text-end">
+                            <CButton color="danger" size="sm" variant="outline" @click="deleteUser(user.id)">
+                                <CIcon icon="cilTrash" />
+                            </CButton>
+                        </CTableDataCell>
+                    </CTableRow>
+                </CTableBody>
+            </CTable>
+        </CCardBody>
+        <CCardFooter v-if="paginationMetadata.last_page > 1" class="d-flex justify-content-center">
+            <Paginator
+                :current-page="currentPage"
+                :total-pages="paginationMetadata.last_page"
+                @page-changed="onPageChanged"
+            />
+        </CCardFooter>
+    </CCard>
 </template>
 
 <script setup>
@@ -23,21 +47,22 @@ import { ref, onMounted } from 'vue'
 import { apiFetch } from '../utils/api'
 import Paginator from './Paginator.vue'
 
-const emit = defineEmits(['add-user-clicked'])
+const emit = defineEmits(['add-clicked'])
 const users = ref([])
-const data = ref({})
 const paginationMetadata = ref({})
 const currentPage = ref(1)
 
-const load = async () => {
-    const res = await apiFetch('/api/v1/users?&page=' + currentPage.value)
-    data.value = await res.json()
-    users.value = data.value.users
-    paginationMetadata.value = data.value.pagination_metadata
+const typeBadgeColor = (type) => {
+    if (type === 'admin') return 'danger'
+    if (type === 'milter') return 'warning'
+    return 'secondary'
 }
 
-const edit = (alias) => {
-    console.log('edit not implemented', alias)
+const load = async () => {
+    const res = await apiFetch('/api/v1/users?page=' + currentPage.value)
+    const data = await res.json()
+    users.value = data.users
+    paginationMetadata.value = data.pagination_metadata
 }
 
 const deleteUser = async (id) => {
@@ -45,15 +70,10 @@ const deleteUser = async (id) => {
     await load()
 }
 
-const addUser = () => {
-    emit('add-user-clicked')
-}
-
 const onPageChanged = async (page) => {
     currentPage.value = page
     await load()
 }
-
 
 onMounted(load)
 </script>

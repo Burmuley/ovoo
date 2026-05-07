@@ -138,6 +138,7 @@ func TestAddressGORMRepo_Create_WithForwardAddress(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, retrieved.ForwardAddress)
 	assert.Equal(t, forwardAddress.Email, retrieved.ForwardAddress.Email)
+	assert.Equal(t, user.ID, retrieved.ForwardAddress.Owner.ID)
 }
 
 func TestAddressGORMRepo_BatchCreate(t *testing.T) {
@@ -305,6 +306,8 @@ func TestAddressGORMRepo_GetById(t *testing.T) {
 	assert.Equal(t, address.Email, retrieved.Email)
 	assert.Equal(t, address.Type, retrieved.Type)
 	assert.Equal(t, address.Metadata.Comment, retrieved.Metadata.Comment)
+	assert.Equal(t, user.ID, retrieved.Owner.ID)
+	assert.Equal(t, user.ID, retrieved.UpdatedBy.ID)
 }
 
 func TestAddressGORMRepo_GetById_NotFound(t *testing.T) {
@@ -338,6 +341,8 @@ func TestAddressGORMRepo_GetByEmail(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 1)
 	assert.Equal(t, address.Email, retrieved[0].Email)
+	assert.Equal(t, user.ID, retrieved[0].Owner.ID)
+	assert.Equal(t, user.ID, retrieved[0].UpdatedBy.ID)
 }
 
 func TestAddressGORMRepo_GetByEmail_NotFound(t *testing.T) {
@@ -463,6 +468,7 @@ func TestAddressGORMRepo_GetAll_FilterByOwner(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 1)
 	assert.Equal(t, user.ID, retrieved[0].Owner.ID)
+	assert.Equal(t, user.ID, retrieved[0].UpdatedBy.ID)
 	assert.Equal(t, 1, metadata.TotalRecords)
 }
 
@@ -631,6 +637,8 @@ func TestAddressGORMRepo_GetAll_FilterByForwardAddressIds(t *testing.T) {
 	assert.Len(t, retrieved, 1)
 	assert.Equal(t, alias.ID, retrieved[0].ID)
 	assert.Equal(t, 1, metadata.TotalRecords)
+	assert.NotNil(t, retrieved[0].ForwardAddress)
+	assert.Equal(t, user.ID, retrieved[0].ForwardAddress.Owner.ID)
 }
 
 func TestAddressGORMRepo_GetAll_Pagination(t *testing.T) {
