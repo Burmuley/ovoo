@@ -12,12 +12,14 @@ import (
 )
 
 func setupTokenTestDB(t *testing.T) (*TokenGORMRepo, entities.User) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -47,12 +49,14 @@ func setupTokenTestDB(t *testing.T) (*TokenGORMRepo, entities.User) {
 }
 
 func TestNewApiTokenGORMRepo(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 

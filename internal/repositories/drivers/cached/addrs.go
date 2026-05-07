@@ -12,11 +12,11 @@ import (
 
 type AddrsRepo struct {
 	cache  cache.Cache
-	config *config.APICacheConfig
+	config *config.ConfigCache
 	repo   repositories.AddressReadWriter
 }
 
-func NewCachedAddrsRepo(cache cache.Cache, repo repositories.AddressReadWriter, config *config.APICacheConfig) (*AddrsRepo, error) {
+func NewCachedAddrsRepo(cache cache.Cache, repo repositories.AddressReadWriter, config *config.ConfigCache) (*AddrsRepo, error) {
 	if cache == nil {
 		return nil, fmt.Errorf("%w: cache instance can not be empty", entities.ErrValidation)
 	}

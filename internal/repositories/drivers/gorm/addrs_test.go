@@ -12,12 +12,14 @@ import (
 )
 
 func setupAddressTestDB(t *testing.T) (*AddressGORMRepo, entities.User) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -47,12 +49,14 @@ func setupAddressTestDB(t *testing.T) (*AddressGORMRepo, entities.User) {
 }
 
 func TestNewAddressGORMRepo(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -664,12 +668,14 @@ func TestAddressGORMRepo_GetAll_Pagination(t *testing.T) {
 }
 
 func TestApplyAddressFilter_NoFilters(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -686,12 +692,14 @@ func TestApplyAddressFilter_NoFilters(t *testing.T) {
 }
 
 func TestApplyAddressFilter_WithPagination(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 

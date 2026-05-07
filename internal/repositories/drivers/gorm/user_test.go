@@ -12,12 +12,14 @@ import (
 )
 
 func setupUserTestDB(t *testing.T) *UserGORMRepo {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -31,12 +33,14 @@ func setupUserTestDB(t *testing.T) *UserGORMRepo {
 }
 
 func TestNewUserGORMRepo(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 

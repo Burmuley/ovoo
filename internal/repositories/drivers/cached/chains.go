@@ -12,11 +12,11 @@ import (
 
 type ChainsRepo struct {
 	cache  cache.Cache
-	config *config.APICacheConfig
+	config *config.ConfigCache
 	repo   repositories.ChainReadWriter
 }
 
-func NewCachedChainsRepo(cache cache.Cache, repo repositories.ChainReadWriter, config *config.APICacheConfig) (*ChainsRepo, error) {
+func NewCachedChainsRepo(cache cache.Cache, repo repositories.ChainReadWriter, config *config.ConfigCache) (*ChainsRepo, error) {
 	if cache == nil {
 		return nil, fmt.Errorf("%w: cache instance can not be empty", entities.ErrValidation)
 	}

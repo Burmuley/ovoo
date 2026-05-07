@@ -23,7 +23,7 @@ type RedisCache struct {
 // and RESP protocol version) and constructs a go-redis client. The client
 // connection is lazy — no network dial occurs until the first command is issued.
 // Protocol defaults to RESP3 (version 3) when the config value is zero.
-func New(config config.APICacheConfig) (*RedisCache, error) {
+func New(config config.ConfigCache) (*RedisCache, error) {
 	// parse configuration
 	redisCfg := config.Config.Redis
 	opts := redis.Options{}

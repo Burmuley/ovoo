@@ -13,14 +13,14 @@ import (
 // NewDatabase creates a new GORM database connection based on the provided configuration.
 // It supports SQLite as the database driver and automatically migrates the necessary tables.
 // Returns a pointer to gorm.DB and an error if any occurred during the process.
-func NewDatabase(config config.APIDBConfig) (*gorm.DB, error) {
+func NewDatabase(config config.ConfigDB) (*gorm.DB, error) {
 	var dialect gorm.Dialector
 
-	switch config.Config.Driver {
+	switch config.Config.GORM.Driver {
 	case "sqlite":
-		dialect = sqlite.Open(config.Config.ConnectionString)
+		dialect = sqlite.Open(config.Config.GORM.ConnectionString)
 	default:
-		return nil, fmt.Errorf("%w: unknown database driver '%s'", entities.ErrConfiguration, config.Config.Driver)
+		return nil, fmt.Errorf("%w: unknown GORM database driver '%s'", entities.ErrConfiguration, config.Config.GORM.Driver)
 	}
 
 	var logLevel logger.LogLevel

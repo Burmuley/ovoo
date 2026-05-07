@@ -16,16 +16,18 @@ import (
 )
 
 // sqliteCfg is the shared in-memory SQLite config used by all test setups.
-var sqliteCfg = config.APIDBConfig{
-	DBType:   "gorm",
+var sqliteCfg = config.ConfigDB{
+	Driver:   "gorm",
 	LogLevel: "silent",
-	Config: config.APIDBDriverConfig{
-		Driver:           "sqlite",
-		ConnectionString: ":memory:",
+	Config: config.ConfigDBDriver{
+		GORM: config.ConfigDBDriverGORM{
+			Driver:           "sqlite",
+			ConnectionString: ":memory:",
+		},
 	},
 }
 
-var cacheCfg = config.APICacheConfig{
+var cacheCfg = config.ConfigCache{
 	SingleItemTTL: 300,
 	ListTTL:       60,
 }

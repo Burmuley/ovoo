@@ -10,12 +10,14 @@ import (
 )
 
 func TestNewGORMDatabase_SQLite(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -32,12 +34,14 @@ func TestNewGORMDatabase_SQLite(t *testing.T) {
 }
 
 func TestNewGORMDatabase_ErrorLogLevel(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -48,12 +52,14 @@ func TestNewGORMDatabase_ErrorLogLevel(t *testing.T) {
 }
 
 func TestNewGORMDatabase_DebugLogLevel(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -64,12 +70,14 @@ func TestNewGORMDatabase_DebugLogLevel(t *testing.T) {
 }
 
 func TestNewGORMDatabase_UnknownDriver(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "unknown",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "unknown",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -78,16 +86,18 @@ func TestNewGORMDatabase_UnknownDriver(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, db)
 	assert.ErrorIs(t, err, entities.ErrConfiguration)
-	assert.Contains(t, err.Error(), "unknown database driver")
+	assert.Contains(t, err.Error(), "unknown GORM database driver")
 }
 
 func TestNewGORMDatabase_InvalidConnectionString(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -103,15 +113,16 @@ func TestNewGORMDatabase_InvalidConnectionString(t *testing.T) {
 }
 
 func TestNewGORMDatabase_DefaultLogLevel(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
-
 	db, err := NewDatabase(config)
 
 	require.NoError(t, err)

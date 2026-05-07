@@ -10,7 +10,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/config"
 )
 
-func startMilter(cfg config.MilterConfig) error {
+func startMilter(cfg *config.MilterConfig) error {
 	// logger configuration
 	logger := slog.New(slog.NewTextHandler(
 		os.Stdout,
@@ -31,7 +31,7 @@ func startMilter(cfg config.MilterConfig) error {
 	if ovooApiToken == "" {
 		return errors.New("missing 'auth_token' configuration parameter")
 	}
-	ovooClient, err := milter.NewOvooClient(ovooApiAddr, ovooApiToken, cfg.Api.TlsSkipVerify, cfg.Domain)
+	ovooClient, err := milter.NewOvooClient(ovooApiAddr, ovooApiToken, cfg.Api.TLSSkipVerify, cfg.Domain)
 	if err != nil {
 		return fmt.Errorf("error creating Ovoo API client: %w", err)
 	}

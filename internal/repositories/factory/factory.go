@@ -25,14 +25,14 @@ type RepoFactory struct {
 // New creates a new RepoFactory instance based on the provided repository type and configuration.
 // It returns a pointer to RepoFabric and an error if the repository type is unknown.
 func New(
-	dbConfig config.APIDBConfig,
-	cacheConfig *config.APICacheConfig,
-	defAdminCfg *config.APIDefaultAdminConfig,
+	dbConfig config.ConfigDB,
+	cacheConfig *config.ConfigCache,
+	defAdminCfg *config.ConfigDefaultAdmin,
 	logger *slog.Logger,
 ) (*RepoFactory, error) {
 	var repoFactory *RepoFactory
 
-	switch dbConfig.DBType {
+	switch dbConfig.Driver {
 	case "gorm":
 		var err error
 		repoFactory, err = newGormRepoFactory(dbConfig)
@@ -71,7 +71,7 @@ func New(
 
 }
 
-func handleDefaultAdmin(logger *slog.Logger, repo *RepoFactory, defAdminCfg *config.APIDefaultAdminConfig) error {
+func handleDefaultAdmin(logger *slog.Logger, repo *RepoFactory, defAdminCfg *config.ConfigDefaultAdmin) error {
 	adminUser := entities.User{
 		FirstName:    defAdminCfg.FirstName,
 		LastName:     defAdminCfg.LastName,

@@ -45,7 +45,7 @@ func makeServices(repoFactory *factory.RepoFactory, domain string, dict []string
 	return svcGw, nil
 }
 
-func startApi(cfg config.APIConfig) error {
+func startApi(cfg *config.APIConfig) error {
 	// logger configuration
 	logger := slog.New(slog.NewTextHandler(
 		os.Stdout,
@@ -63,7 +63,7 @@ func startApi(cfg config.APIConfig) error {
 	}
 
 	// initialize repo fabric
-	repoFactory, err := factory.New(cfg.Database, cfg.Cache, &cfg.DefaultAdmin, logger)
+	repoFactory, err := factory.New(cfg.Database, cfg.Cache, cfg.DefaultAdmin, logger)
 	if err != nil {
 		return fmt.Errorf("error initializing repository: %w", err)
 	}
@@ -80,7 +80,7 @@ func startApi(cfg config.APIConfig) error {
 		listen_addr = rest.DefaultListenAddr
 	}
 
-	restApi, err := rest.New(listen_addr, logger, svcGw, cfg.Tls.Key, cfg.Tls.Cert, cfg.OIDC)
+	restApi, err := rest.New(listen_addr, logger, svcGw, cfg.TLS.Key, cfg.TLS.Cert, cfg.OIDC)
 	if err != nil {
 		return fmt.Errorf("error initializing rest api: %w", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/repositories/drivers/cached"
 )
 
-func newCachedRepoFactory(cache cache.Cache, repoFactory *RepoFactory, config *config.APICacheConfig) (*RepoFactory, error) {
+func newCachedRepoFactory(cache cache.Cache, repoFactory *RepoFactory, config *config.ConfigCache) (*RepoFactory, error) {
 	cachedRF := &RepoFactory{}
 
 	{

@@ -12,12 +12,14 @@ import (
 )
 
 func setupChainsTestDB(t *testing.T) (*ChainsGORMRepo, entities.User) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -94,12 +96,14 @@ func createTestChain(user entities.User) entities.Chain {
 }
 
 func TestNewChainsGORMRepo(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -397,12 +401,14 @@ func TestChainsGORMRepo_BatchDelete(t *testing.T) {
 }
 
 func TestApplyChainFilter_NoFilters(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 
@@ -423,12 +429,14 @@ func TestApplyChainFilter_NoFilters(t *testing.T) {
 }
 
 func TestApplyChainFilter_WithPagination(t *testing.T) {
-	config := config.APIDBConfig{
-		DBType:   "gorm",
+	config := config.ConfigDB{
+		Driver:   "gorm",
 		LogLevel: "silent",
-		Config: config.APIDBDriverConfig{
-			Driver:           "sqlite",
-			ConnectionString: ":memory:",
+		Config: config.ConfigDBDriver{
+			GORM: config.ConfigDBDriverGORM{
+				Driver:           "sqlite",
+				ConnectionString: ":memory:",
+			},
 		},
 	}
 

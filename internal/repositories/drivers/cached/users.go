@@ -12,11 +12,11 @@ import (
 
 type UsersRepo struct {
 	cache  cache.Cache
-	config *config.APICacheConfig
+	config *config.ConfigCache
 	repo   repositories.UsersReadWriter
 }
 
-func NewCachedUsersRepo(cache cache.Cache, repo repositories.UsersReadWriter, config *config.APICacheConfig) (*UsersRepo, error) {
+func NewCachedUsersRepo(cache cache.Cache, repo repositories.UsersReadWriter, config *config.ConfigCache) (*UsersRepo, error) {
 	if cache == nil {
 		return nil, fmt.Errorf("%w: cache instance can not be empty", entities.ErrValidation)
 	}

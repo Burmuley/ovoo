@@ -21,9 +21,9 @@ func newTestCache(t *testing.T) (*RedisCache, *miniredis.Miniredis) {
 	t.Helper()
 	mr := miniredis.RunT(t)
 	addr := mr.Addr()
-	cfg := config.APICacheConfig{
-		Config: config.APICacheDriverConfig{
-			Redis: &config.APICacheDriverRedisConfig{
+	cfg := config.ConfigCache{
+		Config: config.ConfigCacheDriver{
+			Redis: &config.ConfigCacheDriverRedis{
 				Addr: &addr,
 				DB:   0,
 				// Protocol 0 → New() falls back to default (3); miniredis supports HELLO.

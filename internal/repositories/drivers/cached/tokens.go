@@ -12,11 +12,11 @@ import (
 
 type TokensRepo struct {
 	cache  cache.Cache
-	config *config.APICacheConfig
+	config *config.ConfigCache
 	repo   repositories.TokensReadWriter
 }
 
-func NewCachedTokensRepo(cache cache.Cache, repo repositories.TokensReadWriter, config *config.APICacheConfig) (*TokensRepo, error) {
+func NewCachedTokensRepo(cache cache.Cache, repo repositories.TokensReadWriter, config *config.ConfigCache) (*TokensRepo, error) {
 	if cache == nil {
 		return nil, fmt.Errorf("%w: cache instance can not be empty", entities.ErrValidation)
 	}
