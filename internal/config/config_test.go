@@ -54,7 +54,7 @@ func TestLoadConfig_APIConfig_Full(t *testing.T) {
 		}
 	}`)
 
-	cfg, err := LoadConfig[APIConfig](path)
+	cfg, err := LoadConfig[APIConfig](APISection, path)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -95,7 +95,7 @@ func TestLoadConfig_APIConfig_OptionalFieldsAbsent(t *testing.T) {
 		}
 	}`)
 
-	cfg, err := LoadConfig[APIConfig](path)
+	cfg, err := LoadConfig[APIConfig](APISection, path)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -109,7 +109,7 @@ func TestLoadConfig_APIConfig_OptionalFieldsAbsent(t *testing.T) {
 func TestLoadConfig_APIConfig_EmptyJSON(t *testing.T) {
 	path := writeTempConfig(t, `{}`)
 
-	cfg, err := LoadConfig[APIConfig](path)
+	cfg, err := LoadConfig[APIConfig](APISection, path)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	assert.Equal(t, "", cfg.Domain)
@@ -143,7 +143,7 @@ func TestLoadConfig_APIConfig_RedisCache(t *testing.T) {
 		}
 	}`)
 
-	cfg, err := LoadConfig[APIConfig](path)
+	cfg, err := LoadConfig[APIConfig](APISection, path)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	require.NotNil(t, cfg.Cache)
@@ -160,7 +160,7 @@ func TestLoadConfig_APIConfig_RedisCache(t *testing.T) {
 }
 
 func TestLoadConfig_FileNotFound(t *testing.T) {
-	cfg, err := LoadConfig[APIConfig]("/nonexistent/path/config.json")
+	cfg, err := LoadConfig[APIConfig](APISection, "/nonexistent/path/config.json")
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.ErrorIs(t, err, entities.ErrConfiguration)
@@ -169,7 +169,7 @@ func TestLoadConfig_FileNotFound(t *testing.T) {
 func TestLoadConfig_InvalidJSON(t *testing.T) {
 	path := writeTempConfig(t, `{not valid json}`)
 
-	cfg, err := LoadConfig[APIConfig](path)
+	cfg, err := LoadConfig[APIConfig](APISection, path)
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.ErrorIs(t, err, entities.ErrConfiguration)
@@ -181,7 +181,7 @@ func TestLoadConfig_MilterConfig_Full(t *testing.T) {
 	// LoadConfig always unmarshals from the "api" key regardless of type T,
 	// so MilterConfig fields must be nested under "api" in the JSON.
 	path := writeTempConfig(t, `{
-		"api": {
+		"milter": {
 			"domain": "example.com",
 			"listen_addr": "127.0.0.1:6785",
 			"api": {
@@ -193,7 +193,7 @@ func TestLoadConfig_MilterConfig_Full(t *testing.T) {
 		}
 	}`)
 
-	cfg, err := LoadConfig[MilterConfig](path)
+	cfg, err := LoadConfig[MilterConfig](MilterSection, path)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
@@ -207,7 +207,7 @@ func TestLoadConfig_MilterConfig_Full(t *testing.T) {
 }
 
 func TestLoadConfig_MilterConfig_FileNotFound(t *testing.T) {
-	cfg, err := LoadConfig[MilterConfig]("/nonexistent/milter.json")
+	cfg, err := LoadConfig[MilterConfig](MilterSection, "/nonexistent/milter.json")
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.ErrorIs(t, err, entities.ErrConfiguration)
@@ -216,7 +216,7 @@ func TestLoadConfig_MilterConfig_FileNotFound(t *testing.T) {
 func TestLoadConfig_MilterConfig_InvalidJSON(t *testing.T) {
 	path := writeTempConfig(t, `[invalid`)
 
-	cfg, err := LoadConfig[MilterConfig](path)
+	cfg, err := LoadConfig[MilterConfig](MilterSection, path)
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
 	assert.ErrorIs(t, err, entities.ErrConfiguration)

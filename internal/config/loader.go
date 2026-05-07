@@ -9,14 +9,14 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
-func LoadConfig[T APIConfig | MilterConfig](path string) (*T, error) {
+func LoadConfig[T APIConfig | MilterConfig](section CfgSectionName, path string) (*T, error) {
 	loader := koanf.New("/")
 	if err := loader.Load(file.Provider(path), json.Parser()); err != nil {
 		return nil, fmt.Errorf("%w: %w", entities.ErrConfiguration, err)
 	}
 
 	var cfg T
-	if err := loader.Unmarshal(string(APISection), &cfg); err != nil {
+	if err := loader.Unmarshal(string(section), &cfg); err != nil {
 		return nil, fmt.Errorf("%w: %w", entities.ErrConfiguration, err)
 	}
 

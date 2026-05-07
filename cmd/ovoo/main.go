@@ -36,7 +36,7 @@ func main() {
 		return
 	case "api":
 		apiCmd.Parse(os.Args[2:])
-		config, err := config.LoadConfig[config.APIConfig](*apiCfgName)
+		config, err := config.LoadConfig[config.APIConfig](config.APISection, *apiCfgName)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -47,7 +47,7 @@ func main() {
 
 	case "milter":
 		milterCmd.Parse(os.Args[2:])
-		config, err := config.LoadConfig[config.MilterConfig](*milterCfgName)
+		config, err := config.LoadConfig[config.MilterConfig](config.MilterSection, *milterCfgName)
 		if err != nil {
 			log.Fatal(err)
 		}
