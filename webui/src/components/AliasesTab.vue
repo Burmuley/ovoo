@@ -78,7 +78,7 @@
                                     color="danger"
                                     size="sm"
                                     variant="outline"
-                                    @click="deleteAlias(alias.id)"
+                                    @click="deletingId = alias.id"
                                 >
                                     <CIcon icon="cilTrash" />
                                 </CButton>
@@ -96,10 +96,19 @@
             />
         </CCardFooter>
     </CCard>
+
+    <CModal :visible="deletingId !== null" @close="deletingId = null">
+        <CModalHeader><CModalTitle>Delete Alias</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to delete this alias? This action cannot be undone.</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="deletingId = null">Cancel</CButton>
+            <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../utils/api'
 import Paginator from './Paginator.vue'
 
@@ -110,6 +119,7 @@ const currentPage = ref(1)
 const editingId = ref(null)
 const editForm = ref({ service_name: '', comment: '' })
 const saving = ref(false)
+const deletingId = ref(null)
 
 const load = async () => {
     const res = await apiFetch('/api/v1/aliases?page=' + currentPage.value)
@@ -146,10 +156,22 @@ const saveEdit = async (id) => {
     await load()
 }
 
-const deleteAlias = async (id) => {
+const performDelete = async (id) => {
+    saving.value = true
     await apiFetch(`/api/v1/aliases/${id}`, { method: 'DELETE' })
+    saving.value = false
+    deletingId.value = null
     await load()
 }
+
+function onDeleteKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); performDelete(deletingId.value) }
+}
+watch(deletingId, id => {
+    if (id !== null) document.addEventListener('keydown', onDeleteKey)
+    else             document.removeEventListener('keydown', onDeleteKey)
+})
+onUnmounted(() => document.removeEventListener('keydown', onDeleteKey))
 
 const onPageChanged = async (page) => {
     currentPage.value = page

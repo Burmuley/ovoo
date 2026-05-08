@@ -89,7 +89,7 @@
                                     color="danger"
                                     size="sm"
                                     variant="outline"
-                                    @click="deleteApiKey(key.id)"
+                                    @click="deletingId = key.id"
                                 >
                                     <CIcon icon="cilTrash" />
                                 </CButton>
@@ -101,6 +101,15 @@
             </CTable>
         </CCardBody>
     </CCard>
+
+    <CModal :visible="deletingId !== null" @close="deletingId = null">
+        <CModalHeader><CModalTitle>Delete API Key</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to delete this API key? This action cannot be undone.</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="deletingId = null">Cancel</CButton>
+            <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
+        </CModalFooter>
+    </CModal>
 
     <CModal :visible="confirmingId !== null" @close="confirmingId = null">
         <CModalHeader>
@@ -117,7 +126,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import moment from 'moment'
 import { apiFetch } from '../utils/api'
 
@@ -126,6 +135,7 @@ const apiKeys = ref([])
 const editingId = ref(null)
 const editForm = ref({ name: '', description: '' })
 const confirmingId = ref(null)
+const deletingId = ref(null)
 const saving = ref(false)
 
 const load = async () => {
@@ -164,10 +174,22 @@ const deactivate = async (id) => {
     await load()
 }
 
-const deleteApiKey = async (id) => {
+const performDelete = async (id) => {
+    saving.value = true
     await apiFetch(`/api/v1/users/apitokens/${id}`, { method: 'DELETE' })
+    saving.value = false
+    deletingId.value = null
     await load()
 }
+
+function onDeleteKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); performDelete(deletingId.value) }
+}
+watch(deletingId, id => {
+    if (id !== null) document.addEventListener('keydown', onDeleteKey)
+    else             document.removeEventListener('keydown', onDeleteKey)
+})
+onUnmounted(() => document.removeEventListener('keydown', onDeleteKey))
 
 onMounted(load)
 </script>

@@ -29,7 +29,7 @@
                             <CBadge :color="typeBadgeColor(user.type)">{{ user.type }}</CBadge>
                         </CTableDataCell>
                         <CTableDataCell class="text-end">
-                            <CButton color="danger" size="sm" variant="outline" @click.stop="deleteUser(user.id)">
+                            <CButton color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
                                 <CIcon icon="cilTrash" />
                             </CButton>
                         </CTableDataCell>
@@ -141,10 +141,19 @@
             <CButton color="secondary" variant="outline" @click="selectedUser = null">Close</CButton>
         </CModalFooter>
     </CModal>
+
+    <CModal :visible="deletingId !== null" @close="deletingId = null">
+        <CModalHeader><CModalTitle>Delete User</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to delete this user? This action cannot be undone.</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="deletingId = null">Cancel</CButton>
+            <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../utils/api'
 import Paginator from './Paginator.vue'
 
@@ -158,6 +167,7 @@ const selectedUser = ref(null)
 const editingField = ref(null)
 const editValue = ref('')
 const saving = ref(false)
+const deletingId = ref(null)
 
 watch(selectedUser, () => {
     editingField.value = null
@@ -207,10 +217,22 @@ const load = async () => {
     paginationMetadata.value = data.pagination_metadata
 }
 
-const deleteUser = async (id) => {
+const performDelete = async (id) => {
+    saving.value = true
     await apiFetch(`/api/v1/users/${id}`, { method: 'DELETE' })
+    saving.value = false
+    deletingId.value = null
     await load()
 }
+
+function onDeleteKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); performDelete(deletingId.value) }
+}
+watch(deletingId, id => {
+    if (id !== null) document.addEventListener('keydown', onDeleteKey)
+    else             document.removeEventListener('keydown', onDeleteKey)
+})
+onUnmounted(() => document.removeEventListener('keydown', onDeleteKey))
 
 const onPageChanged = async (page) => {
     currentPage.value = page
