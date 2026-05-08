@@ -24,10 +24,13 @@ go generate "$PWD/internal/applications/rest"
 
 if [[ "${TARGET}" == "local" ]]; then
     build_webui
-    go build -x -o "bin/ovoo_${TARGET}" ./cmd/ovoo
+    rm -f bin/ovoo_linux
+    go build -ldflags="-s -w" -o "bin/ovoo_${TARGET}" ./cmd/ovoo
 elif [[ "${TARGET}" == "linux" ]]; then
     build_webui
-    GOOS=linux GOARCH=amd64 go build -x -o bin/ovoo_linux ./cmd/ovoo
+    rm -f bin/ovoo_linux
+    GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o bin/ovoo_linux ./cmd/ovoo
+    upx bin/ovoo_linux
 elif [[ "${TARGET}" == "webui" ]]; then
     build_webui
 fi

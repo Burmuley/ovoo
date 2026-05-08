@@ -114,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../utils/api'
 import AliasesTab from './AliasesTab.vue'
 import PrAddrsTab from './PrAddrsTab.vue'
@@ -126,14 +126,39 @@ import ApiKeysTab from './ApiKeysTab.vue'
 import AddApiKeyForm from './AddApiKeyForm.vue'
 import UserInfo from './UserInfo.vue'
 
-const currentTab = ref('aliases')
+const MAIN_TABS = new Set(['aliases', 'praddrs', 'apikeys', 'users'])
+
+function tabFromHash() {
+    const tab = location.hash.slice(1)
+    return MAIN_TABS.has(tab) ? tab : 'aliases'
+}
+
+const currentTab = ref(tabFromHash())
 const userInfo = ref({})
 const sidebarVisible = ref(true)
+
+watch(currentTab, (tab) => {
+    if (MAIN_TABS.has(tab)) location.hash = tab
+})
 
 const load = async () => {
     const res = await apiFetch('/api/v1/users/profile')
     userInfo.value = await res.json()
+    if (currentTab.value === 'users' && userInfo.value.type !== 'admin') {
+        currentTab.value = 'aliases'
+    }
 }
 
-onMounted(load)
+const onHashChange = () => {
+    const tab = tabFromHash()
+    if (tab === 'users' && userInfo.value.type !== 'admin') return
+    currentTab.value = tab
+}
+
+onMounted(() => {
+    load()
+    window.addEventListener('hashchange', onHashChange)
+})
+
+onUnmounted(() => window.removeEventListener('hashchange', onHashChange))
 </script>
