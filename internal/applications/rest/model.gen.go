@@ -123,6 +123,18 @@ type ProtectedAddressData struct {
 	Owner    UserData            `json:"owner"`
 }
 
+// SystemVersionData defines model for systemVersionData.
+type SystemVersionData struct {
+	// BuiltAt Build timestamp
+	BuiltAt string `json:"built_at"`
+
+	// GitCommit Git commit ID (full)
+	GitCommit string `json:"git_commit"`
+
+	// Version Semantic version number
+	Version string `json:"version"`
+}
+
 // UserData defines model for userData.
 type UserData struct {
 	// FailedAttempts number of failed authentication attempts
@@ -220,6 +232,9 @@ type GetPrAddrsResponse struct {
 	PaginationMetadata PaginationMetadata     `json:"pagination_metadata"`
 	ProtectedAddresses []ProtectedAddressData `json:"protected_addresses"`
 }
+
+// GetSystemVersionResponse defines model for getSystemVersionResponse.
+type GetSystemVersionResponse = SystemVersionData
 
 // GetUserDetailsResponse defines model for getUserDetailsResponse.
 type GetUserDetailsResponse = UserData

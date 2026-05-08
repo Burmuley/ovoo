@@ -80,7 +80,7 @@ func startApi(cfg *config.APIConfig) error {
 		listen_addr = rest.DefaultListenAddr
 	}
 
-	app, err := rest.New(listen_addr, logger, svcGw, cfg.TLS.Key, cfg.TLS.Cert, cfg.OIDC)
+	app, err := rest.New(listen_addr, logger, svcGw, cfg.TLS.Key, cfg.TLS.Cert, cfg.OIDC, cfg.Version)
 	if err != nil {
 		return fmt.Errorf("error initializing rest api: %w", err)
 	}

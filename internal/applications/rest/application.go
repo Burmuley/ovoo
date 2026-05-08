@@ -47,6 +47,7 @@ type Application struct {
 	tls_cert        string
 	tls_key         string
 	providerConfigs map[string]middleware.OIDCProvider
+	version         config.SystemVersion
 }
 
 // New creates and returns a new Application instance configured for REST API handling.
@@ -69,6 +70,7 @@ func New(
 	svcGw *services.ServiceGateway,
 	tls_key, tls_cert string,
 	providersConfig map[string]config.ConfigOIDC,
+	version config.SystemVersion,
 ) (applications.Application, error) {
 	ctrl := &Application{
 		svcGw:      svcGw,
@@ -76,6 +78,7 @@ func New(
 		logger:     logger,
 		tls_key:    tls_key,
 		tls_cert:   tls_cert,
+		version:    version,
 	}
 
 	if len(listenAddr) < 1 {
@@ -176,6 +179,17 @@ func (a *Application) Start() error {
 	mux.HandleFunc("GET /private/api/v1/chains/{hash}", a.getChainByHash)
 	mux.HandleFunc("POST /private/api/v1/chains", a.CreateChain)
 	mux.HandleFunc("DELETE /private/api/v1/chains/{hash}", a.DeleteChain)
+
+	// version
+	mux.HandleFunc("GET /api/v1/version", func(w http.ResponseWriter, r *http.Request) {
+		resp := GetSystemVersionResponse{
+			BuiltAt:   a.version.BuiltAt,
+			GitCommit: a.version.GitCommit,
+			Version:   a.version.Version,
+		}
+
+		a.successResponse(w, resp, http.StatusOK)
+	})
 
 	// root
 	webui, err := fs.Sub(webuiData, "data/webui")

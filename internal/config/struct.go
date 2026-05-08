@@ -11,6 +11,13 @@ type APIConfig struct {
 	Log          ConfigLogging         `koanf:"logging"`
 	OIDC         map[string]ConfigOIDC `koanf:"oidc"`
 	TLS          ConfigTLS             `koanf:"tls"`
+	Version      SystemVersion
+}
+
+type SystemVersion struct {
+	Version   string
+	GitCommit string
+	BuiltAt   string
 }
 
 type ConfigLogging struct {

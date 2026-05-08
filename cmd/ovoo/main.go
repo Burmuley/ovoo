@@ -15,7 +15,9 @@ const (
 )
 
 var (
-	appVersion string
+	appInfoVersion   string = "LOCAL"
+	appInfoGitCommit string = "LOCAL"
+	appInfoBuiltAt   string = "NOW"
 )
 
 func main() {
@@ -32,26 +34,33 @@ func main() {
 
 	switch os.Args[1] {
 	case "version":
-		fmt.Printf("Ovoo version: %s\n", appVersion)
+		fmt.Printf("Version: %s\n", appInfoVersion)
+		fmt.Printf("Git commit: %s\n", appInfoGitCommit)
+		fmt.Printf("Build timestamp: %s\n", appInfoBuiltAt)
 		return
 	case "api":
 		apiCmd.Parse(os.Args[2:])
-		config, err := config.LoadConfig[config.APIConfig](config.APISection, *apiCfgName)
+		cfg, err := config.LoadConfig[config.APIConfig](config.APISection, *apiCfgName)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if err := startApi(config); err != nil {
+		cfg.Version = config.SystemVersion{
+			Version:   appInfoVersion,
+			GitCommit: appInfoGitCommit,
+			BuiltAt:   appInfoBuiltAt,
+		}
+		if err := startApi(cfg); err != nil {
 			slog.Error(err.Error())
 		}
 
 	case "milter":
 		milterCmd.Parse(os.Args[2:])
-		config, err := config.LoadConfig[config.MilterConfig](config.MilterSection, *milterCfgName)
+		cfg, err := config.LoadConfig[config.MilterConfig](config.MilterSection, *milterCfgName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := startMilter(config); err != nil {
+		if err := startMilter(cfg); err != nil {
 			slog.Error(err.Error())
 		}
 	default:

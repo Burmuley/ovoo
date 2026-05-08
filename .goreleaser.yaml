@@ -1,43 +1,46 @@
 version: 2
 
 before:
-  hooks:
-    - ./scripts/build.sh webui
-    - go mod tidy
-    - go generate ./...
+    hooks:
+        - ./scripts/build.sh webui
+        - go mod tidy
+        - go generate ./...
+upx:
+    - enabled: true
 
 builds:
-  - env:
-      - CGO_ENABLED=0
-    main: ./cmd/ovoo
-    binary: ovoo
-    goos:
-      - linux
-    goarch:
-      - amd64
-      - arm64
+    - env:
+          - CGO_ENABLED=0
+      id: ovoo-build
+      main: ./cmd/ovoo
+      binary: ovoo
+      goos:
+          - linux
+      goarch:
+          - amd64
+          - arm64
+      ldflags:
+          - -s -w -X main.appInfoGitCommit={{.Commit}} -X
+            main.appInfoVersion={{.Version}} -X main.appInfoBuiltAt={{.Date}}
 
 archives:
-  - formats: [tar.gz]
-    # this name template makes the OS and Arch compatible with the results of `uname`.
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    - formats: [tar.gz]
+      # this name template makes the OS and Arch compatible with the results of `uname`.
+      name_template: >-
+          {{ .ProjectName }}_ {{- title .Os }}_ {{- if eq .Arch "amd64" }}x86_64
+          {{- else }}{{ .Arch }}{{ end }} {{- if .Arm }}v{{ .Arm }}{{ end }}
 
 changelog:
-  sort: asc
-  abbrev: 8
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+    sort: asc
+    abbrev: 8
+    filters:
+        exclude:
+            - "^docs:"
+            - "^test:"
 
 release:
-  footer: >-
+    footer: >-
+        
+        ---
 
-    ---
-
-    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+        Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

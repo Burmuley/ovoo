@@ -1,1215 +1,1275 @@
 openapi: 3.1.0
 info:
-  title: Ovoo API
-  description: >-
-    Ovoo - privacy email gateway to manage aliases hiding real (protected)
-    emails from senders.
-  contact:
-    email: burmuley@gmail.com
-    name: Konstantin Vasilev
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-  version: "1.3"
+    title: Ovoo API
+    description: >-
+        Ovoo - privacy email gateway to manage aliases hiding real (protected)
+        emails from senders.
+    contact:
+        email: burmuley@gmail.com
+        name: Konstantin Vasilev
+    license:
+        name: Apache 2.0
+        url: http://www.apache.org/licenses/LICENSE-2.0.html
+    version: "1.3"
 externalDocs:
-  description: Ovoo service source code
-  url: https://github.com/Burmuley/ovoo
+    description: Ovoo service source code
+    url: https://github.com/Burmuley/ovoo
 security:
-  - OAuth2: []
-  - BasicAuthentication: []
-  - ApiToken: []
+    - OAuth2: []
+    - BasicAuthentication: []
+    - ApiToken: []
 servers:
-  - url: https://ovoolocal.burmuley.com:8808
-    description: Local testing server
-    variables: {}
-  - url: https://ovoomail.burmuley.com:8808
-    description: Public testing server
+    - url: https://ovoolocal.burmuley.com:8808
+      description: Local testing server
+      variables: {}
+    - url: https://ovoomail.burmuley.com:8808
+      description: Public testing server
 tags:
-  - name: Aliases
-    description: >-
-      API group defines basic operations to manage alias emails for regular
-      users and admins
-  - name: Protected Addresses
-    description: >-
-      API group defines operations on protected addresses for regular users
-      and admins
-  - name: Users
-    description: >-
-      API group defines operations to manage user accounts for users with `admin` role
-  - name: Email chains
-    description: >-
-      API group defines operations to manage email chains, used by Milter service
-  - name: ApiTokens
-    description: >-
-      API group defines operations to manage API tokens for all users of the system
+    - name: Aliases
+      description: >-
+          API group defines basic operations to manage alias emails for regular
+          users and admins
+    - name: Protected Addresses
+      description: >-
+          API group defines operations on protected addresses for regular users
+          and admins
+    - name: Users
+      description: >-
+          API group defines operations to manage user accounts for users with
+          `admin` role
+    - name: Email chains
+      description: >-
+          API group defines operations to manage email chains, used by Milter
+          service
+    - name: ApiTokens
+      description: >-
+          API group defines operations to manage API tokens for all users of the
+          system
+    - name: System
+      description: >-
+          API group defines endpoints providing various information about the
+          system, such as runtime version information
 paths:
-  /api/v1/aliases:
-    get:
-      summary: Get all aliases
-      description: >-
-        Retrieve a list of alias addresses found in the database considering filters defined in query parameters: owner, id, email. Each query parameter can be defined multiple times. Filter `owner` is only useful for admin users, regular users always get only aliases they own.
-      operationId: getAliases
-      tags:
-        - Aliases
-      responses:
-        "200":
-          $ref: "#/components/responses/getAliasesResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-      parameters:
-        - in: query
-          name: owner
-          description: owner ID to fetch parameters for
-          schema:
-            type: string
-          required: false
-        - in: query
-          name: email
-          description: email of an alias to lookup
-          schema:
-            type: string
-          required: false
-        - in: query
-          name: id
-          description: alias id to retrieve
-          schema:
-            type: string
-          required: false
-        - in: query
-          name: service_name
-          description: allows to lookup aliases by service name metadata field value
-          schema:
-            type: string
-          required: false
-    post:
-      description: Create new alias address. Request is of the type \`application/json\`.
-      operationId: createAlias
-      tags:
-        - Aliases
-      requestBody:
-        $ref: "#/components/requestBodies/createAliasRequest"
-      responses:
-        "201":
-          $ref: "#/components/responses/createAliasResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-      summary: Create new Alias
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-  /api/v1/aliases/{id}:
-    get:
-      description: >-
-        Retrieve deteiled information of a particular alias address by its ID.
-        The ID is defined as a path parameter and should be of ULID format.
-      operationId: getAliasDetails
-      tags:
-        - Aliases
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/getAliasDetailsResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      summary: Get details of a particular Alias
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    delete:
-      description: >-
-        Delete a particular alias address by its ID. The ID is defined as a path
-        parameter and should be of ULID format.
-      operationId: deleteAlias
-      tags:
-        - Aliases
-      parameters: []
-      responses:
-        "204":
-          description: ""
-          content: {}
-          headers: {}
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      summary: Delete Alias by ID
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    patch:
-      description: >-
-        Update alias address information such as \`forward\_email\` and
-        \`metadata\`. No other fields can be updated. The ID is defined as a
-        path parameter and should be of ULID format.
-      operationId: updateAlias
-      tags:
-        - Aliases
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/updateAliasRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/updateAliasResponse"
-        "400":
-          $ref: "#/components/responses/errorResponse"
-        "404":
-          $ref: "#/components/responses/errorResponse"
-      summary: Update Alias
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    parameters:
-      - in: path
-        name: id
-        description: "Email alias ID"
-        schema:
-          type: string
-        required: true
-  /api/v1/users:
-    get:
-      description: >-
-        Retrieve a list of users accessible for the currently authenticated
-        user. In case if authenticated user is not of admin role -
-        the only record in the list is the user information about itself (all filters are ignored)
-      operationId: getUsers
-      tags:
-        - Users
-      parameters:
-        - in: query
-          name: id
-          description: user id filter
-          schema:
-            type: string
-          required: false
-        - in: query
-          name: login
-          description: user login filter
-          schema:
-            type: string
-          required: false
-        - in: query
-          name: type
-          description: user type filter
-          schema:
-            type: string
-          required: false
-      responses:
-        "200":
-          $ref: "#/components/responses/getUsersResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-      summary: Get all users
-    post:
-      description: >-
-        Create new user. Only users if type \`admin\` are authorized to submit
-        this request.
-      operationId: createUser
-      tags:
-        - Users
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/createUserRequest"
-      responses:
-        "201":
-          $ref: "#/components/responses/createUserResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-      summary: Create user
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-  /api/v1/users/{id}:
-    get:
-      description: >-
-        Retrieve deteiled information of a particular user by its ID. The ID is
-        defined as a path parameter and should be of ULID format.
-      operationId: getUserDetails
-      tags:
-        - Users
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/getUserDetailsResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-      summary: Get user details
-    patch:
-      description: >-
-        Update user information such as \`first\_name\`, \`last\_name\` and
-        \`type\`. No other fields can be updated. The ID is defined as a path
-        parameter and should be of ULID format.
-      operationId: updateUser
-      tags:
-        - Users
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/updateUserRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/updateUserResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      summary: Update user information
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    delete:
-      description: >-
-        Delete a particular user by its ID. The ID is defined as a path
-        parameter and should be of ULID format.
-      operationId: deleteUser
-      tags:
-        - Users
-      parameters: []
-      responses:
-        "204":
-          description: ""
-          content: {}
-          headers: {}
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      summary: Delete user
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    parameters:
-      - in: path
-        name: id
-        description: "User ID"
-        schema:
-          type: string
-        required: true
-  /api/v1/users/profile:
-    get:
-      summary: Get current user profile
-      description: Retrieves currently logged on user profile
-      operationId: getUserProfile
-      tags:
-        - Users
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/getUserDetailsResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-  /api/v1/users/apitokens:
-    get:
-      summary: Get user's API Tokens
-      description: "Retrieve list of API tokens for the current user"
-      operationId: getApiTokens
-      tags:
-        - ApiTokens
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/getApiTokensResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-    post:
-      summary: Create new API token
-      description: ""
-      operationId: createApiToken
-      tags:
-        - ApiTokens
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/createApiToken"
-      responses:
-        "201":
-          $ref: "#/components/responses/createApiTokenResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-  /api/v1/users/apitokens/{id}:
-    get:
-      summary: Get API token detailed information
-      description: "Get existing API token detailed information"
-      operationId: getApiTokenDetails
-      tags:
-        - ApiTokens
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/getApiTokenDetailsResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-    delete:
-      summary: Delete API token
-      description: "Delete existing API token"
-      operationId: deleteApiToken
-      tags:
-        - ApiTokens
-      parameters: []
-      responses:
-        "204":
-          $ref: "#/components/responses/deleteApiTokenResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-    patch:
-      summary: Update API token attributes
-      description: "Update existing API token metadata attributes"
-      operationId: updateApiToken
-      tags:
-        - ApiTokens
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/updateApiToken"
-      responses:
-        "200":
-          $ref: "#/components/responses/updateApiTokenResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-    parameters:
-      - in: path
-        name: id
-        description: "API token ID"
-        schema:
-          type: string
-        required: true
-  /api/v1/praddrs:
-    get:
-      summary: Get protected addresses available for the authenticated user
-      description: >-
-        Retrieve a list of protected addresses belonging to the currently
-        authenticated user. Optional fields \`id\` and \`email\` can be used to
-        limit the search scope.
-      operationId: getPrAddrs
-      tags:
-        - Protected Addresses
-      parameters:
-        - in: query
-          name: id
-          description: ""
-          schema:
-            type: string
-        - in: query
-          name: email
-          description: ""
-          schema:
-            type: string
-      responses:
-        "200":
-          $ref: "#/components/responses/getPrAddrsResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    post:
-      summary: >-
-        Create new protected address and make current authenticated user its
-        owner
-      description: >-
-        Create new protected address. Request is of the type
-        \`application/json\`.
-      operationId: createPrAddr
-      tags:
-        - Protected Addresses
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/createProtectedAddressRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/createPrAddrResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-  /api/v1/praddrs/{id}:
-    get:
-      summary: Get details on a particular protected address
-      description: >-
-        Retrieve deteiled information of a particular protected address by its
-        ID. The ID is defined as a path parameter and should of ULID format.
-      operationId: getPrAddrDetails
-      tags:
-        - Protected Addresses
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/getPrAddrDetailsResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    patch:
-      summary: Update defined protected address by its ID
-      description: >-
-        Update protected address information such as \`metadata\`. No other
-        fields can be updated. The ID is defined as a path parameter and should
-        be of ULID format.
-      operationId: updatePrAddr
-      tags:
-        - Protected Addresses
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/updateProtectedAddressRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/updatePrAddrResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    delete:
-      summary: Delete defined protected address by its ID
-      description: >-
-        Delete a particular protected address by its ID. The ID is defined as a
-        path parameter and should be of ULID format.
-      operationId: deletePrAddr
-      tags:
-        - Protected Addresses
-      parameters: []
-      responses:
-        "204":
-          description: ""
-          content: {}
-          headers: {}
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - OAuth2: []
-        - BasicAuthentication: []
-    parameters:
-      - in: path
-        name: id
-        description: "Protected Address ID"
-        schema:
-          type: string
-        required: true
-  /private/api/v1/chains:
-    post:
-      summary: Create new email chain
-      description: >-
-        Create new email address chain. the request if of \`application/json\`
-        type.
-      operationId: createChain
-      tags:
-        - Email chains
-      parameters: []
-      requestBody:
-        $ref: "#/components/requestBodies/createEmailChain"
-      responses:
-        "201":
-          $ref: "#/components/responses/createEmailChainResponse"
-        "400":
-          $ref: "#/components/responses/HTTP400"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-      security:
-        - ApiToken: []
-  /private/api/v1/chains/{hash}:
-    get:
-      summary: Get a particular email chain by its hash
-      description: >-
-        Retrieve deteiled information of a particular email address chain by its
-        hash. The \`hash\` is a path parameter and is of SHA2-512/256 format.
-      operationId: getChainByHash
-      tags:
-        - Email chains
-      parameters: []
-      responses:
-        "200":
-          $ref: "#/components/responses/getEmailChainDetailsResponse"
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - ApiToken: []
-    delete:
-      summary: Delete a particular email chain by it hash
-      description: >-
-        Delete a particular email address chain by its hash. The \`hash\` is a
-        path parameter and is of SHA2-512/256 format.
-      operationId: deleteChainByHash
-      tags:
-        - Email chains
-      parameters: []
-      responses:
-        "204":
-          description: ""
-          content: {}
-          headers: {}
-        "401":
-          $ref: "#/components/responses/HTTP401"
-        "403":
-          $ref: "#/components/responses/HTTP403"
-        "404":
-          $ref: "#/components/responses/HTTP404"
-      security:
-        - ApiToken: []
-    parameters:
-      - in: path
-        name: hash
-        description: "Email thread chain hash"
-        schema:
-          type: string
-        required: true
+    /api/v1/aliases:
+        get:
+            summary: Get all aliases
+            description: >-
+                Retrieve a list of alias addresses found in the database
+                considering filters defined in query parameters: owner, id,
+                email. Each query parameter can be defined multiple times.
+                Filter `owner` is only useful for admin users, regular users
+                always get only aliases they own.
+            operationId: getAliases
+            tags:
+                - Aliases
+            responses:
+                "200":
+                    $ref: "#/components/responses/getAliasesResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+            parameters:
+                - in: query
+                  name: owner
+                  description: owner ID to fetch parameters for
+                  schema:
+                      type: string
+                  required: false
+                - in: query
+                  name: email
+                  description: email of an alias to lookup
+                  schema:
+                      type: string
+                  required: false
+                - in: query
+                  name: id
+                  description: alias id to retrieve
+                  schema:
+                      type: string
+                  required: false
+                - in: query
+                  name: service_name
+                  description: allows to lookup aliases by service name metadata field value
+                  schema:
+                      type: string
+                  required: false
+        post:
+            description: Create new alias address. Request is of the type
+                \`application/json\`.
+            operationId: createAlias
+            tags:
+                - Aliases
+            requestBody:
+                $ref: "#/components/requestBodies/createAliasRequest"
+            responses:
+                "201":
+                    $ref: "#/components/responses/createAliasResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+            summary: Create new Alias
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+    /api/v1/aliases/{id}:
+        get:
+            description: >-
+                Retrieve deteiled information of a particular alias address by
+                its ID. The ID is defined as a path parameter and should be of
+                ULID format.
+            operationId: getAliasDetails
+            tags:
+                - Aliases
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getAliasDetailsResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            summary: Get details of a particular Alias
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        delete:
+            description: >-
+                Delete a particular alias address by its ID. The ID is defined
+                as a path parameter and should be of ULID format.
+            operationId: deleteAlias
+            tags:
+                - Aliases
+            parameters: []
+            responses:
+                "204":
+                    description: ""
+                    content: {}
+                    headers: {}
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            summary: Delete Alias by ID
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        patch:
+            description: >-
+                Update alias address information such as \`forward\_email\` and
+                \`metadata\`. No other fields can be updated. The ID is defined
+                as a path parameter and should be of ULID format.
+            operationId: updateAlias
+            tags:
+                - Aliases
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/updateAliasRequest"
+            responses:
+                "200":
+                    $ref: "#/components/responses/updateAliasResponse"
+                "400":
+                    $ref: "#/components/responses/errorResponse"
+                "404":
+                    $ref: "#/components/responses/errorResponse"
+            summary: Update Alias
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        parameters:
+            - in: path
+              name: id
+              description: "Email alias ID"
+              schema:
+                  type: string
+              required: true
+    /api/v1/users:
+        get:
+            description: >-
+                Retrieve a list of users accessible for the currently
+                authenticated user. In case if authenticated user is not of
+                admin role - the only record in the list is the user information
+                about itself (all filters are ignored)
+            operationId: getUsers
+            tags:
+                - Users
+            parameters:
+                - in: query
+                  name: id
+                  description: user id filter
+                  schema:
+                      type: string
+                  required: false
+                - in: query
+                  name: login
+                  description: user login filter
+                  schema:
+                      type: string
+                  required: false
+                - in: query
+                  name: type
+                  description: user type filter
+                  schema:
+                      type: string
+                  required: false
+            responses:
+                "200":
+                    $ref: "#/components/responses/getUsersResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+            summary: Get all users
+        post:
+            description: >-
+                Create new user. Only users if type \`admin\` are authorized to
+                submit this request.
+            operationId: createUser
+            tags:
+                - Users
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/createUserRequest"
+            responses:
+                "201":
+                    $ref: "#/components/responses/createUserResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+            summary: Create user
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+    /api/v1/users/{id}:
+        get:
+            description: >-
+                Retrieve deteiled information of a particular user by its ID.
+                The ID is defined as a path parameter and should be of ULID
+                format.
+            operationId: getUserDetails
+            tags:
+                - Users
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getUserDetailsResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+            summary: Get user details
+        patch:
+            description: >-
+                Update user information such as \`first\_name\`, \`last\_name\`
+                and \`type\`. No other fields can be updated. The ID is defined
+                as a path parameter and should be of ULID format.
+            operationId: updateUser
+            tags:
+                - Users
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/updateUserRequest"
+            responses:
+                "200":
+                    $ref: "#/components/responses/updateUserResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            summary: Update user information
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        delete:
+            description: >-
+                Delete a particular user by its ID. The ID is defined as a path
+                parameter and should be of ULID format.
+            operationId: deleteUser
+            tags:
+                - Users
+            parameters: []
+            responses:
+                "204":
+                    description: ""
+                    content: {}
+                    headers: {}
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            summary: Delete user
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        parameters:
+            - in: path
+              name: id
+              description: "User ID"
+              schema:
+                  type: string
+              required: true
+    /api/v1/users/profile:
+        get:
+            summary: Get current user profile
+            description: Retrieves currently logged on user profile
+            operationId: getUserProfile
+            tags:
+                - Users
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getUserDetailsResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+    /api/v1/users/apitokens:
+        get:
+            summary: Get user's API Tokens
+            description: "Retrieve list of API tokens for the current user"
+            operationId: getApiTokens
+            tags:
+                - ApiTokens
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getApiTokensResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+        post:
+            summary: Create new API token
+            description: ""
+            operationId: createApiToken
+            tags:
+                - ApiTokens
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/createApiToken"
+            responses:
+                "201":
+                    $ref: "#/components/responses/createApiTokenResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+    /api/v1/users/apitokens/{id}:
+        get:
+            summary: Get API token detailed information
+            description: "Get existing API token detailed information"
+            operationId: getApiTokenDetails
+            tags:
+                - ApiTokens
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getApiTokenDetailsResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+        delete:
+            summary: Delete API token
+            description: "Delete existing API token"
+            operationId: deleteApiToken
+            tags:
+                - ApiTokens
+            parameters: []
+            responses:
+                "204":
+                    $ref: "#/components/responses/deleteApiTokenResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+        patch:
+            summary: Update API token attributes
+            description: "Update existing API token metadata attributes"
+            operationId: updateApiToken
+            tags:
+                - ApiTokens
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/updateApiToken"
+            responses:
+                "200":
+                    $ref: "#/components/responses/updateApiTokenResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+        parameters:
+            - in: path
+              name: id
+              description: "API token ID"
+              schema:
+                  type: string
+              required: true
+    /api/v1/praddrs:
+        get:
+            summary: Get protected addresses available for the authenticated user
+            description: >-
+                Retrieve a list of protected addresses belonging to the
+                currently authenticated user. Optional fields \`id\` and
+                \`email\` can be used to limit the search scope.
+            operationId: getPrAddrs
+            tags:
+                - Protected Addresses
+            parameters:
+                - in: query
+                  name: id
+                  description: ""
+                  schema:
+                      type: string
+                - in: query
+                  name: email
+                  description: ""
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    $ref: "#/components/responses/getPrAddrsResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        post:
+            summary: >-
+                Create new protected address and make current authenticated user
+                its owner
+            description: >-
+                Create new protected address. Request is of the type
+                \`application/json\`.
+            operationId: createPrAddr
+            tags:
+                - Protected Addresses
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/createProtectedAddressRequest"
+            responses:
+                "200":
+                    $ref: "#/components/responses/createPrAddrResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+    /api/v1/praddrs/{id}:
+        get:
+            summary: Get details on a particular protected address
+            description: >-
+                Retrieve deteiled information of a particular protected address
+                by its ID. The ID is defined as a path parameter and should of
+                ULID format.
+            operationId: getPrAddrDetails
+            tags:
+                - Protected Addresses
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getPrAddrDetailsResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        patch:
+            summary: Update defined protected address by its ID
+            description: >-
+                Update protected address information such as \`metadata\`. No
+                other fields can be updated. The ID is defined as a path
+                parameter and should be of ULID format.
+            operationId: updatePrAddr
+            tags:
+                - Protected Addresses
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/updateProtectedAddressRequest"
+            responses:
+                "200":
+                    $ref: "#/components/responses/updatePrAddrResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        delete:
+            summary: Delete defined protected address by its ID
+            description: >-
+                Delete a particular protected address by its ID. The ID is
+                defined as a path parameter and should be of ULID format.
+            operationId: deletePrAddr
+            tags:
+                - Protected Addresses
+            parameters: []
+            responses:
+                "204":
+                    description: ""
+                    content: {}
+                    headers: {}
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+        parameters:
+            - in: path
+              name: id
+              description: "Protected Address ID"
+              schema:
+                  type: string
+              required: true
+    /api/v1/version:
+        get:
+            summary: Get runtime version details
+            description: >-
+                Retrieve details of the running system version
+            operationId: getSystemVersionInfo
+            tags:
+                - System
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getPrAddrDetailsResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+            security:
+                - OAuth2: []
+                - BasicAuthentication: []
+    /private/api/v1/chains:
+        post:
+            summary: Create new email chain
+            description: >-
+                Create new email address chain. the request if of
+                \`application/json\` type.
+            operationId: createChain
+            tags:
+                - Email chains
+            parameters: []
+            requestBody:
+                $ref: "#/components/requestBodies/createEmailChain"
+            responses:
+                "201":
+                    $ref: "#/components/responses/createEmailChainResponse"
+                "400":
+                    $ref: "#/components/responses/HTTP400"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+            security:
+                - ApiToken: []
+    /private/api/v1/chains/{hash}:
+        get:
+            summary: Get a particular email chain by its hash
+            description: >-
+                Retrieve deteiled information of a particular email address
+                chain by its hash. The \`hash\` is a path parameter and is of
+                SHA2-512/256 format.
+            operationId: getChainByHash
+            tags:
+                - Email chains
+            parameters: []
+            responses:
+                "200":
+                    $ref: "#/components/responses/getEmailChainDetailsResponse"
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - ApiToken: []
+        delete:
+            summary: Delete a particular email chain by it hash
+            description: >-
+                Delete a particular email address chain by its hash. The
+                \`hash\` is a path parameter and is of SHA2-512/256 format.
+            operationId: deleteChainByHash
+            tags:
+                - Email chains
+            parameters: []
+            responses:
+                "204":
+                    description: ""
+                    content: {}
+                    headers: {}
+                "401":
+                    $ref: "#/components/responses/HTTP401"
+                "403":
+                    $ref: "#/components/responses/HTTP403"
+                "404":
+                    $ref: "#/components/responses/HTTP404"
+            security:
+                - ApiToken: []
+        parameters:
+            - in: path
+              name: hash
+              description: "Email thread chain hash"
+              schema:
+                  type: string
+              required: true
+
 components:
-  schemas:
-    aliasData:
-      type: object
-      properties:
-        email:
-          type: string
-          description: Email of the Alias
-          format: email
-        owner:
-          $ref: "#/components/schemas/userData"
-        forward_email:
-          type: string
-          format: email
-          description: forward email for alias address
-        metadata:
-          $ref: "#/components/schemas/addressMetadata"
-        id:
-          type: string
-          description: alias address id
-      description: Address of type "alias" data structure
-      required:
-        - email
-        - owner
-        - forward_email
-        - metadata
-        - id
-    userData:
-      type: object
-      properties:
-        login:
-          type: string
-          description: user login (for OIDC support should be formatted as email)
-        first_name:
-          type: string
-          description: user first name
-        last_name:
-          type: string
-          description: user last name
-        type:
-          type: string
-          description: user type
-        id:
-          type: string
-          description: user id
-        failed_attempts:
-          type: number
-          description: number of failed authentication attempts
-        lockout_until:
-          type: string
-          description: date/time the user account was lockout until
-      required:
-        - login
-        - first_name
-        - last_name
-        - type
-        - id
-    apiTokenData:
-      type: object
-      properties:
-        id:
-          type: string
-          description: API token ULID ID
-        name:
-          type: string
-          description: Name of the API token
-        description:
-          type: string
-          description: Optional details about the API token
-        expiration:
-          type: string
-          format: date-time
-          description: Time of expiration of the API token
-        active:
-          type: boolean
-          description: Indicates whether the API token is active and can be used
-      required:
-        - name
-        - expiration
-        - active
-    apiTokenDataOnCreate:
-      type: object
-      allOf:
-        - $ref: "#/components/schemas/apiTokenData"
-        - type: object
-          properties:
-            api_token:
-              type: string
-              description: Clear text API token value; only returned when API token created first time
-          required:
-            - api_token
-    protectedAddressData:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        owner:
-          $ref: "#/components/schemas/userData"
-        metadata:
-          $ref: "#/components/schemas/addressMetadata"
-        id:
-          type: string
-      required:
-        - email
-        - owner
-        - id
-    chainAddressData:
-      type: object
-      properties:
-        email:
-          type: string
-        type:
-          type: string
-      required:
-        - email
-        - type
-    chainData:
-      type: object
-      properties:
-        hash:
-          type: string
-        from_email:
-          type: string
-        to_email:
-          type: string
-        orig_from_address:
-          $ref: "#/components/schemas/chainAddressData"
-        orig_to_address:
-          $ref: "#/components/schemas/chainAddressData"
-      required:
-        - hash
-        - from_email
-        - to_email
-        - orig_from_address
-        - orig_to_address
-    addressMetadata:
-      type: object
-      properties:
-        comment:
-          type: string
-        service_name:
-          type: string
-    error:
-      type: object
-      properties:
-        status:
-          type: string
-          description: HTTP status
-        detail:
-          type: string
-          description: Error details
-      required:
-        - status
-        - detail
-    basicAuthForm:
-      type: object
-      properties:
-        user:
-          type: string
-          description: user name
-        password:
-          type: string
-      required:
-        - user
-        - password
-    paginationMetadata:
-      type: object
-      properties:
-        current_page:
-          type: number
-        page_size:
-          type: number
-        first_page:
-          type: number
-        last_page:
-          type: number
-        total_records:
-          type: number
-      required:
-        - current_page
-        - page_size
-        - first_page
-        - last_page
-        - total_records
-  securitySchemes:
-    ApiToken:
-      type: http
-      scheme: bearer
-    OAuth2:
-      type: oauth2
-      flows:
-        authorizationCode:
-          authorizationUrl: https://localhost.com/authorize
-          tokenUrl: https://localhost.com/token
-          scopes: {}
-    BasicAuthentication:
-      type: http
-      scheme: basic
-  requestBodies:
-    createAliasRequest:
-      required: false
-      description: ""
-      content:
-        application/json:
-          schema:
+    schemas:
+        aliasData:
             type: object
             properties:
-              protected_address_id:
-                type: string
-              metadata:
-                $ref: "#/components/schemas/addressMetadata"
+                email:
+                    type: string
+                    description: Email of the Alias
+                    format: email
+                owner:
+                    $ref: "#/components/schemas/userData"
+                forward_email:
+                    type: string
+                    format: email
+                    description: forward email for alias address
+                metadata:
+                    $ref: "#/components/schemas/addressMetadata"
+                id:
+                    type: string
+                    description: alias address id
+            description: Address of type "alias" data structure
             required:
-              - email
-              - protected_address_id
-              - metadata
-    updateAliasRequest:
-      content:
-        application/json:
-          schema:
+                - email
+                - owner
+                - forward_email
+                - metadata
+                - id
+        userData:
             type: object
             properties:
-              metadata:
-                $ref: "#/components/schemas/addressMetadata"
-    createUserRequest:
-      required: false
-      description: ""
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              login:
-                type: string
-              first_name:
-                type: string
-              last_name:
-                type: string
-              type:
-                type: string
-              password:
-                type: string
+                login:
+                    type: string
+                    description: user login (for OIDC support should be formatted as email)
+                first_name:
+                    type: string
+                    description: user first name
+                last_name:
+                    type: string
+                    description: user last name
+                type:
+                    type: string
+                    description: user type
+                id:
+                    type: string
+                    description: user id
+                failed_attempts:
+                    type: number
+                    description: number of failed authentication attempts
+                lockout_until:
+                    type: string
+                    description: date/time the user account was lockout until
             required:
-              - login
-              - first_name
-              - last_name
-              - type
-    updateUserRequest:
-      required: false
-      description: ""
-      content:
-        application/json:
-          schema:
+                - login
+                - first_name
+                - last_name
+                - type
+                - id
+        apiTokenData:
             type: object
             properties:
-              first_name:
-                type: string
-              last_name:
-                type: string
-              type:
-                type: string
-    createProtectedAddressRequest:
-      required: false
-      description: ""
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              email:
-                type: string
-              metadata:
-                $ref: "#/components/schemas/addressMetadata"
+                id:
+                    type: string
+                    description: API token ULID ID
+                name:
+                    type: string
+                    description: Name of the API token
+                description:
+                    type: string
+                    description: Optional details about the API token
+                expiration:
+                    type: string
+                    format: date-time
+                    description: Time of expiration of the API token
+                active:
+                    type: boolean
+                    description: Indicates whether the API token is active and can be used
             required:
-              - email
-              - metadata
-    updateProtectedAddressRequest:
-      required: false
-      description: ""
-      content:
-        application/json:
-          schema:
+                - name
+                - expiration
+                - active
+        apiTokenDataOnCreate:
+            type: object
+            allOf:
+                - $ref: "#/components/schemas/apiTokenData"
+                - type: object
+                  properties:
+                      api_token:
+                          type: string
+                          description: Clear text API token value; only returned when API token created
+                              first time
+                  required:
+                      - api_token
+        protectedAddressData:
             type: object
             properties:
-              metadata:
-                $ref: "#/components/schemas/addressMetadata"
-    createEmailChain:
-      required: false
-      description: ""
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              from_email:
-                type: string
-                format: email
-              to_email:
-                type: string
-                format: email
+                email:
+                    type: string
+                    format: email
+                owner:
+                    $ref: "#/components/schemas/userData"
+                metadata:
+                    $ref: "#/components/schemas/addressMetadata"
+                id:
+                    type: string
             required:
-              - from_email
-              - to_email
-    createApiToken:
-      required: false
-      description: Request to create API token
-      content:
-        application/json:
-          schema:
+                - email
+                - owner
+                - id
+        chainAddressData:
             type: object
             properties:
-              name:
-                type: string
-              description:
-                type: string
-              expire_in:
-                type: number
+                email:
+                    type: string
+                type:
+                    type: string
             required:
-              - name
-              - expire_in
-    updateApiToken:
-      required: false
-      description: Request to update API token
-      content:
-        application/json:
-          schema:
+                - email
+                - type
+        chainData:
             type: object
             properties:
-              name:
-                type: string
-              description:
-                type: string
-              active:
-                type: boolean
-    basicAuthentication:
-      content:
-        others:
-          schema:
-            type: object
-            properties:
-              login:
-                type: string
-              password:
-                type: string
-  responses:
-    HTTP403:
-      description: Forbidden error response
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/error"
-    HTTP404:
-      description: Not found error response
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/error"
-    HTTP401:
-      headers: {}
-      description: Unauthorized error response
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/error"
-    HTTP400:
-      description: Bad or malformed request error response
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/error"
-    errorResponse:
-      description: Response containing errors information
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              errors:
-                type: array
-                items:
-                  $ref: "#/components/schemas/error"
+                hash:
+                    type: string
+                from_email:
+                    type: string
+                to_email:
+                    type: string
+                orig_from_address:
+                    $ref: "#/components/schemas/chainAddressData"
+                orig_to_address:
+                    $ref: "#/components/schemas/chainAddressData"
             required:
-              - errors
-    getAliasesResponse:
-      headers: {}
-      content:
-        application/json:
-          schema:
+                - hash
+                - from_email
+                - to_email
+                - orig_from_address
+                - orig_to_address
+        addressMetadata:
             type: object
             properties:
-              pagination_metadata:
-                $ref: "#/components/schemas/paginationMetadata"
-              aliases:
-                type: array
-                items:
-                  $ref: "#/components/schemas/aliasData"
-            required:
-              - pagination_metadata
-              - aliases
-      description: A list of aliases
-    getAliasDetailsResponse:
-      description: Response containing detailed alias address data
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/aliasData"
-    createAliasResponse:
-      description: Response containing detailes on the created alias
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/aliasData"
-    updateAliasResponse:
-      description: Response contains details on alias address after applied updates
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/aliasData"
-    getUsersResponse:
-      headers: {}
-      content:
-        application/json:
-          schema:
-            schema:
+                comment:
+                    type: string
+                service_name:
+                    type: string
+        error:
             type: object
             properties:
-              pagination_metadata:
-                $ref: "#/components/schemas/paginationMetadata"
-              users:
-                type: array
-                items:
-                  $ref: "#/components/schemas/userData"
+                status:
+                    type: string
+                    description: HTTP status
+                detail:
+                    type: string
+                    description: Error details
             required:
-              - pagination_metadata
-              - users
-      description: A list of users
-    getUserDetailsResponse:
-      description: Response containing detailed user data
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/userData"
-    createUserResponse:
-      description: Response containing detailes on the created user
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/userData"
-    updateUserResponse:
-      description: Response contains details on user after applied updates
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/userData"
-    getPrAddrsResponse:
-      description: A list of protected addresses
-      headers: {}
-      content:
-        application/json:
-          schema:
-            schema:
+                - status
+                - detail
+        basicAuthForm:
             type: object
             properties:
-              pagination_metadata:
-                $ref: "#/components/schemas/paginationMetadata"
-              protected_addresses:
-                type: array
-                items:
-                  $ref: "#/components/schemas/protectedAddressData"
+                user:
+                    type: string
+                    description: user name
+                password:
+                    type: string
             required:
-              - pagination_metadata
-              - protected_addresses
-    getPrAddrDetailsResponse:
-      description: Response containing detailed protected address data
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/protectedAddressData"
-    createPrAddrResponse:
-      description: Response containing detailes on the created protected address
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/protectedAddressData"
-    updatePrAddrResponse:
-      description: Response contains details on protected address after applied updates
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/protectedAddressData"
-    getEmailChainDetailsResponse:
-      description: ""
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/chainData"
-    createEmailChainResponse:
-      description: ""
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/chainData"
-    createApiTokenResponse:
-      description: Response containing information about newly created API token
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/apiTokenDataOnCreate"
-    updateApiTokenResponse:
-      description: Response containing updated information of the API token
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/apiTokenData"
-    getApiTokenDetailsResponse:
-      description: Response containing information about existing API token
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/apiTokenData"
-    deleteApiTokenResponse:
-      description: Response containing information about just deleted API token
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/apiTokenData"
-    getApiTokensResponse:
-      description: Response with a list of API tokens for the current user
-      headers: {}
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/apiTokenData"
-    basicAuthenticationTokenResponse:
-      description: ""
-      headers: {}
-      content:
-        application/json:
-          schema:
+                - user
+                - password
+        paginationMetadata:
             type: object
             properties:
-              token:
-                type: string
-                description: signed JWT token for stateless authentication
-              expiry:
-                type: string
-                description: time of token expiration
+                current_page:
+                    type: number
+                page_size:
+                    type: number
+                first_page:
+                    type: number
+                last_page:
+                    type: number
+                total_records:
+                    type: number
             required:
-              - token
-              - expiry
-    authForm:
-      description: ""
-      headers: {}
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/basicAuthForm"
+                - current_page
+                - page_size
+                - first_page
+                - last_page
+                - total_records
+        systemVersionData:
+            type: object
+            properties:
+                version:
+                    type: string
+                    description: Semantic version number
+                git_commit:
+                    type: string
+                    description: Git commit ID (full)
+                built_at:
+                    type: string
+                    description: Build timestamp
+            required:
+                - version
+                - built_at
+                - git_commit
+    securitySchemes:
+        ApiToken:
+            type: http
+            scheme: bearer
+        OAuth2:
+            type: oauth2
+            flows:
+                authorizationCode:
+                    authorizationUrl: https://localhost.com/authorize
+                    tokenUrl: https://localhost.com/token
+                    scopes: {}
+        BasicAuthentication:
+            type: http
+            scheme: basic
+    requestBodies:
+        createAliasRequest:
+            required: false
+            description: ""
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            protected_address_id:
+                                type: string
+                            metadata:
+                                $ref: "#/components/schemas/addressMetadata"
+                        required:
+                            - email
+                            - protected_address_id
+                            - metadata
+        updateAliasRequest:
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            metadata:
+                                $ref: "#/components/schemas/addressMetadata"
+        createUserRequest:
+            required: false
+            description: ""
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            login:
+                                type: string
+                            first_name:
+                                type: string
+                            last_name:
+                                type: string
+                            type:
+                                type: string
+                            password:
+                                type: string
+                        required:
+                            - login
+                            - first_name
+                            - last_name
+                            - type
+        updateUserRequest:
+            required: false
+            description: ""
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            first_name:
+                                type: string
+                            last_name:
+                                type: string
+                            type:
+                                type: string
+        createProtectedAddressRequest:
+            required: false
+            description: ""
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            email:
+                                type: string
+                            metadata:
+                                $ref: "#/components/schemas/addressMetadata"
+                        required:
+                            - email
+                            - metadata
+        updateProtectedAddressRequest:
+            required: false
+            description: ""
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            metadata:
+                                $ref: "#/components/schemas/addressMetadata"
+        createEmailChain:
+            required: false
+            description: ""
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            from_email:
+                                type: string
+                                format: email
+                            to_email:
+                                type: string
+                                format: email
+                        required:
+                            - from_email
+                            - to_email
+        createApiToken:
+            required: false
+            description: Request to create API token
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            name:
+                                type: string
+                            description:
+                                type: string
+                            expire_in:
+                                type: number
+                        required:
+                            - name
+                            - expire_in
+        updateApiToken:
+            required: false
+            description: Request to update API token
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            name:
+                                type: string
+                            description:
+                                type: string
+                            active:
+                                type: boolean
+        basicAuthentication:
+            content:
+                others:
+                    schema:
+                        type: object
+                        properties:
+                            login:
+                                type: string
+                            password:
+                                type: string
+    responses:
+        HTTP403:
+            description: Forbidden error response
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/error"
+        HTTP404:
+            description: Not found error response
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/error"
+        HTTP401:
+            headers: {}
+            description: Unauthorized error response
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/error"
+        HTTP400:
+            description: Bad or malformed request error response
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/error"
+        errorResponse:
+            description: Response containing errors information
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            errors:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/error"
+                        required:
+                            - errors
+        getAliasesResponse:
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            pagination_metadata:
+                                $ref: "#/components/schemas/paginationMetadata"
+                            aliases:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/aliasData"
+                        required:
+                            - pagination_metadata
+                            - aliases
+            description: A list of aliases
+        getAliasDetailsResponse:
+            description: Response containing detailed alias address data
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/aliasData"
+        createAliasResponse:
+            description: Response containing detailes on the created alias
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/aliasData"
+        updateAliasResponse:
+            description: Response contains details on alias address after applied updates
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/aliasData"
+        getUsersResponse:
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        schema:
+                        type: object
+                        properties:
+                            pagination_metadata:
+                                $ref: "#/components/schemas/paginationMetadata"
+                            users:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/userData"
+                        required:
+                            - pagination_metadata
+                            - users
+            description: A list of users
+        getUserDetailsResponse:
+            description: Response containing detailed user data
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/userData"
+        createUserResponse:
+            description: Response containing detailes on the created user
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/userData"
+        updateUserResponse:
+            description: Response contains details on user after applied updates
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/userData"
+        getPrAddrsResponse:
+            description: A list of protected addresses
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        schema:
+                        type: object
+                        properties:
+                            pagination_metadata:
+                                $ref: "#/components/schemas/paginationMetadata"
+                            protected_addresses:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/protectedAddressData"
+                        required:
+                            - pagination_metadata
+                            - protected_addresses
+        getPrAddrDetailsResponse:
+            description: Response containing detailed protected address data
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/protectedAddressData"
+        createPrAddrResponse:
+            description: Response containing detailes on the created protected address
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/protectedAddressData"
+        updatePrAddrResponse:
+            description: Response contains details on protected address after applied
+                updates
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/protectedAddressData"
+        getEmailChainDetailsResponse:
+            description: ""
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/chainData"
+        createEmailChainResponse:
+            description: ""
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/chainData"
+        createApiTokenResponse:
+            description: Response containing information about newly created API token
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/apiTokenDataOnCreate"
+        updateApiTokenResponse:
+            description: Response containing updated information of the API token
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/apiTokenData"
+        getApiTokenDetailsResponse:
+            description: Response containing information about existing API token
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/apiTokenData"
+        deleteApiTokenResponse:
+            description: Response containing information about just deleted API token
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/apiTokenData"
+        getApiTokensResponse:
+            description: Response with a list of API tokens for the current user
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        type: array
+                        items:
+                            $ref: "#/components/schemas/apiTokenData"
+        getSystemVersionResponse:
+            description: Nested mappings are not allowed in compact mappings
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/systemVersionData"
+        basicAuthenticationTokenResponse:
+            description: ""
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        properties:
+                            token:
+                                type: string
+                                description: signed JWT token for stateless authentication
+                            expiry:
+                                type: string
+                                description: time of token expiration
+                        required:
+                            - token
+                            - expiry
+        authForm:
+            description: ""
+            headers: {}
+            content:
+                application/json:
+                    schema:
+                        $ref: "#/components/schemas/basicAuthForm"

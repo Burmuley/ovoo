@@ -109,6 +109,7 @@
                     />
                 </CContainer>
             </div>
+            <AppFooter />
         </div>
     </div>
 </template>
@@ -125,6 +126,7 @@ import AddUserForm from './AddUserForm.vue'
 import ApiKeysTab from './ApiKeysTab.vue'
 import AddApiKeyForm from './AddApiKeyForm.vue'
 import UserInfo from './UserInfo.vue'
+import AppFooter from './AppFooter.vue'
 
 const MAIN_TABS = new Set(['aliases', 'praddrs', 'apikeys', 'users'])
 
