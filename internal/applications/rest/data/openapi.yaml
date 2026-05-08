@@ -594,7 +594,7 @@ paths:
             parameters: []
             responses:
                 "200":
-                    $ref: "#/components/responses/getPrAddrDetailsResponse"
+                    $ref: "#/components/responses/getSystemVersionResponse"
                 "401":
                     $ref: "#/components/responses/HTTP401"
             security:
