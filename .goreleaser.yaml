@@ -4,6 +4,7 @@ before:
     hooks:
         - ./scripts/build.sh webui
         - go mod tidy
+        - cd ./internal/tools && go mod tidy && cd ..
         - go generate ./...
 upx:
     - enabled: true

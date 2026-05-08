@@ -1,8 +1,7 @@
 package: rest
 output: model.gen.go
 generate:
-  models: true
+    models: true
 output-options:
-  # NOTE that this is only required for the `Unreferenced` type
-  skip-prune: true
-  initialism-overrides: true
+    # NOTE that this is only required for the `Unreferenced` type
+    skip-prune: true
