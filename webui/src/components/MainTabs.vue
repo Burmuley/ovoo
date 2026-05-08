@@ -101,6 +101,7 @@
                     />
                     <UsersTab
                         v-else-if="currentTab === 'users' && userInfo.type === 'admin'"
+                        :user-info="userInfo"
                         @add-clicked="currentTab = 'addUser'"
                     />
                     <AddUserForm
