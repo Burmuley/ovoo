@@ -58,6 +58,7 @@ type User struct {
 	UpdatedAt      time.Time
 	UpdatedBy      *User
 	CreatedBy      *User
+	Active         bool
 }
 
 // Validate checks if the User object is valid and returns an error if not.

@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type OvooChainAddressData struct {
@@ -46,11 +47,12 @@ type OvooClient struct {
 	domain string
 }
 
-func NewClient(server string, authToken string, tlsSkipVerify bool, domain string) (OvooClient, error) {
+func NewClient(server string, authToken string, tlsSkipVerify bool, domain string, timeout time.Duration) (OvooClient, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify},
 		},
+		Timeout: timeout,
 	}
 
 	if domain == "" {
@@ -81,9 +83,11 @@ func (o OvooClient) createRequest(ctx context.Context, server, path, method stri
 		req.Header.Add(header, value)
 	}
 
+	qr := req.URL.Query()
 	for param, value := range queryParams {
-		req.URL.Query().Add(param, value)
+		qr.Add(param, value)
 	}
+	req.URL.RawQuery = qr.Encode()
 
 	return req, nil
 }
@@ -150,6 +154,9 @@ func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) 
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusCreated {
 		return nil, o.parseError(resp)

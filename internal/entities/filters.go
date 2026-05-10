@@ -7,7 +7,7 @@ import (
 
 const (
 	DefaultPageSize  int = 5
-	DefaulPageNumber     = 1
+	DefaulPageNumber int = 1
 )
 
 type Filter struct {

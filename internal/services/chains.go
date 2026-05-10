@@ -167,11 +167,9 @@ func checkCreateSrcAddr(ctx context.Context, repof *factory.RepoFactory, faddr s
 	}
 
 	// check if requested external address is in the results
-	if srcAddrs != nil {
-		for _, addr := range srcAddrs {
-			if addr.Type == entities.ExternalAddress {
-				return addr, nil
-			}
+	for _, addr := range srcAddrs {
+		if addr.Type == entities.ExternalAddress {
+			return addr, nil
 		}
 	}
 

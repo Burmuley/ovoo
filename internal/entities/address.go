@@ -34,6 +34,7 @@ type Address struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	UpdatedBy      User
+	Active         bool
 }
 
 // Validate checks if the Address object is valid according to the defined rules.

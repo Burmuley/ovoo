@@ -90,4 +90,5 @@ type ConfigMilterAPIConn struct {
 	Addr          string `koanf:"addr"`
 	AuthToken     string `koanf:"auth_token"`
 	TLSSkipVerify bool   `koanf:"tls_skip_verify"`
+	Timeout       int    `koanf:"client_timeout"`
 }
