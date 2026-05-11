@@ -862,3 +862,138 @@ func TestProtectedAddrService_DeleteById_NotFound(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 }
+
+func TestProtectedAddrService_Update_Activate(t *testing.T) {
+	service, addressRepo, _ := setupProtectedAddrService(t)
+	ctx := context.Background()
+
+	user := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "user@test.com",
+	}
+
+	prAddrId := entities.NewId()
+	existingPrAddr := entities.Address{
+		ID:     prAddrId,
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  user,
+		Active: false,
+	}
+
+	activate := true
+	cmd := PrAddrUpdateCmd{
+		PrAddrId: prAddrId,
+		Active:   &activate,
+	}
+
+	addressRepo.On("GetById", ctx, prAddrId).Return(existingPrAddr, nil)
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return a.ID == prAddrId && a.Active
+	})).Return(nil)
+
+	result, err := service.Update(ctx, user, cmd)
+
+	assert.NoError(t, err)
+	assert.True(t, result.Active)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestProtectedAddrService_Update_Deactivate(t *testing.T) {
+	service, addressRepo, _ := setupProtectedAddrService(t)
+	ctx := context.Background()
+
+	user := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "user@test.com",
+	}
+
+	prAddrId := entities.NewId()
+	existingPrAddr := entities.Address{
+		ID:     prAddrId,
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  user,
+		Active: true,
+	}
+
+	aliasId := entities.NewId()
+	alias := entities.Address{
+		ID:     aliasId,
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  user,
+		Active: true,
+	}
+
+	deactivate := false
+	cmd := PrAddrUpdateCmd{
+		PrAddrId: prAddrId,
+		Active:   &deactivate,
+	}
+
+	addressRepo.On("GetById", ctx, prAddrId).Return(existingPrAddr, nil)
+
+	// deactivateAliasesForPrAddr: get active aliases forwarding to this praddr
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active && len(f.ForwardAddressIds) > 0
+	})).Return([]entities.Address{alias}, entities.PaginationMetadata{}, nil)
+
+	// Update alias to inactive
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return a.ID == aliasId && !a.Active
+	})).Return(nil)
+
+	// Update praddr to inactive
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return a.ID == prAddrId && !a.Active
+	})).Return(nil)
+
+	result, err := service.Update(ctx, user, cmd)
+
+	assert.NoError(t, err)
+	assert.False(t, result.Active)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestProtectedAddrService_Update_SetActive_NotAuthorized(t *testing.T) {
+	service, addressRepo, _ := setupProtectedAddrService(t)
+	ctx := context.Background()
+
+	owner := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "owner@test.com",
+	}
+
+	nonOwner := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "nonowner@test.com",
+	}
+
+	prAddrId := entities.NewId()
+	existingPrAddr := entities.Address{
+		ID:     prAddrId,
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  owner,
+		Active: true,
+	}
+
+	deactivate := false
+	cmd := PrAddrUpdateCmd{
+		PrAddrId: prAddrId,
+		Active:   &deactivate,
+	}
+
+	addressRepo.On("GetById", ctx, prAddrId).Return(existingPrAddr, nil)
+
+	_, err := service.Update(ctx, nonOwner, cmd)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	addressRepo.AssertNotCalled(t, "Update")
+}

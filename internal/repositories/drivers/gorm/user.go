@@ -115,6 +115,10 @@ func applyUserFilter(stmt *gorm.DB, filter entities.UserFilter) *int64 {
 		stmt.Where("login IN ?", filter.Logins)
 	}
 
+	if filter.Active != nil {
+		stmt.Where("active = ?", *filter.Active)
+	}
+
 	var count int64
 	stmt.Count(&count)
 	if filter.Page != 0 && filter.PageSize != 0 {

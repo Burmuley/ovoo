@@ -245,3 +245,47 @@ func canDeleteApiToken(cuser entities.User, token entities.ApiToken) bool {
 
 	return false
 }
+
+func canSetActiveAlias(alias entities.Address, cuser entities.User) bool {
+	if cuser.Type == entities.AdminUser {
+		return true
+	}
+
+	if alias.Owner.ID == cuser.ID {
+		return true
+	}
+
+	return false
+}
+
+func canSetActivePrAddr(praddr entities.Address, cuser entities.User) bool {
+	if cuser.Type == entities.AdminUser {
+		return true
+	}
+
+	if praddr.Owner.ID == cuser.ID {
+		return true
+	}
+
+	return false
+}
+
+func canSetActiveApiToken(token entities.ApiToken, cuser entities.User) bool {
+	if cuser.Type == entities.AdminUser {
+		return true
+	}
+
+	if token.Owner.ID == cuser.ID {
+		return true
+	}
+
+	return false
+}
+
+func canSetActiveUser(user entities.User, cuser entities.User) bool {
+	if cuser.Type == entities.AdminUser && user.ID != cuser.ID {
+		return true
+	}
+
+	return false
+}

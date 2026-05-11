@@ -181,3 +181,69 @@ func deleteChainsForAliasIds(ctx context.Context, repof *factory.RepoFactory, al
 
 	return nil
 }
+
+func deactivateAliasesForPrAddr(ctx context.Context, repof *factory.RepoFactory, praddrId entities.Id) error {
+	active := true
+	aliases, _, err := repof.Address.GetAll(ctx, entities.AddressFilter{
+		Active:            &active,
+		ForwardAddressIds: []entities.Id{praddrId},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, alias := range aliases {
+		alias.Active = false
+		if err := repof.Address.Update(ctx, alias); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deactivatePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, userId entities.Id) error {
+	active := true
+	praddrs, _, err := repof.Address.GetAll(ctx, entities.AddressFilter{
+		Active: &active,
+		Owners: []entities.Id{userId},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, praddr := range praddrs {
+		if err := deactivateAliasesForPrAddr(ctx, repof, praddr.ID); err != nil {
+			return err
+		}
+
+		praddr.Active = false
+		if err := repof.Address.Update(ctx, praddr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deactivateTokensForUser(ctx context.Context, repof *factory.RepoFactory, userId entities.Id) error {
+	active := true
+	tokens, err := repof.ApiTokens.GetAll(ctx, entities.ApiTokenFilter{
+		Active:  &active,
+		UserIds: []entities.Id{userId},
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, token := range tokens {
+		token.Active = false
+		if _, err := repof.ApiTokens.Update(ctx, token); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

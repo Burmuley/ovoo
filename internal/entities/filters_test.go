@@ -74,6 +74,27 @@ func TestNewAddressFilter(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "active true",
+			input: map[string][]string{"active": {"true"}},
+			want: AddressFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				Active: func() *bool { v := true; return &v }(),
+			},
+		},
+		{
+			name:  "active false",
+			input: map[string][]string{"active": {"false"}},
+			want: AddressFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				Active: func() *bool { v := false; return &v }(),
+			},
+		},
+		{
+			name:    "invalid active value",
+			input:   map[string][]string{"active": {"notabool"}},
+			wantErr: ErrValidation,
+		},
 	}
 
 	for _, tt := range tests {
@@ -104,6 +125,13 @@ func TestNewAddressFilter(t *testing.T) {
 				}
 				if len(got.ServiceNames) != len(tt.want.ServiceNames) {
 					t.Errorf("ServiceNames length = %v, want %v", len(got.ServiceNames), len(tt.want.ServiceNames))
+				}
+				if tt.want.Active != nil {
+					if got.Active == nil {
+						t.Errorf("Active = nil, want %v", *tt.want.Active)
+					} else if *got.Active != *tt.want.Active {
+						t.Errorf("Active = %v, want %v", *got.Active, *tt.want.Active)
+					}
 				}
 			}
 		})
@@ -175,6 +203,27 @@ func TestNewUserFilter(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "active true",
+			input: map[string][]string{"active": {"true"}},
+			want: UserFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				Active: func() *bool { v := true; return &v }(),
+			},
+		},
+		{
+			name:  "active false",
+			input: map[string][]string{"active": {"false"}},
+			want: UserFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				Active: func() *bool { v := false; return &v }(),
+			},
+		},
+		{
+			name:    "invalid active value",
+			input:   map[string][]string{"active": {"notabool"}},
+			wantErr: ErrValidation,
+		},
 	}
 
 	for _, tt := range tests {
@@ -200,6 +249,109 @@ func TestNewUserFilter(t *testing.T) {
 				if len(got.Logins) != len(tt.want.Logins) {
 					t.Errorf("Logins length = %v, want %v", len(got.Logins), len(tt.want.Logins))
 				}
+				if tt.want.Active != nil {
+					if got.Active == nil {
+						t.Errorf("Active = nil, want %v", *tt.want.Active)
+					} else if *got.Active != *tt.want.Active {
+						t.Errorf("Active = %v, want %v", *got.Active, *tt.want.Active)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestNewApiTokensFilter(t *testing.T) {
+	trueVal := true
+	falseVal := false
+
+	tests := []struct {
+		name    string
+		input   map[string][]string
+		want    ApiTokenFilter
+		wantErr error
+	}{
+		{
+			name: "valid user_ids filter",
+			input: map[string][]string{
+				"user_ids":  {"uid1", "uid2"},
+				"page":      {"2"},
+				"page_size": {"5"},
+			},
+			want: ApiTokenFilter{
+				Filter:  Filter{Page: 2, PageSize: 5},
+				UserIds: []Id{"uid1", "uid2"},
+			},
+		},
+		{
+			name:  "active true",
+			input: map[string][]string{"user_ids": {"uid1"}, "active": {"true"}},
+			want: ApiTokenFilter{
+				Filter:  Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				UserIds: []Id{"uid1"},
+				Active:  &trueVal,
+			},
+		},
+		{
+			name:  "active false",
+			input: map[string][]string{"user_ids": {"uid1"}, "active": {"false"}},
+			want: ApiTokenFilter{
+				Filter:  Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				UserIds: []Id{"uid1"},
+				Active:  &falseVal,
+			},
+		},
+		{
+			name:    "invalid active value",
+			input:   map[string][]string{"user_ids": {"uid1"}, "active": {"notabool"}},
+			wantErr: ErrValidation,
+		},
+		{
+			name: "default page values",
+			input: map[string][]string{
+				"user_ids": {"uid1"},
+			},
+			want: ApiTokenFilter{
+				Filter:  Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				UserIds: []Id{"uid1"},
+			},
+		},
+		{
+			name:    "invalid page",
+			input:   map[string][]string{"page": {"invalid"}},
+			wantErr: ErrValidation,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewApiTokensFilter(tt.input)
+			if tt.wantErr != nil {
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("NewApiTokensFilter() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got.Page != tt.want.Page {
+				t.Errorf("Page = %v, want %v", got.Page, tt.want.Page)
+			}
+			if got.PageSize != tt.want.PageSize {
+				t.Errorf("PageSize = %v, want %v", got.PageSize, tt.want.PageSize)
+			}
+			if len(got.UserIds) != len(tt.want.UserIds) {
+				t.Errorf("UserIds length = %v, want %v", len(got.UserIds), len(tt.want.UserIds))
+			}
+			if tt.want.Active != nil {
+				if got.Active == nil {
+					t.Errorf("Active = nil, want %v", *tt.want.Active)
+				} else if *got.Active != *tt.want.Active {
+					t.Errorf("Active = %v, want %v", *got.Active, *tt.want.Active)
+				}
+			} else if got.Active != nil {
+				t.Errorf("Active = %v, want nil", *got.Active)
 			}
 		})
 	}

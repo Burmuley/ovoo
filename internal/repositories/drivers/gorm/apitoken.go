@@ -101,11 +101,11 @@ func (t *TokenGORMRepo) GetById(ctx context.Context, token_id entities.Id) (enti
 	return apiTokenToEntity(token), nil
 }
 
-// GetAllForUser retrieves all API tokens associated with a given user.
+// GetAll retrieves all API tokens associated with a given user.
 // It takes a context and a user ID, finds all tokens associated with that user,
 // and preloads the Owner relation for each token.
 // Returns a slice of API token entities and an error if the query fails.
-func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
+func (t *TokenGORMRepo) GetAll(ctx context.Context, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
 	gorm_tokens := make([]ApiToken, 0)
 	if len(filter.UserIds) == 0 {
 		return nil, fmt.Errorf("%w: at least one user id has to be defined", entities.ErrValidation)
@@ -114,7 +114,11 @@ func (t *TokenGORMRepo) GetAllForUser(ctx context.Context, filter entities.ApiTo
 	for _, val := range filter.UserIds {
 		uids = append(uids, val.String())
 	}
-	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id IN ?", uids).Preload(clause.Associations).Find(&gorm_tokens).Error; err != nil {
+	stmt := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id IN ?", uids)
+	if filter.Active != nil {
+		stmt = stmt.Where("active = ?", *filter.Active)
+	}
+	if err := stmt.Preload(clause.Associations).Find(&gorm_tokens).Error; err != nil {
 		return nil, wrapGormError(err)
 	}
 

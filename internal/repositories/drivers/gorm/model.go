@@ -26,6 +26,7 @@ type User struct {
 	LockoutUntil   time.Time `gorm:"column:lockout_until"`
 	UpdatedByID    string    `gorm:"column:updated_by_id"`
 	UpdatedBy      *User     `gorm:"foreignKey:UpdatedByID"`
+	Active         bool      `gorm:"column:active;default:true"`
 }
 
 // TableName specifies the table name for User
@@ -51,6 +52,7 @@ type Address struct {
 	Metadata         AddressMetadata `gorm:"serializer:json;index"`
 	UpdatedByID      string          `gorm:"column:updated_by_id"`
 	UpdatedBy        User            `gorm:"foreignKey:UpdatedByID"`
+	Active           bool            `gorm:"column:active;default:true"`
 }
 
 // TableName specifies the table name for Address
@@ -91,7 +93,7 @@ type ApiToken struct {
 	OwnerID     string    `gorm:"column:owner_id"`
 	Owner       User      `gorm:"foreignKey:OwnerID"`
 	Expiration  time.Time `gorm:"column:expiration"`
-	Active      bool      `gorm:"column:active"`
+	Active      bool      `gorm:"column:active;default:true"`
 	UpdatedByID string    `gorm:"column:updated_by_id"`
 	UpdatedBy   User      `gorm:"foreignKey:UpdatedByID"`
 }

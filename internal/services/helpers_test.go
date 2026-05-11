@@ -23,6 +23,18 @@ func setupHelpersTest() (*factory.RepoFactory, *MockAddressRepo, *MockChainRepo)
 	return repof, addressRepo, chainRepo
 }
 
+func setupDeactivateHelpersTest() (*factory.RepoFactory, *MockAddressRepo, *MockApiTokensRepo) {
+	addressRepo := new(MockAddressRepo)
+	tokensRepo := new(MockApiTokensRepo)
+
+	repof := &factory.RepoFactory{
+		Address:   addressRepo,
+		ApiTokens: tokensRepo,
+	}
+
+	return repof, addressRepo, tokensRepo
+}
+
 func TestDeletePrAddrsForUser_NoAddresses(t *testing.T) {
 	repof, addressRepo, _ := setupHelpersTest()
 	ctx := context.Background()
@@ -420,6 +432,221 @@ func TestDeletePrAddrsForUser_ErrorGettingAddresses(t *testing.T) {
 	)
 
 	err := deletePrAddrsForUser(ctx, repof, userId)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrDatabase)
+}
+
+// Tests for deactivateAliasesForPrAddr
+
+func TestDeactivateAliasesForPrAddr_NoAliases(t *testing.T) {
+	repof, addressRepo, _ := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	praddrId := entities.NewId()
+
+	active := true
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active == active
+	})).Return([]entities.Address{}, entities.PaginationMetadata{}, nil)
+
+	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
+
+	assert.NoError(t, err)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestDeactivateAliasesForPrAddr_WithAliases(t *testing.T) {
+	repof, addressRepo, _ := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	praddrId := entities.NewId()
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+
+	alias1 := entities.Address{ID: entities.NewId(), Type: entities.AliasAddress, Email: "alias1@test.com", Owner: owner, Active: true}
+	alias2 := entities.Address{ID: entities.NewId(), Type: entities.AliasAddress, Email: "alias2@test.com", Owner: owner, Active: true}
+
+	active := true
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active == active
+	})).Return([]entities.Address{alias1, alias2}, entities.PaginationMetadata{}, nil)
+
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return !a.Active
+	})).Return(nil).Times(2)
+
+	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
+
+	assert.NoError(t, err)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestDeactivateAliasesForPrAddr_ErrorGettingAliases(t *testing.T) {
+	repof, addressRepo, _ := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	praddrId := entities.NewId()
+
+	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(
+		[]entities.Address{}, entities.PaginationMetadata{}, entities.ErrDatabase,
+	)
+
+	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrDatabase)
+}
+
+// Tests for deactivatePrAddrsForUser
+
+func TestDeactivatePrAddrsForUser_NoAddresses(t *testing.T) {
+	repof, addressRepo, _ := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	userId := entities.NewId()
+
+	active := true
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active == active
+	})).Return([]entities.Address{}, entities.PaginationMetadata{}, nil)
+
+	err := deactivatePrAddrsForUser(ctx, repof, userId)
+
+	assert.NoError(t, err)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestDeactivatePrAddrsForUser_WithAddresses(t *testing.T) {
+	repof, addressRepo, _ := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	userId := entities.NewId()
+	owner := entities.User{ID: userId, Type: entities.RegularUser}
+	praddrId := entities.NewId()
+	praddr := entities.Address{ID: praddrId, Type: entities.ProtectedAddress, Email: "protected@example.com", Owner: owner, Active: true}
+
+	active := true
+	// First GetAll: returns the active praddr
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active == active && len(f.Owners) > 0
+	})).Return([]entities.Address{praddr}, entities.PaginationMetadata{}, nil).Once()
+
+	// Second GetAll: deactivateAliasesForPrAddr looks up active aliases for the praddr → none
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active == active && len(f.ForwardAddressIds) > 0
+	})).Return([]entities.Address{}, entities.PaginationMetadata{}, nil).Once()
+
+	// Update praddr to inactive
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return a.ID == praddrId && !a.Active
+	})).Return(nil)
+
+	err := deactivatePrAddrsForUser(ctx, repof, userId)
+
+	assert.NoError(t, err)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestDeactivatePrAddrsForUser_WithAddressesAndAliases(t *testing.T) {
+	repof, addressRepo, _ := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	userId := entities.NewId()
+	owner := entities.User{ID: userId, Type: entities.RegularUser}
+	praddrId := entities.NewId()
+	praddr := entities.Address{ID: praddrId, Type: entities.ProtectedAddress, Email: "protected@example.com", Owner: owner, Active: true}
+	alias := entities.Address{ID: entities.NewId(), Type: entities.AliasAddress, Email: "alias@test.com", Owner: owner, Active: true}
+
+	active := true
+	// GetAll for active praddrs owned by user
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active == active && len(f.Owners) > 0
+	})).Return([]entities.Address{praddr}, entities.PaginationMetadata{}, nil).Once()
+
+	// GetAll for active aliases forwarding to praddr
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active == active && len(f.ForwardAddressIds) > 0
+	})).Return([]entities.Address{alias}, entities.PaginationMetadata{}, nil).Once()
+
+	// Update alias to inactive, then praddr to inactive
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return !a.Active
+	})).Return(nil).Times(2)
+
+	err := deactivatePrAddrsForUser(ctx, repof, userId)
+
+	assert.NoError(t, err)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestDeactivatePrAddrsForUser_ErrorGettingAddresses(t *testing.T) {
+	repof, addressRepo, _ := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	userId := entities.NewId()
+
+	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(
+		[]entities.Address{}, entities.PaginationMetadata{}, entities.ErrDatabase,
+	)
+
+	err := deactivatePrAddrsForUser(ctx, repof, userId)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrDatabase)
+}
+
+// Tests for deactivateTokensForUser
+
+func TestDeactivateTokensForUser_NoTokens(t *testing.T) {
+	repof, _, tokensRepo := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	userId := entities.NewId()
+
+	active := true
+	tokensRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.ApiTokenFilter) bool {
+		return f.Active != nil && *f.Active == active
+	})).Return([]entities.ApiToken{}, nil)
+
+	err := deactivateTokensForUser(ctx, repof, userId)
+
+	assert.NoError(t, err)
+	tokensRepo.AssertExpectations(t)
+}
+
+func TestDeactivateTokensForUser_WithTokens(t *testing.T) {
+	repof, _, tokensRepo := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	userId := entities.NewId()
+	owner := entities.User{ID: userId, Type: entities.RegularUser}
+	token1 := entities.ApiToken{ID: entities.NewId(), Name: "Token 1", Owner: owner, Active: true}
+	token2 := entities.ApiToken{ID: entities.NewId(), Name: "Token 2", Owner: owner, Active: true}
+
+	active := true
+	tokensRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.ApiTokenFilter) bool {
+		return f.Active != nil && *f.Active == active
+	})).Return([]entities.ApiToken{token1, token2}, nil)
+
+	tokensRepo.On("Update", ctx, mock.MatchedBy(func(tk entities.ApiToken) bool {
+		return !tk.Active
+	})).Return(entities.ApiToken{}, nil).Times(2)
+
+	err := deactivateTokensForUser(ctx, repof, userId)
+
+	assert.NoError(t, err)
+	tokensRepo.AssertExpectations(t)
+}
+
+func TestDeactivateTokensForUser_ErrorGettingTokens(t *testing.T) {
+	repof, _, tokensRepo := setupDeactivateHelpersTest()
+	ctx := context.Background()
+
+	userId := entities.NewId()
+
+	tokensRepo.On("GetAll", ctx, mock.AnythingOfType("entities.ApiTokenFilter")).Return(nil, entities.ErrDatabase)
+
+	err := deactivateTokensForUser(ctx, repof, userId)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrDatabase)

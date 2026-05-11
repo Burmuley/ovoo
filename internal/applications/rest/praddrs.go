@@ -114,6 +114,7 @@ func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 			Comment:     req.Metadata.Comment,
 			ServiceName: req.Metadata.ServiceName,
 		},
+		Active: req.Active,
 	})
 	if err != nil {
 		a.errorLogNResponse(w, "updating protected address", err)

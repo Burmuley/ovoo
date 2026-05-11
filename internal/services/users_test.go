@@ -625,3 +625,152 @@ func TestUsersService_GetAll_RegularUser(t *testing.T) {
 	assert.Equal(t, expectedMetadata, metadata)
 	usersRepo.AssertExpectations(t)
 }
+
+func TestUsersService_Update_Activate(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminId := entities.NewId()
+	admin := entities.User{
+		ID:    adminId,
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	userId := entities.NewId()
+	targetUser := entities.User{
+		ID:        userId,
+		FirstName: "John",
+		LastName:  "Doe",
+		Login:     "john@test.com",
+		Type:      entities.RegularUser,
+		Active:    false,
+	}
+
+	activate := true
+	cmd := UserUpdateCmd{
+		UserID: userId,
+		Active: &activate,
+	}
+
+	usersRepo.On("GetById", ctx, userId).Return(targetUser, nil)
+	usersRepo.On("Update", ctx, mock.MatchedBy(func(u entities.User) bool {
+		return u.ID == userId && u.Active
+	})).Return(nil)
+
+	result, err := service.Update(ctx, admin, cmd)
+
+	assert.NoError(t, err)
+	assert.True(t, result.Active)
+	usersRepo.AssertExpectations(t)
+}
+
+func TestUsersService_Update_Deactivate(t *testing.T) {
+	service, usersRepo, addressRepo, tokensRepo, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminId := entities.NewId()
+	admin := entities.User{
+		ID:    adminId,
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	userId := entities.NewId()
+	targetUser := entities.User{
+		ID:        userId,
+		FirstName: "John",
+		LastName:  "Doe",
+		Login:     "john@test.com",
+		Type:      entities.RegularUser,
+		Active:    true,
+	}
+
+	deactivate := false
+	cmd := UserUpdateCmd{
+		UserID: userId,
+		Active: &deactivate,
+	}
+
+	usersRepo.On("GetById", ctx, userId).Return(targetUser, nil)
+
+	// deactivatePrAddrsForUser: get active praddrs for user → none
+	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
+		return f.Active != nil && *f.Active && len(f.Owners) > 0
+	})).Return([]entities.Address{}, entities.PaginationMetadata{}, nil)
+
+	// deactivateTokensForUser: get active tokens for user → none
+	tokensRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.ApiTokenFilter) bool {
+		return f.Active != nil && *f.Active && len(f.UserIds) > 0
+	})).Return([]entities.ApiToken{}, nil)
+
+	usersRepo.On("Update", ctx, mock.MatchedBy(func(u entities.User) bool {
+		return u.ID == userId && !u.Active
+	})).Return(nil)
+
+	result, err := service.Update(ctx, admin, cmd)
+
+	assert.NoError(t, err)
+	assert.False(t, result.Active)
+	usersRepo.AssertExpectations(t)
+	addressRepo.AssertExpectations(t)
+	tokensRepo.AssertExpectations(t)
+}
+
+func TestUsersService_Update_SetActive_NotAuthorized(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	regularUser := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "user@test.com",
+	}
+
+	targetId := entities.NewId()
+	targetUser := entities.User{
+		ID:     targetId,
+		Login:  "other@test.com",
+		Type:   entities.RegularUser,
+		Active: true,
+	}
+
+	deactivate := false
+	cmd := UserUpdateCmd{
+		UserID: targetId,
+		Active: &deactivate,
+	}
+
+	usersRepo.On("GetById", ctx, targetId).Return(targetUser, nil)
+
+	_, err := service.Update(ctx, regularUser, cmd)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+}
+
+func TestUsersService_Update_SetActive_AdminSelf(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminId := entities.NewId()
+	admin := entities.User{
+		ID:     adminId,
+		Type:   entities.AdminUser,
+		Login:  "admin@test.com",
+		Active: true,
+	}
+
+	deactivate := false
+	cmd := UserUpdateCmd{
+		UserID: adminId,
+		Active: &deactivate,
+	}
+
+	usersRepo.On("GetById", ctx, adminId).Return(admin, nil)
+
+	_, err := service.Update(ctx, admin, cmd)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+}

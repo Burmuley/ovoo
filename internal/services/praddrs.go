@@ -25,6 +25,7 @@ type PrAddrUpdateCmd struct {
 		Comment     *string
 		ServiceName *string
 	}
+	Active *bool
 }
 
 // ProtectedAddrService handles operations related to protected addresses
@@ -75,6 +76,7 @@ func (prs *ProtectedAddrService) Create(ctx context.Context, cuser entities.User
 		Metadata:  metadata,
 		Owner:     cuser,
 		UpdatedBy: cuser,
+		Active:    true,
 	}
 
 	if err := praddr.Validate(); err != nil {
@@ -109,6 +111,21 @@ func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User
 	}
 	if cmd.Metadata.ServiceName != nil {
 		praddr.Metadata.ServiceName = *cmd.Metadata.ServiceName
+	}
+
+	if cmd.Active != nil {
+		if canSetActivePrAddr(praddr, cuser) {
+			if *cmd.Active == true && praddr.Active == false {
+				praddr.Active = *cmd.Active
+			} else if *cmd.Active == false && praddr.Active == true {
+				if err := deactivateAliasesForPrAddr(ctx, prs.repof, praddr.ID); err != nil {
+					return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
+				}
+				praddr.Active = *cmd.Active
+			}
+		} else {
+			return entities.Address{}, entities.ErrNotAuthorized
+		}
 	}
 
 	if err := praddr.Validate(); err != nil {

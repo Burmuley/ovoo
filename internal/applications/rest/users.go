@@ -114,6 +114,7 @@ func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		UserID:    entities.Id(userId),
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
+		Active:    req.Active,
 	}
 	if req.Type != nil {
 		utyp := userTypeFStr(*req.Type)

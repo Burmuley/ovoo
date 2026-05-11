@@ -23,6 +23,9 @@ type AddressMetadata struct {
 
 // AliasData Address of type "alias" data structure
 type AliasData struct {
+	// Active Indicates whether the Alias is active and can be used
+	Active *bool `json:"active,omitempty"`
+
 	// Email Email of the Alias
 	Email openapi_types.Email `json:"email"`
 
@@ -117,6 +120,8 @@ type PaginationMetadata struct {
 
 // ProtectedAddressData defines model for protectedAddressData.
 type ProtectedAddressData struct {
+	// Active Indicates whether the Protected Address is active and can be used
+	Active   *bool               `json:"active,omitempty"`
 	Email    openapi_types.Email `json:"email"`
 	Id       string              `json:"id"`
 	Metadata *AddressMetadata    `json:"metadata,omitempty"`
@@ -137,6 +142,9 @@ type SystemVersionData struct {
 
 // UserData defines model for userData.
 type UserData struct {
+	// Active Indicates whether the user is active
+	Active *bool `json:"active,omitempty"`
+
 	// FailedAttempts number of failed authentication attempts
 	FailedAttempts *float32 `json:"failed_attempts,omitempty"`
 
@@ -293,6 +301,7 @@ type CreateUserRequest struct {
 
 // UpdateAliasRequest defines model for updateAliasRequest.
 type UpdateAliasRequest struct {
+	Active   *bool            `json:"active,omitempty"`
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
@@ -305,11 +314,13 @@ type UpdateApiToken struct {
 
 // UpdateProtectedAddressRequest defines model for updateProtectedAddressRequest.
 type UpdateProtectedAddressRequest struct {
+	Active   *bool            `json:"active,omitempty"`
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
 // UpdateUserRequest defines model for updateUserRequest.
 type UpdateUserRequest struct {
+	Active    *bool   `json:"active,omitempty"`
 	FirstName *string `json:"first_name,omitempty"`
 	LastName  *string `json:"last_name,omitempty"`
 	Type      *string `json:"type,omitempty"`
@@ -347,6 +358,7 @@ type CreateAliasJSONBody struct {
 
 // UpdateAliasJSONBody defines parameters for UpdateAlias.
 type UpdateAliasJSONBody struct {
+	Active   *bool            `json:"active,omitempty"`
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
@@ -364,6 +376,7 @@ type CreatePrAddrJSONBody struct {
 
 // UpdatePrAddrJSONBody defines parameters for UpdatePrAddr.
 type UpdatePrAddrJSONBody struct {
+	Active   *bool            `json:"active,omitempty"`
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
@@ -404,6 +417,7 @@ type UpdateApiTokenJSONBody struct {
 
 // UpdateUserJSONBody defines parameters for UpdateUser.
 type UpdateUserJSONBody struct {
+	Active    *bool   `json:"active,omitempty"`
 	FirstName *string `json:"first_name,omitempty"`
 	LastName  *string `json:"last_name,omitempty"`
 	Type      *string `json:"type,omitempty"`

@@ -67,9 +67,10 @@ func TestChainsService_GetByHash_Success_AdminUser(t *testing.T) {
 	hash := entities.NewHash("from@example.com", "to@test.com")
 
 	owner := entities.User{
-		ID:    entities.NewId(),
-		Type:  entities.RegularUser,
-		Login: "owner@test.com",
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
 	}
 
 	fromAddr := entities.Address{
@@ -86,11 +87,20 @@ func TestChainsService_GetByHash_Success_AdminUser(t *testing.T) {
 		Owner: owner,
 	}
 
+	origToAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  owner,
+		Active: true,
+	}
+
 	expectedChain := entities.Chain{
-		Hash:        hash,
-		FromAddress: fromAddr,
-		ToAddress:   toAddr,
-		CreatedAt:   time.Now(),
+		Hash:          hash,
+		FromAddress:   fromAddr,
+		ToAddress:     toAddr,
+		OrigToAddress: origToAddr,
+		CreatedAt:     time.Now(),
 	}
 
 	chainRepo.On("GetByHash", ctx, hash).Return(expectedChain, nil)
@@ -115,9 +125,10 @@ func TestChainsService_GetByHash_Success_MilterUser(t *testing.T) {
 	hash := entities.NewHash("from@example.com", "to@test.com")
 
 	owner := entities.User{
-		ID:    entities.NewId(),
-		Type:  entities.RegularUser,
-		Login: "owner@test.com",
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
 	}
 
 	fromAddr := entities.Address{
@@ -134,11 +145,20 @@ func TestChainsService_GetByHash_Success_MilterUser(t *testing.T) {
 		Owner: owner,
 	}
 
+	origToAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  owner,
+		Active: true,
+	}
+
 	expectedChain := entities.Chain{
-		Hash:        hash,
-		FromAddress: fromAddr,
-		ToAddress:   toAddr,
-		CreatedAt:   time.Now(),
+		Hash:          hash,
+		FromAddress:   fromAddr,
+		ToAddress:     toAddr,
+		OrigToAddress: origToAddr,
+		CreatedAt:     time.Now(),
 	}
 
 	chainRepo.On("GetByHash", ctx, hash).Return(expectedChain, nil)
@@ -518,6 +538,7 @@ func TestChainsService_Create_Success(t *testing.T) {
 		Email:          entities.Email(toEmail),
 		ForwardAddress: &protectedAddr,
 		Owner:          owner,
+		Active:         true,
 	}
 
 	// Chain doesn't exist
@@ -583,6 +604,7 @@ func TestChainsService_Create_ExistingExternalAddress(t *testing.T) {
 		Email:          entities.Email(toEmail),
 		ForwardAddress: &protectedAddr,
 		Owner:          owner,
+		Active:         true,
 	}
 
 	existingExternalAddr := entities.Address{
@@ -615,6 +637,177 @@ func TestChainsService_Create_ExistingExternalAddress(t *testing.T) {
 	assert.Equal(t, hash, chain.Hash)
 	chainRepo.AssertExpectations(t)
 	addressRepo.AssertExpectations(t)
+}
+
+func TestChainsService_GetByHash_InactiveOrigToAddress(t *testing.T) {
+	service, chainRepo, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	admin := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	hash := entities.NewHash("from@example.com", "to@test.com")
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
+	}
+
+	origToAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  owner,
+		Active: false, // inactive
+	}
+
+	chain := entities.Chain{
+		Hash:          hash,
+		OrigToAddress: origToAddr,
+	}
+
+	chainRepo.On("GetByHash", ctx, hash).Return(chain, nil)
+
+	result, err := service.GetByHash(ctx, admin, hash)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+	assert.Equal(t, entities.Chain{}, result)
+}
+
+func TestChainsService_GetByHash_InactiveOrigToOwner(t *testing.T) {
+	service, chainRepo, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	admin := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	hash := entities.NewHash("from@example.com", "to@test.com")
+
+	inactiveOwner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: false, // inactive owner
+	}
+
+	origToAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  inactiveOwner,
+		Active: true,
+	}
+
+	chain := entities.Chain{
+		Hash:          hash,
+		OrigToAddress: origToAddr,
+	}
+
+	chainRepo.On("GetByHash", ctx, hash).Return(chain, nil)
+
+	result, err := service.GetByHash(ctx, admin, hash)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+	assert.Equal(t, entities.Chain{}, result)
+}
+
+func TestChainsService_GetByHash_InactiveForwardAddress(t *testing.T) {
+	service, chainRepo, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	admin := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	hash := entities.NewHash("from@example.com", "to@test.com")
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
+	}
+
+	inactivePrAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  owner,
+		Active: false, // inactive forward address
+	}
+
+	origToAddr := entities.Address{
+		ID:             entities.NewId(),
+		Type:           entities.AliasAddress,
+		Email:          "alias@test.com",
+		Owner:          owner,
+		Active:         true,
+		ForwardAddress: &inactivePrAddr,
+	}
+
+	chain := entities.Chain{
+		Hash:          hash,
+		OrigToAddress: origToAddr,
+	}
+
+	chainRepo.On("GetByHash", ctx, hash).Return(chain, nil)
+
+	result, err := service.GetByHash(ctx, admin, hash)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+	assert.Equal(t, entities.Chain{}, result)
+}
+
+func TestChainsService_Create_InactiveAliasSkipped(t *testing.T) {
+	service, chainRepo, addressRepo := setupChainsService(t)
+	ctx := context.Background()
+
+	milter := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.MilterUser,
+		Login: "milter@test.com",
+	}
+
+	owner := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "owner@test.com",
+	}
+
+	fromEmail := "from@example.com"
+	toEmail := "to@test.com"
+	hash := entities.NewHash(fromEmail, toEmail)
+
+	inactiveAlias := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  entities.Email(toEmail),
+		Owner:  owner,
+		Active: false, // inactive alias — should be skipped
+	}
+
+	chainRepo.On("GetByHash", ctx, hash).Return(entities.Chain{}, entities.ErrNotFound)
+	addressRepo.On("GetByEmail", ctx, entities.Email(toEmail)).Return([]entities.Address{inactiveAlias}, nil)
+
+	chain, err := service.Create(ctx, milter, fromEmail, toEmail, owner)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.Contains(t, err.Error(), "destination alias not found")
+	assert.Equal(t, entities.Chain{}, chain)
 }
 
 func TestChainsService_Create_AdminUser(t *testing.T) {
@@ -650,6 +843,7 @@ func TestChainsService_Create_AdminUser(t *testing.T) {
 		Email:          entities.Email(toEmail),
 		ForwardAddress: &protectedAddr,
 		Owner:          owner,
+		Active:         true,
 	}
 
 	// Chain doesn't exist

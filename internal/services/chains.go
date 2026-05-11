@@ -44,7 +44,14 @@ func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, has
 		return entities.Chain{}, err
 	}
 
-	// TODO: add logic to check if addresses in the chain are active (alias or praddr)
+	// checking if addresses in the chain are active (alias or praddr)
+	if !chain.OrigToAddress.Active || !chain.OrigToAddress.Owner.Active {
+		return entities.Chain{}, entities.ErrNotFound
+	}
+
+	if chain.OrigToAddress.ForwardAddress != nil && !chain.OrigToAddress.ForwardAddress.Active {
+		return entities.Chain{}, entities.ErrNotFound
+	}
 	return chain, nil
 }
 
@@ -87,7 +94,7 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 
 	var alias *entities.Address
 	for _, addr := range addrs {
-		if addr.Type == entities.AliasAddress {
+		if addr.Type == entities.AliasAddress && addr.Active {
 			alias = &addr
 		}
 	}

@@ -22,6 +22,7 @@ type UserUpdateCmd struct {
 	FirstName *string
 	LastName  *string
 	Type      *entities.UserType
+	Active    *bool
 }
 
 // UsersService represents the use case for user operations
@@ -48,6 +49,7 @@ func (u *UsersService) Create(ctx context.Context, cuser entities.User, cmd User
 		FirstName: cmd.FirstName,
 		LastName:  cmd.LastName,
 		Type:      cmd.Type,
+		Active:    true,
 	}
 
 	user.ID = entities.NewId()
@@ -129,6 +131,25 @@ func (u *UsersService) Update(ctx context.Context, cuser entities.User, cmd User
 
 	if cmd.Type != nil {
 		user.Type = *cmd.Type
+	}
+
+	if cmd.Active != nil {
+		if canSetActiveUser(user, cuser) {
+			if *cmd.Active == true && user.Active == false {
+				user.Active = *cmd.Active
+			} else if *cmd.Active == false && user.Active == true {
+				if err := deactivatePrAddrsForUser(ctx, u.repof, user.ID); err != nil {
+					return entities.User{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
+				}
+
+				if err := deactivateTokensForUser(ctx, u.repof, user.ID); err != nil {
+					return entities.User{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
+				}
+				user.Active = *cmd.Active
+			}
+		} else {
+			return entities.User{}, entities.ErrNotAuthorized
+		}
 	}
 
 	if err := user.Validate(); err != nil {

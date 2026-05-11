@@ -122,6 +122,7 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 			Comment:     req.Metadata.Comment,
 			ServiceName: req.Metadata.ServiceName,
 		},
+		Active: req.Active,
 	})
 	if err != nil {
 		a.errorLogNResponse(w, "updating alias", err)

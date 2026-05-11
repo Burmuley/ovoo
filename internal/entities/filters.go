@@ -67,6 +67,7 @@ type AddressFilter struct {
 	Owners            []Id
 	ServiceNames      []string
 	ForwardAddressIds []Id
+	Active            *bool
 }
 
 // NewAddressFilter parses and returns an AddressFilter from the given input map.
@@ -111,7 +112,12 @@ func NewAddressFilter(input map[string][]string) (AddressFilter, error) {
 				snames = append(snames, val)
 			}
 			af.ServiceNames = snames
-
+		case "active":
+			active, err := strconv.ParseBool(vals[len(vals)-1])
+			if err != nil {
+				return AddressFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
+			}
+			af.Active = &active
 		}
 	}
 
@@ -122,6 +128,7 @@ type UserFilter struct {
 	Filter
 	Types  []UserType
 	Logins []string
+	Active *bool
 }
 
 // NewUserFilter parses and returns a UserFilter from the given input map.
@@ -153,6 +160,12 @@ func NewUserFilter(input map[string][]string) (UserFilter, error) {
 				logins = append(logins, val)
 			}
 			uf.Logins = logins
+		case "active":
+			active, err := strconv.ParseBool(vals[len(vals)-1])
+			if err != nil {
+				return UserFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
+			}
+			uf.Active = &active
 		}
 	}
 
@@ -162,6 +175,7 @@ func NewUserFilter(input map[string][]string) (UserFilter, error) {
 type ApiTokenFilter struct {
 	Filter
 	UserIds []Id
+	Active  *bool
 }
 
 // NewApiTokensFilter constructs an ApiTokenFilter using the provided input map.
@@ -183,6 +197,12 @@ func NewApiTokensFilter(input map[string][]string) (ApiTokenFilter, error) {
 				ids = append(ids, Id(val))
 			}
 			af.UserIds = ids
+		case "active":
+			active, err := strconv.ParseBool(vals[len(vals)-1])
+			if err != nil {
+				return ApiTokenFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
+			}
+			af.Active = &active
 		}
 	}
 	return af, nil

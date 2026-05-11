@@ -66,7 +66,7 @@ func (t *ApiTokensService) GetByIdCurUser(ctx context.Context, cuser entities.Us
 // GetAll retrieves all API tokens belonging to the specified owner.
 // Returns an error if owner ID validation fails.
 func (t *ApiTokensService) GetAll(ctx context.Context, cuser entities.User) ([]entities.ApiToken, error) {
-	tokens, err := t.repof.ApiTokens.GetAllForUser(
+	tokens, err := t.repof.ApiTokens.GetAll(
 		ctx, entities.ApiTokenFilter{UserIds: []entities.Id{cuser.ID}},
 	)
 	if err != nil {
@@ -134,10 +134,14 @@ func (t *ApiTokensService) Update(ctx context.Context, cuser entities.User, cmd 
 	}
 
 	if cmd.Active != nil {
-		if *cmd.Active == true && token.Active == false {
-			return entities.ApiToken{}, fmt.Errorf("%w: inactive tokens can not be reactivated", entities.ErrValidation)
+		if canSetActiveApiToken(token, cuser) {
+			if *cmd.Active == true && token.Active == false {
+				return entities.ApiToken{}, fmt.Errorf("%w: inactive tokens can not be reactivated", entities.ErrValidation)
+			}
+			token.Active = *cmd.Active
+		} else {
+			return entities.ApiToken{}, entities.ErrNotAuthorized
 		}
-		token.Active = *cmd.Active
 	}
 
 	token.UpdatedBy = cuser

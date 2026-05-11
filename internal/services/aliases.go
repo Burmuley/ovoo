@@ -25,6 +25,7 @@ type AliasUpdateCmd struct {
 		Comment     *string
 		ServiceName *string
 	}
+	Active *bool
 }
 
 // AliasesService handles operations related to alias addresses.
@@ -76,6 +77,10 @@ func (als *AliasesService) Create(
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
+	if !protAddr.Active {
+		return entities.Address{}, fmt.Errorf("%w: can not create alias for inactive protected address", entities.ErrValidation)
+	}
+
 	aliasEmail, err := entities.GenAliasEmail(als.domain, als.wordsDictionary)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
@@ -98,6 +103,7 @@ func (als *AliasesService) Create(
 		Metadata:       metadata,
 		Owner:          cuser,
 		UpdatedBy:      cuser,
+		Active:         true,
 	}
 
 	if err := alias.Validate(); err != nil {
@@ -133,6 +139,14 @@ func (als *AliasesService) Update(ctx context.Context, cuser entities.User, cmd 
 
 	if cmd.Metadata.ServiceName != nil {
 		alias.Metadata.ServiceName = strings.TrimSpace(*cmd.Metadata.ServiceName)
+	}
+
+	if cmd.Active != nil {
+		if canSetActiveAlias(alias, cuser) {
+			alias.Active = *cmd.Active
+		} else {
+			return entities.Address{}, entities.ErrNotAuthorized
+		}
 	}
 
 	if err := alias.Validate(); err != nil {

@@ -675,6 +675,62 @@ func TestAddressGORMRepo_GetAll_Pagination(t *testing.T) {
 	assert.Equal(t, 3, metadata.LastPage)
 }
 
+func TestAddressGORMRepo_GetAll_FilterByActive(t *testing.T) {
+	repo, user := setupAddressTestDB(t)
+	ctx := context.Background()
+
+	activeTrue := true
+	activeFalse := false
+
+	// Create both addresses as active (GORM skips false zero-values on Create)
+	addresses := []entities.Address{
+		{
+			ID:        entities.NewId(),
+			Type:      entities.ProtectedAddress,
+			Email:     entities.Email("active@example.com"),
+			Owner:     user,
+			UpdatedBy: user,
+			Active:    true,
+		},
+		{
+			ID:        entities.NewId(),
+			Type:      entities.ProtectedAddress,
+			Email:     entities.Email("inactive@example.com"),
+			Owner:     user,
+			UpdatedBy: user,
+			Active:    true,
+		},
+	}
+
+	err := repo.BatchCreate(ctx, addresses)
+	require.NoError(t, err)
+
+	// Deactivate the second address via Update (uses Select("*") which handles zero values)
+	addresses[1].Active = false
+	err = repo.Update(ctx, addresses[1])
+	require.NoError(t, err)
+
+	// Filter active=true
+	retrieved, metadata, err := repo.GetAll(ctx, entities.AddressFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
+		Active: &activeTrue,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.True(t, retrieved[0].Active)
+	assert.Equal(t, 1, metadata.TotalRecords)
+
+	// Filter active=false
+	retrieved, metadata, err = repo.GetAll(ctx, entities.AddressFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
+		Active: &activeFalse,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.False(t, retrieved[0].Active)
+	assert.Equal(t, 1, metadata.TotalRecords)
+}
+
 func TestApplyAddressFilter_NoFilters(t *testing.T) {
 	config := config.ConfigDB{
 		Driver:   "gorm",

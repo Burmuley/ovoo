@@ -519,3 +519,104 @@ func TestCanGetUsers_Panics(t *testing.T) {
 		canGetUsers()
 	})
 }
+
+// Tests for canSetActiveAlias
+func TestCanSetActiveAlias_AdminUser(t *testing.T) {
+	admin := createTestUser(entities.AdminUser)
+	owner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+
+	assert.True(t, canSetActiveAlias(addr, admin))
+}
+
+func TestCanSetActiveAlias_OwnerRegularUser(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+
+	assert.True(t, canSetActiveAlias(addr, owner))
+}
+
+func TestCanSetActiveAlias_NonOwnerRegularUser(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	nonOwner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+
+	assert.False(t, canSetActiveAlias(addr, nonOwner))
+}
+
+func TestCanSetActiveAlias_MilterUser(t *testing.T) {
+	milter := createTestUser(entities.MilterUser)
+	owner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+
+	assert.False(t, canSetActiveAlias(addr, milter))
+}
+
+// Tests for canSetActivePrAddr
+func TestCanSetActivePrAddr_AdminUser(t *testing.T) {
+	admin := createTestUser(entities.AdminUser)
+	owner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+
+	assert.True(t, canSetActivePrAddr(addr, admin))
+}
+
+func TestCanSetActivePrAddr_OwnerRegularUser(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+
+	assert.True(t, canSetActivePrAddr(addr, owner))
+}
+
+func TestCanSetActivePrAddr_NonOwnerRegularUser(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	nonOwner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+
+	assert.False(t, canSetActivePrAddr(addr, nonOwner))
+}
+
+// Tests for canSetActiveApiToken
+func TestCanSetActiveApiToken_AdminUser(t *testing.T) {
+	admin := createTestUser(entities.AdminUser)
+	owner := createTestUser(entities.RegularUser)
+	token := createTestApiToken(owner)
+
+	assert.True(t, canSetActiveApiToken(token, admin))
+}
+
+func TestCanSetActiveApiToken_OwnerUser(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	token := createTestApiToken(owner)
+
+	assert.True(t, canSetActiveApiToken(token, owner))
+}
+
+func TestCanSetActiveApiToken_NonOwner(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	nonOwner := createTestUser(entities.RegularUser)
+	token := createTestApiToken(owner)
+
+	assert.False(t, canSetActiveApiToken(token, nonOwner))
+}
+
+// Tests for canSetActiveUser
+func TestCanSetActiveUser_AdminUser_OtherUser(t *testing.T) {
+	admin := createTestUser(entities.AdminUser)
+	targetUser := createTestUser(entities.RegularUser)
+
+	assert.True(t, canSetActiveUser(targetUser, admin))
+}
+
+func TestCanSetActiveUser_AdminUser_Self(t *testing.T) {
+	admin := createTestUser(entities.AdminUser)
+
+	assert.False(t, canSetActiveUser(admin, admin))
+}
+
+func TestCanSetActiveUser_RegularUser(t *testing.T) {
+	user := createTestUser(entities.RegularUser)
+	targetUser := createTestUser(entities.RegularUser)
+
+	assert.False(t, canSetActiveUser(targetUser, user))
+}

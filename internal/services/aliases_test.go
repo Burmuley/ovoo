@@ -85,10 +85,11 @@ func TestAliasesService_Create_Success(t *testing.T) {
 
 	prAddrId := entities.NewId()
 	protectedAddr := entities.Address{
-		ID:    prAddrId,
-		Type:  entities.ProtectedAddress,
-		Email: "protected@example.com",
-		Owner: user,
+		ID:     prAddrId,
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  user,
+		Active: true,
 	}
 
 	serviceName := "Test Service"
@@ -712,4 +713,183 @@ func TestAliasesService_DeleteById_NotFound(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
+}
+
+func TestAliasesService_Create_InactiveProtectedAddress(t *testing.T) {
+	service, addressRepo, _ := setupAliasesService(t)
+	ctx := context.Background()
+
+	user := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "user@test.com",
+	}
+
+	prAddrId := entities.NewId()
+	inactivePrAddr := entities.Address{
+		ID:     prAddrId,
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  user,
+		Active: false,
+	}
+
+	cmd := AliasCreateCmd{
+		ProtectedAddressId: string(prAddrId),
+	}
+
+	addressRepo.On("GetById", ctx, prAddrId).Return(inactivePrAddr, nil)
+
+	alias, err := service.Create(ctx, user, cmd)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.Contains(t, err.Error(), "inactive protected address")
+	assert.Equal(t, entities.Address{}, alias)
+	addressRepo.AssertNotCalled(t, "Create")
+}
+
+func TestAliasesService_Update_SetActive_Owner(t *testing.T) {
+	service, addressRepo, _ := setupAliasesService(t)
+	ctx := context.Background()
+
+	userId := entities.NewId()
+	user := entities.User{
+		ID:    userId,
+		Type:  entities.RegularUser,
+		Login: "user@test.com",
+	}
+
+	prAddr := entities.Address{
+		ID:    entities.NewId(),
+		Type:  entities.ProtectedAddress,
+		Email: "protected@example.com",
+		Owner: user,
+	}
+
+	aliasId := entities.NewId()
+	existingAlias := entities.Address{
+		ID:             aliasId,
+		Type:           entities.AliasAddress,
+		Email:          "alias@test.com",
+		Owner:          user,
+		Active:         true,
+		ForwardAddress: &prAddr,
+	}
+
+	active := false
+	cmd := AliasUpdateCmd{
+		AliasId: aliasId,
+		Active:  &active,
+	}
+
+	addressRepo.On("GetById", ctx, aliasId).Return(existingAlias, nil)
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return a.ID == aliasId && !a.Active
+	})).Return(nil)
+
+	result, err := service.Update(ctx, user, cmd)
+
+	assert.NoError(t, err)
+	assert.False(t, result.Active)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestAliasesService_Update_SetActive_Admin(t *testing.T) {
+	service, addressRepo, _ := setupAliasesService(t)
+	ctx := context.Background()
+
+	admin := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	owner := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "owner@test.com",
+	}
+
+	prAddr := entities.Address{
+		ID:    entities.NewId(),
+		Type:  entities.ProtectedAddress,
+		Email: "protected@example.com",
+		Owner: owner,
+	}
+
+	aliasId := entities.NewId()
+	existingAlias := entities.Address{
+		ID:             aliasId,
+		Type:           entities.AliasAddress,
+		Email:          "alias@test.com",
+		Owner:          owner,
+		Active:         true,
+		ForwardAddress: &prAddr,
+	}
+
+	active := false
+	cmd := AliasUpdateCmd{
+		AliasId: aliasId,
+		Active:  &active,
+	}
+
+	addressRepo.On("GetById", ctx, aliasId).Return(existingAlias, nil)
+	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
+		return a.ID == aliasId && !a.Active
+	})).Return(nil)
+
+	result, err := service.Update(ctx, admin, cmd)
+
+	assert.NoError(t, err)
+	assert.False(t, result.Active)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestAliasesService_Update_SetActive_NotAuthorized(t *testing.T) {
+	service, addressRepo, _ := setupAliasesService(t)
+	ctx := context.Background()
+
+	owner := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "owner@test.com",
+	}
+
+	nonOwner := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "nonowner@test.com",
+	}
+
+	prAddr := entities.Address{
+		ID:    entities.NewId(),
+		Type:  entities.ProtectedAddress,
+		Email: "protected@example.com",
+		Owner: owner,
+	}
+
+	aliasId := entities.NewId()
+	existingAlias := entities.Address{
+		ID:             aliasId,
+		Type:           entities.AliasAddress,
+		Email:          "alias@test.com",
+		Owner:          owner,
+		Active:         true,
+		ForwardAddress: &prAddr,
+	}
+
+	active := false
+	cmd := AliasUpdateCmd{
+		AliasId: aliasId,
+		Active:  &active,
+	}
+
+	addressRepo.On("GetById", ctx, aliasId).Return(existingAlias, nil)
+
+	_, err := service.Update(ctx, nonOwner, cmd)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	addressRepo.AssertNotCalled(t, "Update")
 }

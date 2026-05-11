@@ -17,6 +17,7 @@ func userFromEntity(e entities.User) User {
 		PwdHash:        e.PasswordHash,
 		FailedAttempts: e.FailedAttempts,
 		LockoutUntil:   e.LockoutUntil,
+		Active:         e.Active,
 	}
 
 	if e.UpdatedBy != nil {
@@ -51,6 +52,7 @@ func userToEntity(u User) entities.User {
 		FailedAttempts: u.FailedAttempts,
 		UpdatedAt:      u.UpdatedAt,
 		CreatedAt:      u.CreatedAt,
+		Active:         u.Active,
 	}
 
 	if u.UpdatedBy != nil {
@@ -80,6 +82,7 @@ func addressFromEntity(e entities.Address) Address {
 		},
 		UpdatedBy:   userFromEntity(e.UpdatedBy),
 		UpdatedByID: e.UpdatedBy.ID.String(),
+		Active:      e.Active,
 	}
 	if e.ForwardAddress != nil {
 		fa := addressFromEntity(*e.ForwardAddress)
@@ -115,6 +118,7 @@ func addressToEntity(a Address) entities.Address {
 		UpdatedAt: a.UpdatedAt,
 		CreatedAt: a.CreatedAt,
 		UpdatedBy: userToEntity(a.UpdatedBy),
+		Active:    a.Active,
 	}
 
 	if a.ForwardAddress != nil {

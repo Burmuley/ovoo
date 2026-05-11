@@ -495,3 +495,57 @@ func TestUserGORMRepo_GetAll_Pagination(t *testing.T) {
 	assert.Equal(t, 1, metadata.CurrentPage)
 	assert.Equal(t, 3, metadata.LastPage)
 }
+
+func TestUserGORMRepo_GetAll_FilterByActive(t *testing.T) {
+	repo := setupUserTestDB(t)
+	ctx := context.Background()
+
+	activeTrue := true
+	activeFalse := false
+
+	// Create both users as active (GORM skips false zero-values on Create)
+	users := []entities.User{
+		{
+			ID:           entities.NewId(),
+			Login:        "active@example.com",
+			Type:         entities.RegularUser,
+			PasswordHash: "hash1",
+			Active:       true,
+		},
+		{
+			ID:           entities.NewId(),
+			Login:        "inactive@example.com",
+			Type:         entities.RegularUser,
+			PasswordHash: "hash2",
+			Active:       true,
+		},
+	}
+
+	err := repo.BatchCreate(ctx, users)
+	require.NoError(t, err)
+
+	// Deactivate the second user via Update (uses Select("*") which handles zero values)
+	users[1].Active = false
+	err = repo.Update(ctx, users[1])
+	require.NoError(t, err)
+
+	// Filter active=true
+	retrieved, metadata, err := repo.GetAll(ctx, entities.UserFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
+		Active: &activeTrue,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.True(t, retrieved[0].Active)
+	assert.Equal(t, 1, metadata.TotalRecords)
+
+	// Filter active=false
+	retrieved, metadata, err = repo.GetAll(ctx, entities.UserFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
+		Active: &activeFalse,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.False(t, retrieved[0].Active)
+	assert.Equal(t, 1, metadata.TotalRecords)
+}

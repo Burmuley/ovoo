@@ -159,6 +159,10 @@ func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
 		stmt.Where("forward_address_id IN ?", filter.ForwardAddressIds)
 	}
 
+	if filter.Active != nil {
+		stmt.Where("active = ?", *filter.Active)
+	}
+
 	var count int64 = 0
 	stmt.Count(&count)
 	if filter.Page != 0 && filter.PageSize != 0 {

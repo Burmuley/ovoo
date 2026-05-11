@@ -83,7 +83,7 @@ func TestTokensRepo_GetAllForUser_CacheMiss(t *testing.T) {
 	insertToken(t, e.rawTokens, user)
 
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
@@ -96,13 +96,13 @@ func TestTokensRepo_GetAllForUser_CacheHit(t *testing.T) {
 	insertToken(t, e.rawTokens, user)
 
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	_, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err := e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	// Backstage insert — cache is unaware.
 	insertToken(t, e.rawTokens, user)
 
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Len(t, result, 1)
 }
@@ -118,13 +118,13 @@ func TestTokensRepo_Create_EvictsUserList(t *testing.T) {
 	insertToken(t, e.rawTokens, user)
 
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	_, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err := e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	// Create through the cached layer → evicts the user-prefix cache.
 	insertToken(t, e.cachedTokens, user)
 
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
@@ -141,7 +141,7 @@ func TestTokensRepo_Update_EvictsCache(t *testing.T) {
 	_, err := e.cachedTokens.GetById(ctx, token.ID)
 	require.NoError(t, err)
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	_, err = e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err = e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	updated := token
@@ -158,7 +158,7 @@ func TestTokensRepo_Update_EvictsCache(t *testing.T) {
 	// User-list evicted: the cached layer no longer returns the stale [token(active=true)]
 	// slice. Fresh DB data is returned — 1 token with Active=false proves the cache was
 	// cleared and we are not seeing the old stale value.
-	list, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	list, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Len(t, list, 1)
 	assert.False(t, list[0].Active)
@@ -173,7 +173,7 @@ func TestTokensRepo_BatchCreate_EvictsUserList(t *testing.T) {
 	insertToken(t, e.rawTokens, user)
 
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	_, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err := e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	id := entities.NewId()
@@ -182,7 +182,7 @@ func TestTokensRepo_BatchCreate_EvictsUserList(t *testing.T) {
 	}
 	require.NoError(t, e.cachedTokens.BatchCreate(ctx, batch))
 
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
 }
@@ -200,9 +200,9 @@ func TestTokensRepo_BatchCreate_EvictsPerOwner(t *testing.T) {
 	filter1 := entities.ApiTokenFilter{UserIds: []entities.Id{user1.ID}}
 	filter2 := entities.ApiTokenFilter{UserIds: []entities.Id{user2.ID}}
 
-	_, err := e.cachedTokens.GetAllForUser(ctx, filter1)
+	_, err := e.cachedTokens.GetAll(ctx, filter1)
 	require.NoError(t, err)
-	_, err = e.cachedTokens.GetAllForUser(ctx, filter2)
+	_, err = e.cachedTokens.GetAll(ctx, filter2)
 	require.NoError(t, err)
 
 	id1, id2 := entities.NewId(), entities.NewId()
@@ -213,11 +213,11 @@ func TestTokensRepo_BatchCreate_EvictsPerOwner(t *testing.T) {
 	require.NoError(t, e.cachedTokens.BatchCreate(ctx, batch))
 
 	// Both user caches must be evicted — each user now has 2 tokens.
-	r1, err := e.cachedTokens.GetAllForUser(ctx, filter1)
+	r1, err := e.cachedTokens.GetAll(ctx, filter1)
 	assert.NoError(t, err)
 	assert.Len(t, r1, 2)
 
-	r2, err := e.cachedTokens.GetAllForUser(ctx, filter2)
+	r2, err := e.cachedTokens.GetAll(ctx, filter2)
 	assert.NoError(t, err)
 	assert.Len(t, r2, 2)
 }
@@ -232,7 +232,7 @@ func TestTokensRepo_Delete_NoCachedToken(t *testing.T) {
 
 	// Populate user-list cache before deleting (id-key is NOT cached).
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	_, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err := e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	require.NoError(t, e.cachedTokens.Delete(ctx, token.ID))
@@ -242,7 +242,7 @@ func TestTokensRepo_Delete_NoCachedToken(t *testing.T) {
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 
 	// Broad "token:user:" eviction clears the list even without the id-key cached.
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Empty(t, result)
 }
@@ -260,7 +260,7 @@ func TestTokensRepo_Delete_WithCachedToken(t *testing.T) {
 	// Populate both the id-key and the user-list-key.
 	_, err := e.cachedTokens.GetById(ctx, token.ID)
 	require.NoError(t, err)
-	_, err = e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err = e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	require.NoError(t, e.cachedTokens.Delete(ctx, token.ID))
@@ -269,7 +269,7 @@ func TestTokensRepo_Delete_WithCachedToken(t *testing.T) {
 	_, err = e.cachedTokens.GetById(ctx, token.ID)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Empty(t, result)
 }
@@ -295,7 +295,7 @@ func TestTokensRepo_BatchDeleteById_EvictsAll(t *testing.T) {
 	_, err = e.cachedTokens.GetById(ctx, t2.ID)
 	require.NoError(t, err)
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	_, err = e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err = e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	require.NoError(t, e.cachedTokens.BatchDeleteById(ctx, []entities.Id{t1.ID, t2.ID}))
@@ -306,7 +306,7 @@ func TestTokensRepo_BatchDeleteById_EvictsAll(t *testing.T) {
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 
 	// "token:" prefix eviction covers user-list keys too.
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Empty(t, result)
 }
@@ -321,13 +321,13 @@ func TestTokensRepo_BatchDeleteForUser_EvictsUserList(t *testing.T) {
 	insertToken(t, e.rawTokens, user)
 
 	filter := entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}}
-	_, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	_, err := e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
 	require.NoError(t, e.cachedTokens.BatchDeleteForUser(ctx, user.ID))
 
 	// Cache evicted; DB now returns empty list.
-	result, err := e.cachedTokens.GetAllForUser(ctx, filter)
+	result, err := e.cachedTokens.GetAll(ctx, filter)
 	assert.NoError(t, err)
 	assert.Empty(t, result)
 }

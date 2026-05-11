@@ -49,12 +49,12 @@ func (t *TokensRepo) GetById(ctx context.Context, tokenId entities.Id) (entities
 	return token, nil
 }
 
-func (t *TokensRepo) GetAllForUser(ctx context.Context, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
+func (t *TokensRepo) GetAll(ctx context.Context, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
 	key := tokenUserListKey(filter)
 	if tokens, ok := getFromCache[[]entities.ApiToken](ctx, t.cache, key); ok {
 		return tokens, nil
 	}
-	tokens, err := t.repo.GetAllForUser(ctx, filter)
+	tokens, err := t.repo.GetAll(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

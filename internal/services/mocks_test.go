@@ -106,7 +106,7 @@ func (m *MockApiTokensRepo) GetById(ctx context.Context, tokenId entities.Id) (e
 	return args.Get(0).(entities.ApiToken), args.Error(1)
 }
 
-func (m *MockApiTokensRepo) GetAllForUser(ctx context.Context, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
+func (m *MockApiTokensRepo) GetAll(ctx context.Context, filter entities.ApiTokenFilter) ([]entities.ApiToken, error) {
 	args := m.Called(ctx, filter)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

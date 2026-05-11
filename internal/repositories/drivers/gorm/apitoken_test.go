@@ -265,7 +265,7 @@ func TestTokenGORMRepo_BatchDeleteForUser(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Verify all tokens for the user were deleted
-	retrieved, err := repo.GetAllForUser(ctx, entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}})
+	retrieved, err := repo.GetAll(ctx, entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}})
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 0)
 }
@@ -342,7 +342,7 @@ func TestTokenGORMRepo_GetAllForUser(t *testing.T) {
 	err := repo.BatchCreate(ctx, tokens)
 	require.NoError(t, err)
 
-	retrieved, err := repo.GetAllForUser(ctx, entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}})
+	retrieved, err := repo.GetAll(ctx, entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}})
 
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 2)
@@ -355,7 +355,7 @@ func TestTokenGORMRepo_GetAllForUser_NoTokens(t *testing.T) {
 	repo, user := setupTokenTestDB(t)
 	ctx := context.Background()
 
-	retrieved, err := repo.GetAllForUser(ctx, entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}})
+	retrieved, err := repo.GetAll(ctx, entities.ApiTokenFilter{UserIds: []entities.Id{user.ID}})
 
 	assert.NoError(t, err)
 	assert.Len(t, retrieved, 0)
@@ -365,7 +365,7 @@ func TestTokenGORMRepo_GetAllForUser_EmptyUserIds(t *testing.T) {
 	repo, _ := setupTokenTestDB(t)
 	ctx := context.Background()
 
-	retrieved, err := repo.GetAllForUser(ctx, entities.ApiTokenFilter{})
+	retrieved, err := repo.GetAll(ctx, entities.ApiTokenFilter{})
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrValidation)
@@ -414,7 +414,7 @@ func TestTokenGORMRepo_GetAllForUser_MultipleUsers(t *testing.T) {
 	}
 	require.NoError(t, repo.BatchCreate(ctx, tokens))
 
-	retrieved, err := repo.GetAllForUser(ctx, entities.ApiTokenFilter{
+	retrieved, err := repo.GetAll(ctx, entities.ApiTokenFilter{
 		UserIds: []entities.Id{user.ID, user2.ID},
 	})
 
@@ -492,6 +492,64 @@ func TestTokenGORMRepo_Update(t *testing.T) {
 	assert.Equal(t, "Updated Name", retrieved.Name)
 	assert.Equal(t, "Updated description", retrieved.Description)
 	assert.False(t, retrieved.Active)
+}
+
+func TestTokenGORMRepo_GetAll_FilterByActive(t *testing.T) {
+	repo, user := setupTokenTestDB(t)
+	ctx := context.Background()
+
+	activeTrue := true
+	activeFalse := false
+
+	// Create both tokens as active (GORM skips false zero-values on Create)
+	tokens := []entities.ApiToken{
+		{
+			ID:         entities.NewId(),
+			Name:       "Active Token",
+			TokenHash:  "hash-active",
+			Salt:       "salt1",
+			Owner:      user,
+			Expiration: time.Now().Add(24 * time.Hour),
+			Active:     true,
+			UpdatedBy:  user,
+		},
+		{
+			ID:         entities.NewId(),
+			Name:       "Inactive Token",
+			TokenHash:  "hash-inactive",
+			Salt:       "salt2",
+			Owner:      user,
+			Expiration: time.Now().Add(24 * time.Hour),
+			Active:     true,
+			UpdatedBy:  user,
+		},
+	}
+
+	err := repo.BatchCreate(ctx, tokens)
+	require.NoError(t, err)
+
+	// Deactivate the second token via Update (uses Select("*") which handles zero values)
+	tokens[1].Active = false
+	_, err = repo.Update(ctx, tokens[1])
+	require.NoError(t, err)
+
+	// Filter active=true
+	retrieved, err := repo.GetAll(ctx, entities.ApiTokenFilter{
+		UserIds: []entities.Id{user.ID},
+		Active:  &activeTrue,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.True(t, retrieved[0].Active)
+
+	// Filter active=false
+	retrieved, err = repo.GetAll(ctx, entities.ApiTokenFilter{
+		UserIds: []entities.Id{user.ID},
+		Active:  &activeFalse,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.False(t, retrieved[0].Active)
 }
 
 func TestTokenGORMRepo_Update_NotFound(t *testing.T) {
