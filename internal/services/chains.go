@@ -46,12 +46,13 @@ func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, has
 
 	// checking if addresses in the chain are active (alias or praddr)
 	if !chain.OrigToAddress.Active || !chain.OrigToAddress.Owner.Active {
-		return entities.Chain{}, entities.ErrNotFound
+		return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrNotFound)
 	}
 
 	if chain.OrigToAddress.ForwardAddress != nil && !chain.OrigToAddress.ForwardAddress.Active {
-		return entities.Chain{}, entities.ErrNotFound
+		return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrNotFound)
 	}
+
 	return chain, nil
 }
 
@@ -80,6 +81,15 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 	// calculate hash and return corresponding chain if found in the DB
 	hash := entities.NewHash(fromEmail, toEmail)
 	if chain, err := cs.repof.Chain.GetByHash(ctx, hash); err == nil {
+		// checking if addresses in the chain are active (alias or praddr)
+		if !chain.OrigToAddress.Active || !chain.OrigToAddress.Owner.Active {
+			return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrNotFound)
+		}
+
+		if chain.OrigToAddress.ForwardAddress != nil && !chain.OrigToAddress.ForwardAddress.Active {
+			return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrNotFound)
+		}
+
 		return chain, nil
 	}
 
@@ -100,7 +110,7 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 	}
 
 	if alias == nil {
-		return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrValidation)
+		return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrNotFound)
 	}
 
 	src, err := checkCreateSrcAddr(ctx, cs.repof, fromEmail, owner)

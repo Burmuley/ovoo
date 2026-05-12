@@ -33,6 +33,10 @@ func (c *ChainsGORMRepo) GetByHash(ctx context.Context, hash entities.Hash) (ent
 	if err := c.db.WithContext(ctx).Model(&Chain{}).
 		Where("hash = ?", hash).
 		Preload(clause.Associations).
+		Preload("OrigFromAddress." + clause.Associations).
+		Preload("OrigToAddress." + clause.Associations).
+		Preload("FromAddress." + clause.Associations).
+		Preload("ToAddress." + clause.Associations).
 		First(&chain).Error; err != nil {
 		return entities.Chain{}, wrapGormError(err)
 	}
@@ -58,7 +62,12 @@ func (c *ChainsGORMRepo) GetByFilters(ctx context.Context, filter entities.Chain
 	chains := make([]Chain, 0)
 	stmt := c.db.WithContext(ctx).Model(&Chain{})
 	applyChainFilter(stmt, filter)
-	if err := stmt.Preload(clause.Associations).
+	stmt.Preload(clause.Associations).
+		Preload("OrigFromAddress." + clause.Associations).
+		Preload("OrigToAddress." + clause.Associations).
+		Preload("FromAddress." + clause.Associations).
+		Preload("ToAddress." + clause.Associations)
+	if err := stmt.
 		Find(&chains).Error; err != nil {
 		return nil, wrapGormError(err)
 	}

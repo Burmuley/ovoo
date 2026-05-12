@@ -37,7 +37,7 @@ type OvooErrorBody struct {
 }
 
 type OvooError struct {
-	Error []OvooErrorBody
+	Errors []OvooErrorBody `json:"errors"`
 }
 
 type OvooClient struct {
@@ -116,9 +116,9 @@ func (o OvooClient) parseError(resp *http.Response) error {
 		return err
 	}
 
-	cliErrs := make([]OvooErrorBody, 0, len(ovooError.Error))
-	for _, err := range ovooError.Error {
-		cliErrs = append(cliErrs, OvooErrorBody{err.Status, err.Detail})
+	cliErrs := make([]OvooErrorBody, 0, len(ovooError.Errors))
+	for _, cliErr := range ovooError.Errors {
+		cliErrs = append(cliErrs, OvooErrorBody{cliErr.Status, cliErr.Detail})
 	}
 
 	return fmt.Errorf("ovoo api errors: %v", cliErrs)

@@ -406,6 +406,13 @@ func TestChainsService_Create_ExistingChain(t *testing.T) {
 	toEmail := "to@test.com"
 	hash := entities.NewHash(fromEmail, toEmail)
 
+	activeOwner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
+	}
+
 	existingChain := entities.Chain{
 		Hash: hash,
 		FromAddress: entities.Address{
@@ -419,6 +426,13 @@ func TestChainsService_Create_ExistingChain(t *testing.T) {
 			Type:  entities.ProtectedAddress,
 			Email: "protected@example.com",
 			Owner: owner,
+		},
+		OrigToAddress: entities.Address{
+			ID:     entities.NewId(),
+			Type:   entities.AliasAddress,
+			Email:  entities.Email(toEmail),
+			Owner:  activeOwner,
+			Active: true,
 		},
 		CreatedAt: time.Now(),
 	}
@@ -500,7 +514,7 @@ func TestChainsService_Create_DestinationNotAlias(t *testing.T) {
 	chain, err := service.Create(ctx, milter, fromEmail, toEmail, owner)
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
 	assert.Contains(t, err.Error(), "destination alias not found")
 	assert.Equal(t, entities.Chain{}, chain)
 }
@@ -805,7 +819,7 @@ func TestChainsService_Create_InactiveAliasSkipped(t *testing.T) {
 	chain, err := service.Create(ctx, milter, fromEmail, toEmail, owner)
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
 	assert.Contains(t, err.Error(), "destination alias not found")
 	assert.Equal(t, entities.Chain{}, chain)
 }
