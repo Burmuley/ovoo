@@ -110,16 +110,19 @@ func (a *Application) UpdatePrAddr(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metadata := struct {
+		Comment     *string
+		ServiceName *string
+	}{}
+	if req.Metadata != nil {
+		metadata.Comment = req.Metadata.Comment
+		metadata.ServiceName = req.Metadata.ServiceName
+	}
+
 	praddr, err := a.svcGw.PrAddrs.Update(r.Context(), user, services.PrAddrUpdateCmd{
 		PrAddrId: praddrId,
-		Metadata: struct {
-			Comment     *string
-			ServiceName *string
-		}{
-			Comment:     req.Metadata.Comment,
-			ServiceName: req.Metadata.ServiceName,
-		},
-		Active: req.Active,
+		Metadata: metadata,
+		Active:   req.Active,
 	})
 	if err != nil {
 		a.errorLogNResponse(w, "updating protected address", err)

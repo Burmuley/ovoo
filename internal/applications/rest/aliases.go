@@ -117,17 +117,18 @@ func (a *Application) UpdateAlias(w http.ResponseWriter, r *http.Request) {
 		a.errorLogNResponse(w, "parsing alias update request", err)
 		return
 	}
-
+	metadata := struct {
+		Comment     *string
+		ServiceName *string
+	}{}
+	if req.Metadata != nil {
+		metadata.Comment = req.Metadata.Comment
+		metadata.ServiceName = req.Metadata.ServiceName
+	}
 	alias, err := a.svcGw.Aliases.Update(r.Context(), cuser, services.AliasUpdateCmd{
-		AliasId: aliasId,
-		Metadata: struct {
-			Comment     *string
-			ServiceName *string
-		}{
-			Comment:     req.Metadata.Comment,
-			ServiceName: req.Metadata.ServiceName,
-		},
-		Active: req.Active,
+		AliasId:  aliasId,
+		Metadata: metadata,
+		Active:   req.Active,
 	})
 	if err != nil {
 		a.errorLogNResponse(w, "updating alias", err)
