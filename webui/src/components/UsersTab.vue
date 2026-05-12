@@ -2,7 +2,7 @@
     <CCard>
         <CCardHeader class="d-flex align-items-center justify-content-between">
             <span class="fw-semibold">Users</span>
-            <CButton color="primary" size="sm" @click="emit('add-clicked')">
+            <CButton v-if="props.userInfo.type === 'admin'" color="primary" size="sm" @click="emit('add-clicked')">
                 <CIcon icon="cilPlus" /> Add
             </CButton>
         </CCardHeader>
@@ -13,6 +13,7 @@
                         <CTableHeaderCell>Name</CTableHeaderCell>
                         <CTableHeaderCell>Login</CTableHeaderCell>
                         <CTableHeaderCell>Type</CTableHeaderCell>
+                        <CTableHeaderCell>Status</CTableHeaderCell>
                         <CTableHeaderCell></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -28,10 +29,37 @@
                         <CTableDataCell>
                             <CBadge :color="typeBadgeColor(user.type)">{{ user.type }}</CBadge>
                         </CTableDataCell>
-                        <CTableDataCell class="text-end">
-                            <CButton color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
-                                <CIcon icon="cilTrash" />
-                            </CButton>
+                        <CTableDataCell>
+                            <CBadge :color="user.active ? 'success' : 'danger'">
+                                {{ user.active ? 'Active' : 'Inactive' }}
+                            </CBadge>
+                        </CTableDataCell>
+                        <CTableDataCell class="text-end text-nowrap">
+                            <template v-if="props.userInfo.type === 'admin'">
+                                <CButton
+                                    v-if="user.active"
+                                    color="warning"
+                                    size="sm"
+                                    variant="outline"
+                                    class="me-1"
+                                    @click.stop="confirmingDeactivateId = user.id"
+                                >
+                                    <CIcon icon="cilBan" />
+                                </CButton>
+                                <CButton
+                                    v-else
+                                    color="success"
+                                    size="sm"
+                                    variant="outline"
+                                    class="me-1"
+                                    @click.stop="confirmingActivateId = user.id"
+                                >
+                                    <CIcon icon="cilCheckCircle" />
+                                </CButton>
+                                <CButton color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
+                                    <CIcon icon="cilTrash" />
+                                </CButton>
+                            </template>
                         </CTableDataCell>
                     </CTableRow>
                 </CTableBody>
@@ -150,6 +178,24 @@
             <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
         </CModalFooter>
     </CModal>
+
+    <CModal :visible="confirmingDeactivateId !== null" @close="confirmingDeactivateId = null">
+        <CModalHeader><CModalTitle>Deactivate User</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to deactivate this user? They will no longer be able to log in.</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
+        </CModalFooter>
+    </CModal>
+
+    <CModal :visible="confirmingActivateId !== null" @close="confirmingActivateId = null">
+        <CModalHeader><CModalTitle>Activate User</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to activate this user?</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
@@ -168,6 +214,8 @@ const editingField = ref(null)
 const editValue = ref('')
 const saving = ref(false)
 const deletingId = ref(null)
+const confirmingDeactivateId = ref(null)
+const confirmingActivateId = ref(null)
 
 watch(selectedUser, () => {
     editingField.value = null
@@ -215,6 +263,18 @@ const load = async () => {
     const data = await res.json()
     users.value = data.users
     paginationMetadata.value = data.pagination_metadata
+}
+
+const setActive = async (id, active) => {
+    saving.value = true
+    await apiFetch(`/api/v1/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ active }),
+    })
+    saving.value = false
+    confirmingDeactivateId.value = null
+    confirmingActivateId.value = null
+    await load()
 }
 
 const performDelete = async (id) => {

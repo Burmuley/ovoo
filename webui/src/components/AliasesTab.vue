@@ -14,6 +14,7 @@
                         <CTableHeaderCell>Forwards To</CTableHeaderCell>
                         <CTableHeaderCell>Service</CTableHeaderCell>
                         <CTableHeaderCell>Comment</CTableHeaderCell>
+                        <CTableHeaderCell>Status</CTableHeaderCell>
                         <CTableHeaderCell></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -38,6 +39,11 @@
                                     placeholder="Comment"
                                     @keyup.enter="saveEdit(alias.id)"
                                 />
+                            </CTableDataCell>
+                            <CTableDataCell>
+                                <CBadge :color="alias.active ? 'success' : 'danger'">
+                                    {{ alias.active ? 'Active' : 'Inactive' }}
+                                </CBadge>
                             </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
                                 <CButton
@@ -64,6 +70,11 @@
                         <template v-else>
                             <CTableDataCell>{{ alias.metadata?.service_name }}</CTableDataCell>
                             <CTableDataCell>{{ alias.metadata?.comment }}</CTableDataCell>
+                            <CTableDataCell>
+                                <CBadge :color="alias.active ? 'success' : 'danger'">
+                                    {{ alias.active ? 'Active' : 'Inactive' }}
+                                </CBadge>
+                            </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
                                 <CButton
                                     color="primary"
@@ -73,6 +84,26 @@
                                     @click="startEdit(alias)"
                                 >
                                     <CIcon icon="cilPencil" />
+                                </CButton>
+                                <CButton
+                                    v-if="alias.active"
+                                    color="warning"
+                                    size="sm"
+                                    variant="outline"
+                                    class="me-1"
+                                    @click="confirmingDeactivateId = alias.id"
+                                >
+                                    <CIcon icon="cilBan" />
+                                </CButton>
+                                <CButton
+                                    v-else
+                                    color="success"
+                                    size="sm"
+                                    variant="outline"
+                                    class="me-1"
+                                    @click="confirmingActivateId = alias.id"
+                                >
+                                    <CIcon icon="cilCheckCircle" />
                                 </CButton>
                                 <CButton
                                     color="danger"
@@ -105,6 +136,24 @@
             <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
         </CModalFooter>
     </CModal>
+
+    <CModal :visible="confirmingDeactivateId !== null" @close="confirmingDeactivateId = null">
+        <CModalHeader><CModalTitle>Deactivate Alias</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to deactivate this alias? Emails sent to it will stop being forwarded.</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
+        </CModalFooter>
+    </CModal>
+
+    <CModal :visible="confirmingActivateId !== null" @close="confirmingActivateId = null">
+        <CModalHeader><CModalTitle>Activate Alias</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to activate this alias?</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
@@ -120,6 +169,8 @@ const editingId = ref(null)
 const editForm = ref({ service_name: '', comment: '' })
 const saving = ref(false)
 const deletingId = ref(null)
+const confirmingDeactivateId = ref(null)
+const confirmingActivateId = ref(null)
 
 const load = async () => {
     const res = await apiFetch('/api/v1/aliases?page=' + currentPage.value)
@@ -153,6 +204,18 @@ const saveEdit = async (id) => {
     })
     saving.value = false
     editingId.value = null
+    await load()
+}
+
+const setActive = async (id, active) => {
+    saving.value = true
+    await apiFetch(`/api/v1/aliases/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ active }),
+    })
+    saving.value = false
+    confirmingDeactivateId.value = null
+    confirmingActivateId.value = null
     await load()
 }
 

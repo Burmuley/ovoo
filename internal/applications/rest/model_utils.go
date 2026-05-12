@@ -61,6 +61,7 @@ func userTResponse(u entities.User) UserData {
 		LastName:  u.LastName,
 		Login:     u.Login,
 		Type:      userTypeTStr(u.Type),
+		Active:    &u.Active,
 	}
 }
 
@@ -75,7 +76,8 @@ func addressTAliasData(alias entities.Address) AliasData {
 			Comment:     &alias.Metadata.Comment,
 			ServiceName: &alias.Metadata.ServiceName,
 		},
-		Owner: userTResponse(alias.Owner),
+		Owner:  userTResponse(alias.Owner),
+		Active: &alias.Active,
 	}
 }
 
@@ -89,7 +91,8 @@ func addressTPrAddrData(praddr entities.Address) ProtectedAddressData {
 			Comment:     &praddr.Metadata.Comment,
 			ServiceName: &praddr.Metadata.ServiceName,
 		},
-		Owner: userTResponse(praddr.Owner),
+		Owner:  userTResponse(praddr.Owner),
+		Active: &praddr.Active,
 	}
 }
 

@@ -41,7 +41,7 @@
                         API Keys
                     </CNavLink>
                 </CNavItem>
-                <CNavItem v-if="userInfo.type === 'admin'">
+                <CNavItem>
                     <CNavLink
                         :active="currentTab === 'users'"
                         @click="currentTab = 'users'"
@@ -100,7 +100,7 @@
                         @done="currentTab = 'apikeys'"
                     />
                     <UsersTab
-                        v-else-if="currentTab === 'users' && userInfo.type === 'admin'"
+                        v-else-if="currentTab === 'users'"
                         :user-info="userInfo"
                         @add-clicked="currentTab = 'addUser'"
                     />
@@ -147,15 +147,10 @@ watch(currentTab, (tab) => {
 const load = async () => {
     const res = await apiFetch('/api/v1/users/profile')
     userInfo.value = await res.json()
-    if (currentTab.value === 'users' && userInfo.value.type !== 'admin') {
-        currentTab.value = 'aliases'
-    }
 }
 
 const onHashChange = () => {
-    const tab = tabFromHash()
-    if (tab === 'users' && userInfo.value.type !== 'admin') return
-    currentTab.value = tab
+    currentTab.value = tabFromHash()
 }
 
 onMounted(() => {

@@ -12,6 +12,7 @@
                     <CTableRow>
                         <CTableHeaderCell>Email</CTableHeaderCell>
                         <CTableHeaderCell>Comment</CTableHeaderCell>
+                        <CTableHeaderCell>Status</CTableHeaderCell>
                         <CTableHeaderCell></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -27,6 +28,11 @@
                                     placeholder="Comment"
                                     @keyup.enter="saveEdit(addr.id)"
                                 />
+                            </CTableDataCell>
+                            <CTableDataCell>
+                                <CBadge :color="addr.active ? 'success' : 'danger'">
+                                    {{ addr.active ? 'Active' : 'Inactive' }}
+                                </CBadge>
                             </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
                                 <CButton
@@ -52,6 +58,11 @@
 
                         <template v-else>
                             <CTableDataCell>{{ addr.metadata?.comment }}</CTableDataCell>
+                            <CTableDataCell>
+                                <CBadge :color="addr.active ? 'success' : 'danger'">
+                                    {{ addr.active ? 'Active' : 'Inactive' }}
+                                </CBadge>
+                            </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
                                 <CButton
                                     color="primary"
@@ -61,6 +72,26 @@
                                     @click="startEdit(addr)"
                                 >
                                     <CIcon icon="cilPencil" />
+                                </CButton>
+                                <CButton
+                                    v-if="addr.active"
+                                    color="warning"
+                                    size="sm"
+                                    variant="outline"
+                                    class="me-1"
+                                    @click="confirmingDeactivateId = addr.id"
+                                >
+                                    <CIcon icon="cilBan" />
+                                </CButton>
+                                <CButton
+                                    v-else
+                                    color="success"
+                                    size="sm"
+                                    variant="outline"
+                                    class="me-1"
+                                    @click="confirmingActivateId = addr.id"
+                                >
+                                    <CIcon icon="cilCheckCircle" />
                                 </CButton>
                                 <CButton
                                     color="danger"
@@ -93,6 +124,24 @@
             <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
         </CModalFooter>
     </CModal>
+
+    <CModal :visible="confirmingDeactivateId !== null" @close="confirmingDeactivateId = null">
+        <CModalHeader><CModalTitle>Deactivate Protected Address</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to deactivate this protected address? Aliases forwarding to it will stop delivering email.</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
+        </CModalFooter>
+    </CModal>
+
+    <CModal :visible="confirmingActivateId !== null" @close="confirmingActivateId = null">
+        <CModalHeader><CModalTitle>Activate Protected Address</CModalTitle></CModalHeader>
+        <CModalBody>Are you sure you want to activate this protected address?</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
@@ -108,6 +157,8 @@ const editingId = ref(null)
 const editComment = ref('')
 const saving = ref(false)
 const deletingId = ref(null)
+const confirmingDeactivateId = ref(null)
+const confirmingActivateId = ref(null)
 
 const load = async () => {
     const res = await apiFetch('/api/v1/praddrs?page=' + currentPage.value)
@@ -135,6 +186,18 @@ const saveEdit = async (id) => {
     })
     saving.value = false
     editingId.value = null
+    await load()
+}
+
+const setActive = async (id, active) => {
+    saving.value = true
+    await apiFetch(`/api/v1/praddrs/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ active }),
+    })
+    saving.value = false
+    confirmingDeactivateId.value = null
+    confirmingActivateId.value = null
     await load()
 }
 
