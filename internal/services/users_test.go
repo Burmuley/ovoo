@@ -565,9 +565,8 @@ func TestUsersService_GetAll_AdminUser(t *testing.T) {
 		Login: "admin@test.com",
 	}
 
-	filters := map[string][]string{
-		"page":      {"1"},
-		"page_size": {"10"},
+	filter := entities.UserFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
 	}
 
 	expectedUsers := []entities.User{
@@ -582,7 +581,7 @@ func TestUsersService_GetAll_AdminUser(t *testing.T) {
 
 	usersRepo.On("GetAll", ctx, mock.AnythingOfType("entities.UserFilter")).Return(expectedUsers, expectedMetadata, nil)
 
-	users, metadata, err := service.GetAll(ctx, adminUser, filters)
+	users, metadata, err := service.GetAll(ctx, adminUser, filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUsers, users)
@@ -601,9 +600,8 @@ func TestUsersService_GetAll_RegularUser(t *testing.T) {
 		Login: "user@test.com",
 	}
 
-	filters := map[string][]string{
-		"page":      {"1"},
-		"page_size": {"10"},
+	filter := entities.UserFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
 	}
 
 	expectedUsers := []entities.User{
@@ -618,7 +616,7 @@ func TestUsersService_GetAll_RegularUser(t *testing.T) {
 	// For regular user, only their own record should be returned
 	usersRepo.On("GetAll", ctx, mock.AnythingOfType("entities.UserFilter")).Return(expectedUsers, expectedMetadata, nil)
 
-	users, metadata, err := service.GetAll(ctx, regularUser, filters)
+	users, metadata, err := service.GetAll(ctx, regularUser, filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedUsers, users)

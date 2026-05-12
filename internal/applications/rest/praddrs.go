@@ -17,7 +17,12 @@ func (a *Application) GetAllPrAddrs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filling filters
-	filters := readFilters(r, []string{"owner", "id", "email", "page_size", "page"})
+	filters, err := entities.NewAddressFilter(r.URL.Query())
+	if err != nil {
+		a.errorLogNResponse(w, "reading praddrs filters", err)
+		return
+	}
+
 	praddrs, pgm, err := a.svcGw.PrAddrs.GetAll(r.Context(), user, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected addresses", err)

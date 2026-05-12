@@ -18,7 +18,12 @@ func (a *Application) GetAliases(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filling filters
-	filters := readFilters(r, []string{"owner", "id", "service_name", "email", "page_size", "page"})
+	filters, err := entities.NewAddressFilter(r.URL.Query())
+	if err != nil {
+		a.errorLogNResponse(w, "reading aliases filters", err)
+		return
+	}
+
 	aliases, pgm, err := a.svcGw.Aliases.GetAll(r.Context(), cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting aliases", err)

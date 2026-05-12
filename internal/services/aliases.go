@@ -161,17 +161,12 @@ func (als *AliasesService) Update(ctx context.Context, cuser entities.User, cmd 
 }
 
 // GetAll retrieves all alias addresses for a given owner.
-func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.Address, entities.PaginationMetadata, error) {
+func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filter entities.AddressFilter) ([]entities.Address, entities.PaginationMetadata, error) {
 	if !canGetAliases(cuser) {
 		return []entities.Address{}, entities.PaginationMetadata{}, entities.ErrNotAuthorized
 	}
 
-	filter, err := entities.NewAddressFilter(filters)
-	if err != nil {
-		return nil, entities.PaginationMetadata{}, err
-	}
 	filter.Types = []entities.AddressType{entities.AliasAddress}
-
 	// reset Owners filter for non-admins
 	if cuser.Type != entities.AdminUser {
 		filter.Owners = []entities.Id{cuser.ID}

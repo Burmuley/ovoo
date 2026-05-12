@@ -17,7 +17,11 @@ func (a *Application) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// filling filters
-	filters := readFilters(r, []string{"login", "id", "type", "page_size", "page"})
+	filters, err := entities.NewUserFilter(r.URL.Query())
+	if err != nil {
+		a.errorLogNResponse(w, "reading users filters", err)
+		return
+	}
 	users, pgm, err := a.svcGw.Users.GetAll(r.Context(), cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "gettings users", err)

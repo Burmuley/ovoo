@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
@@ -243,23 +244,14 @@ func (u *UsersService) GetByLogin(ctx context.Context, login string) (entities.U
 }
 
 // GetAll retrieves all users
-func (u *UsersService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.User, entities.PaginationMetadata, error) {
-	var filter entities.UserFilter
-	if cuser.Type == entities.AdminUser {
-		{
-			var err error
-			if filter, err = entities.NewUserFilter(filters); err != nil {
-				return nil, entities.PaginationMetadata{}, err
-			}
-		}
-	} else {
-		userFilters := map[string][]string{
-			"page":      filters["page"],
-			"page_size": filters["page_size"],
-			"id":        {cuser.ID.String()},
-		}
+func (u *UsersService) GetAll(ctx context.Context, cuser entities.User, filter entities.UserFilter) ([]entities.User, entities.PaginationMetadata, error) {
+	if cuser.Type != entities.AdminUser {
 		var err error
-		if filter, err = entities.NewUserFilter(userFilters); err != nil {
+		if filter, err = entities.NewUserFilter(map[string][]string{
+			"page":      {strconv.Itoa(filter.Page)},
+			"page_size": {strconv.Itoa(filter.PageSize)},
+			"id":        {cuser.ID.String()},
+		}); err != nil {
 			return nil, entities.PaginationMetadata{}, err
 		}
 	}

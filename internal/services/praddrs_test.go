@@ -354,9 +354,8 @@ func TestProtectedAddrService_GetAll_AdminUser(t *testing.T) {
 		Login: "admin@test.com",
 	}
 
-	filters := map[string][]string{
-		"page":      {"1"},
-		"page_size": {"10"},
+	filter := entities.AddressFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
 	}
 
 	expectedPrAddrs := []entities.Address{
@@ -371,7 +370,7 @@ func TestProtectedAddrService_GetAll_AdminUser(t *testing.T) {
 
 	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(expectedPrAddrs, expectedMetadata, nil)
 
-	praddrs, metadata, err := service.GetAll(ctx, admin, filters)
+	praddrs, metadata, err := service.GetAll(ctx, admin, filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedPrAddrs, praddrs)
@@ -390,9 +389,8 @@ func TestProtectedAddrService_GetAll_RegularUser(t *testing.T) {
 		Login: "user@test.com",
 	}
 
-	filters := map[string][]string{
-		"page":      {"1"},
-		"page_size": {"10"},
+	filter := entities.AddressFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
 	}
 
 	expectedPrAddrs := []entities.Address{
@@ -406,7 +404,7 @@ func TestProtectedAddrService_GetAll_RegularUser(t *testing.T) {
 
 	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(expectedPrAddrs, expectedMetadata, nil)
 
-	praddrs, metadata, err := service.GetAll(ctx, user, filters)
+	praddrs, metadata, err := service.GetAll(ctx, user, filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedPrAddrs, praddrs)

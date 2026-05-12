@@ -140,13 +140,8 @@ func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User
 }
 
 // GetAll retrieves all protected addresses for a given owner
-func (prs *ProtectedAddrService) GetAll(ctx context.Context, cuser entities.User, filters map[string][]string) ([]entities.Address, entities.PaginationMetadata, error) {
-	filter, err := entities.NewAddressFilter(filters)
-	if err != nil {
-		return nil, entities.PaginationMetadata{}, err
-	}
+func (prs *ProtectedAddrService) GetAll(ctx context.Context, cuser entities.User, filter entities.AddressFilter) ([]entities.Address, entities.PaginationMetadata, error) {
 	filter.Types = []entities.AddressType{entities.ProtectedAddress}
-
 	// reset Owners filter for non-admins
 	if cuser.Type != entities.AdminUser {
 		filter.Owners = []entities.Id{cuser.ID}

@@ -312,9 +312,8 @@ func TestAliasesService_GetAll_AdminUser(t *testing.T) {
 		Login: "admin@test.com",
 	}
 
-	filters := map[string][]string{
-		"page":      {"1"},
-		"page_size": {"10"},
+	filter := entities.AddressFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
 	}
 
 	expectedAliases := []entities.Address{
@@ -329,7 +328,7 @@ func TestAliasesService_GetAll_AdminUser(t *testing.T) {
 
 	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(expectedAliases, expectedMetadata, nil)
 
-	aliases, metadata, err := service.GetAll(ctx, admin, filters)
+	aliases, metadata, err := service.GetAll(ctx, admin, filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedAliases, aliases)
@@ -348,9 +347,8 @@ func TestAliasesService_GetAll_RegularUser(t *testing.T) {
 		Login: "user@test.com",
 	}
 
-	filters := map[string][]string{
-		"page":      {"1"},
-		"page_size": {"10"},
+	filter := entities.AddressFilter{
+		Filter: entities.Filter{Page: 1, PageSize: 10},
 	}
 
 	expectedAliases := []entities.Address{
@@ -364,7 +362,7 @@ func TestAliasesService_GetAll_RegularUser(t *testing.T) {
 
 	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(expectedAliases, expectedMetadata, nil)
 
-	aliases, metadata, err := service.GetAll(ctx, user, filters)
+	aliases, metadata, err := service.GetAll(ctx, user, filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedAliases, aliases)
@@ -382,9 +380,9 @@ func TestAliasesService_GetAll_MilterUserNotAuthorized(t *testing.T) {
 		Login: "milter@test.com",
 	}
 
-	filters := map[string][]string{}
+	filter := entities.AddressFilter{}
 
-	aliases, metadata, err := service.GetAll(ctx, milterUser, filters)
+	aliases, metadata, err := service.GetAll(ctx, milterUser, filter)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
