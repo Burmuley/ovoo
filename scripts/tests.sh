@@ -8,6 +8,10 @@ packages=(
     "internal/repositories/drivers/*"
     "internal/services/*"
     "internal/entities/*"
+    "internal/cache/drivers/*"
+    "internal/config"
+    "internal/applications/milter"
+    "internal/applications/rest"
 )
 
 for pkg in "${packages[@]}"; do
