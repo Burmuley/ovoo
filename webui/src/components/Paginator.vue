@@ -1,22 +1,13 @@
 <template>
     <CPagination aria-label="Page navigation" class="mb-0">
-        <CPaginationItem
-            aria-label="Previous"
-            :disabled="page <= 1"
-            href="#"
-            @click.prevent="changePage(page - 1)"
-        >
+        <CPaginationItem aria-label="Previous" :disabled="page <= 1" href="#" @click.prevent="changePage(page - 1)">
             &laquo;
         </CPaginationItem>
         <CPaginationItem disabled>
             {{ page }} / {{ totalPages }}
         </CPaginationItem>
-        <CPaginationItem
-            aria-label="Next"
-            :disabled="page >= totalPages"
-            href="#"
-            @click.prevent="changePage(page + 1)"
-        >
+        <CPaginationItem aria-label="Next" :disabled="page >= totalPages" href="#"
+            @click.prevent="changePage(page + 1)">
             &raquo;
         </CPaginationItem>
     </CPagination>

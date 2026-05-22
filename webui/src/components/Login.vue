@@ -5,13 +5,8 @@
                 <h4 class="text-center mb-1">Ovoo</h4>
                 <p class="text-center text-body-secondary mb-4">Privacy Mail Gateway</p>
                 <div class="d-grid gap-2">
-                    <CButton
-                        v-for="provider in providers"
-                        :key="provider"
-                        color="primary"
-                        variant="outline"
-                        @click="login(provider)"
-                    >
+                    <CButton v-for="provider in providers" :key="provider" color="primary" variant="outline"
+                        @click="login(provider)">
                         Sign in with {{ provider }}
                     </CButton>
                 </div>

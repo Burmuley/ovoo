@@ -68,6 +68,7 @@ type AddressFilter struct {
 	ServiceNames      []string
 	ForwardAddressIds []Id
 	Active            *bool
+	Search            string
 }
 
 // NewAddressFilter parses and returns an AddressFilter from the given input map.
@@ -118,6 +119,10 @@ func NewAddressFilter(input map[string][]string) (AddressFilter, error) {
 				return AddressFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
 			}
 			af.Active = &active
+		case "q":
+			if len(vals) > 0 && vals[0] != "" {
+				af.Search = vals[0]
+			}
 		}
 	}
 

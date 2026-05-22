@@ -22,10 +22,12 @@
 
                         <template v-if="editingId === key.id">
                             <CTableDataCell>
-                                <CFormInput v-model="editForm.name" size="sm" placeholder="Name" @keyup.enter="saveEdit(key.id)" />
+                                <CFormInput v-model="editForm.name" size="sm" placeholder="Name"
+                                    @keyup.enter="saveEdit(key.id)" />
                             </CTableDataCell>
                             <CTableDataCell>
-                                <CFormInput v-model="editForm.description" size="sm" placeholder="Description" @keyup.enter="saveEdit(key.id)" />
+                                <CFormInput v-model="editForm.description" size="sm" placeholder="Description"
+                                    @keyup.enter="saveEdit(key.id)" />
                             </CTableDataCell>
                             <CTableDataCell>{{ moment(key.expiration).format('LLL') }}</CTableDataCell>
                             <CTableDataCell>
@@ -34,22 +36,11 @@
                                 </CBadge>
                             </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
-                                <CButton
-                                    color="success"
-                                    size="sm"
-                                    variant="outline"
-                                    class="me-1"
-                                    :disabled="saving"
-                                    @click="saveEdit(key.id)"
-                                >
+                                <CButton color="success" size="sm" variant="outline" class="me-1" :disabled="saving"
+                                    @click="saveEdit(key.id)">
                                     <CIcon icon="cilCheck" />
                                 </CButton>
-                                <CButton
-                                    color="secondary"
-                                    size="sm"
-                                    variant="outline"
-                                    @click="cancelEdit"
-                                >
+                                <CButton color="secondary" size="sm" variant="outline" @click="cancelEdit">
                                     <CIcon icon="cilX" />
                                 </CButton>
                             </CTableDataCell>
@@ -66,31 +57,16 @@
                             </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
                                 <template v-if="key.active">
-                                    <CButton
-                                        color="primary"
-                                        size="sm"
-                                        variant="outline"
-                                        class="me-1"
-                                        @click="startEdit(key)"
-                                    >
+                                    <CButton color="primary" size="sm" variant="outline" class="me-1"
+                                        @click="startEdit(key)">
                                         <CIcon icon="cilPencil" />
                                     </CButton>
-                                    <CButton
-                                        color="warning"
-                                        size="sm"
-                                        variant="outline"
-                                        class="me-1"
-                                        @click="confirmingId = key.id"
-                                    >
+                                    <CButton color="warning" size="sm" variant="outline" class="me-1"
+                                        @click="confirmingId = key.id">
                                         <CIcon icon="cilBan" />
                                     </CButton>
                                 </template>
-                                <CButton
-                                    color="danger"
-                                    size="sm"
-                                    variant="outline"
-                                    @click="deletingId = key.id"
-                                >
+                                <CButton color="danger" size="sm" variant="outline" @click="deletingId = key.id">
                                     <CIcon icon="cilTrash" />
                                 </CButton>
                             </CTableDataCell>
@@ -103,7 +79,9 @@
     </CCard>
 
     <CModal :visible="deletingId !== null" @close="deletingId = null">
-        <CModalHeader><CModalTitle>Delete API Key</CModalTitle></CModalHeader>
+        <CModalHeader>
+            <CModalTitle>Delete API Key</CModalTitle>
+        </CModalHeader>
         <CModalBody>Are you sure you want to delete this API key? This action cannot be undone.</CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="deletingId = null">Cancel</CButton>
@@ -187,7 +165,7 @@ function onDeleteKey(e) {
 }
 watch(deletingId, id => {
     if (id !== null) document.addEventListener('keydown', onDeleteKey)
-    else             document.removeEventListener('keydown', onDeleteKey)
+    else document.removeEventListener('keydown', onDeleteKey)
 })
 onUnmounted(() => document.removeEventListener('keydown', onDeleteKey))
 

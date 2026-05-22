@@ -4,11 +4,7 @@
             {{ selectedText }}
         </CDropdownToggle>
         <CDropdownMenu>
-            <CDropdownItem
-                v-for="item in items"
-                :key="item.id"
-                @click="select(item)"
-            >
+            <CDropdownItem v-for="item in items" :key="item.id" @click="select(item)">
                 {{ item.text }}
             </CDropdownItem>
         </CDropdownMenu>

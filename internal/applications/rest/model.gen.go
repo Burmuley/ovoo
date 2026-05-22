@@ -348,6 +348,9 @@ type GetAliasesParams struct {
 
 	// ServiceName allows to lookup aliases by service name metadata field value
 	ServiceName *string `form:"service_name,omitempty" json:"service_name,omitempty"`
+
+	// Q partial-match search across email, service name, and comment
+	Q *string `form:"q,omitempty" json:"q,omitempty"`
 }
 
 // CreateAliasJSONBody defines parameters for CreateAlias.
@@ -366,6 +369,9 @@ type UpdateAliasJSONBody struct {
 type GetPrAddrsParams struct {
 	Id    *string `form:"id,omitempty" json:"id,omitempty"`
 	Email *string `form:"email,omitempty" json:"email,omitempty"`
+
+	// Q partial-match search across email and comment
+	Q *string `form:"q,omitempty" json:"q,omitempty"`
 }
 
 // CreatePrAddrJSONBody defines parameters for CreatePrAddr.

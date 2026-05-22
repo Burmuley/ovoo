@@ -154,6 +154,26 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filter entities.AddressFil
 	return addrs, entities.GetPaginationMetadata(filter.Page, filter.PageSize, *count), nil
 }
 
+// applyAddressFilter appends WHERE conditions derived from filter onto stmt and
+// returns the total matching row count (via COUNT(*)) captured before pagination
+// is applied.
+//
+// stmt is mutated in place through GORM's method-chaining API. The caller is
+// responsible for executing the final query (e.g. Find, Updates) after this
+// function returns.
+//
+// Supported filter fields:
+//   - Ids, Emails, Types, Owners, ForwardAddressIds — IN-list predicates.
+//   - ServiceNames — per-value OR LIKE against metadata.service_name (JSON).
+//   - Active — equality predicate; skipped when nil.
+//   - Search — wildcard OR-group across email, metadata.service_name, and
+//     metadata.comment; isolated in a sub-session to preserve correct grouping.
+//   - Page / PageSize — Limit+Offset pagination, applied only when both are > 0.
+//
+// The returned count reflects all matching rows before pagination; pass it to
+// entities.GetPaginationMetadata to compute last-page information.
+// Callers that do not need pagination metadata (e.g. BatchUpdate) may discard
+// the return value.
 func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
 	if len(filter.Ids) > 0 {
 		stmt.Where("id IN ?", filter.Ids)
@@ -183,6 +203,15 @@ func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
 
 	if filter.Active != nil {
 		stmt.Where("active = ?", *filter.Active)
+	}
+
+	if filter.Search != "" {
+		pattern := "%" + filter.Search + "%"
+		group := stmt.Session(&gorm.Session{NewDB: true}).
+			Where("email LIKE ?", pattern).
+			Or(datatypes.JSONQuery("metadata").Likes(pattern, "service_name")).
+			Or(datatypes.JSONQuery("metadata").Likes(pattern, "comment"))
+		stmt.Where(group)
 	}
 
 	var count int64 = 0

@@ -96,6 +96,12 @@ paths:
           schema:
             type: string
           required: false
+        - in: query
+          name: q
+          description: partial-match search across email, service name, and comment
+          schema:
+            type: string
+          required: false
     post:
       description: Create new alias address. Request is of the type
         \`application/json\`.
@@ -465,6 +471,11 @@ paths:
         - in: query
           name: email
           description: ""
+          schema:
+            type: string
+        - in: query
+          name: q
+          description: partial-match search across email and comment
           schema:
             type: string
       responses:

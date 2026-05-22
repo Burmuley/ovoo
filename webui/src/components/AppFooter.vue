@@ -3,7 +3,8 @@
         <div v-if="versionInfo" class="ms-auto text-muted small">
             <span>v{{ versionInfo.version }}</span>
             <span class="mx-2 text-muted-subtle">|</span>
-            <span>commit <a :href="`https://github.com/Burmuley/ovoo/commit/${versionInfo.git_commit}`" target="_blank" rel="noopener noreferrer"><code>{{ versionInfo.git_commit.slice(0, 8) }}</code></a></span>
+            <span>commit <a :href="`https://github.com/Burmuley/ovoo/commit/${versionInfo.git_commit}`" target="_blank"
+                    rel="noopener noreferrer"><code>{{ versionInfo.git_commit.slice(0, 8) }}</code></a></span>
             <span class="mx-2 text-muted-subtle">|</span>
             <span>built {{ formattedDate }}</span>
         </div>

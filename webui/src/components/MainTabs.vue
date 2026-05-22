@@ -1,13 +1,7 @@
 <template>
     <div>
-        <CSidebar
-            class="border-end"
-            color-scheme="dark"
-            position="fixed"
-            :unfoldable="false"
-            :visible="sidebarVisible"
-            @visible-change="sidebarVisible = $event"
-        >
+        <CSidebar class="border-end" color-scheme="dark" position="fixed" :unfoldable="false" :visible="sidebarVisible"
+            @visible-change="sidebarVisible = $event">
             <CSidebarHeader class="border-bottom">
                 <CSidebarBrand>
                     <span class="sidebar-brand-full fs-5 fw-semibold">Ovoo</span>
@@ -15,37 +9,25 @@
             </CSidebarHeader>
             <CSidebarNav>
                 <CNavItem>
-                    <CNavLink
-                        :active="currentTab === 'aliases'"
-                        @click="currentTab = 'aliases'"
-                    >
+                    <CNavLink :active="currentTab === 'aliases'" @click="currentTab = 'aliases'">
                         <CIcon icon="cilEnvelopeClosed" class="nav-icon" />
                         Aliases
                     </CNavLink>
                 </CNavItem>
                 <CNavItem>
-                    <CNavLink
-                        :active="currentTab === 'praddrs'"
-                        @click="currentTab = 'praddrs'"
-                    >
+                    <CNavLink :active="currentTab === 'praddrs'" @click="currentTab = 'praddrs'">
                         <CIcon icon="cilShieldAlt" class="nav-icon" />
                         Protected Addresses
                     </CNavLink>
                 </CNavItem>
                 <CNavItem>
-                    <CNavLink
-                        :active="currentTab === 'apikeys'"
-                        @click="currentTab = 'apikeys'"
-                    >
+                    <CNavLink :active="currentTab === 'apikeys'" @click="currentTab = 'apikeys'">
                         <CIcon icon="cilCode" class="nav-icon" />
                         API Keys
                     </CNavLink>
                 </CNavItem>
                 <CNavItem>
-                    <CNavLink
-                        :active="currentTab === 'users'"
-                        @click="currentTab = 'users'"
-                    >
+                    <CNavLink :active="currentTab === 'users'" @click="currentTab = 'users'">
                         <CIcon icon="cilPeople" class="nav-icon" />
                         Users
                     </CNavLink>
@@ -75,39 +57,15 @@
 
             <div class="body flex-grow-1">
                 <CContainer class="px-4" lg>
-                    <AliasesTab
-                        v-if="currentTab === 'aliases'"
-                        @add-clicked="currentTab = 'addAlias'"
-                    />
-                    <AddAliasForm
-                        v-else-if="currentTab === 'addAlias'"
-                        @done="currentTab = 'aliases'"
-                    />
-                    <PrAddrsTab
-                        v-else-if="currentTab === 'praddrs'"
-                        @add-clicked="currentTab = 'addPrAddr'"
-                    />
-                    <AddPrAddrForm
-                        v-else-if="currentTab === 'addPrAddr'"
-                        @done="currentTab = 'praddrs'"
-                    />
-                    <ApiKeysTab
-                        v-else-if="currentTab === 'apikeys'"
-                        @add-clicked="currentTab = 'addApiKey'"
-                    />
-                    <AddApiKeyForm
-                        v-else-if="currentTab === 'addApiKey'"
-                        @done="currentTab = 'apikeys'"
-                    />
-                    <UsersTab
-                        v-else-if="currentTab === 'users'"
-                        :user-info="userInfo"
-                        @add-clicked="currentTab = 'addUser'"
-                    />
-                    <AddUserForm
-                        v-else-if="currentTab === 'addUser'"
-                        @done="currentTab = 'users'"
-                    />
+                    <AliasesTab v-if="currentTab === 'aliases'" @add-clicked="currentTab = 'addAlias'" />
+                    <AddAliasForm v-else-if="currentTab === 'addAlias'" @done="currentTab = 'aliases'" />
+                    <PrAddrsTab v-else-if="currentTab === 'praddrs'" @add-clicked="currentTab = 'addPrAddr'" />
+                    <AddPrAddrForm v-else-if="currentTab === 'addPrAddr'" @done="currentTab = 'praddrs'" />
+                    <ApiKeysTab v-else-if="currentTab === 'apikeys'" @add-clicked="currentTab = 'addApiKey'" />
+                    <AddApiKeyForm v-else-if="currentTab === 'addApiKey'" @done="currentTab = 'apikeys'" />
+                    <UsersTab v-else-if="currentTab === 'users'" :user-info="userInfo"
+                        @add-clicked="currentTab = 'addUser'" />
+                    <AddUserForm v-else-if="currentTab === 'addUser'" @done="currentTab = 'users'" />
                 </CContainer>
             </div>
             <AppFooter />
