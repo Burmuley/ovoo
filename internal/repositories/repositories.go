@@ -25,6 +25,7 @@ type AddressWriter interface {
 	Update(ctx context.Context, address entities.Address) error
 	DeleteById(ctx context.Context, id entities.Id) error
 	BatchDeleteById(ctx context.Context, ids []entities.Id) error
+	BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error
 }
 
 // AddressReadWriter combines AddressReader and AddressWriter interfaces.

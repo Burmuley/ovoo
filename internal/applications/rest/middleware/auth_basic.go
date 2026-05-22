@@ -33,5 +33,9 @@ func validateBasicAuth(ctx context.Context, username, password string, svcGw *se
 		return entities.User{}, fmt.Errorf("invalid password")
 	}
 
+	if !user.Active {
+		return entities.User{}, fmt.Errorf("inactive user")
+	}
+
 	return user, nil
 }

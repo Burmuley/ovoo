@@ -45,6 +45,7 @@ func (a *Application) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting user profile: identifying user", err)
+		return
 	}
 
 	resp := userTResponse(cuser)
@@ -56,6 +57,7 @@ func (a *Application) GetUserById(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "getting user by id: identifying user", err)
+		return
 	}
 
 	userId := r.PathValue("id")
@@ -105,6 +107,7 @@ func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "updating user: identifying user", err)
+		return
 	}
 
 	userId := r.PathValue("id")
@@ -131,7 +134,7 @@ func (a *Application) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := userTResponse(user)
-	a.successResponse(w, resp, http.StatusCreated)
+	a.successResponse(w, resp, http.StatusOK)
 }
 
 // DeleteUser deletes a user by their ID and returns the deleted user's details.
@@ -139,6 +142,7 @@ func (a *Application) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "deleting user: identifying user", err)
+		return
 	}
 
 	userId := r.PathValue("id")
@@ -149,5 +153,5 @@ func (a *Application) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := userTResponse(user)
-	a.successResponse(w, resp, http.StatusCreated)
+	a.successResponse(w, resp, http.StatusNoContent)
 }

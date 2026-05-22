@@ -10,6 +10,11 @@ import (
 
 const ApiTokenPrefix = "ovtk"
 
+type ApiTokenBulkUpdateFields struct {
+	Description *string
+	Active      *bool
+}
+
 // ApiToken represents an API token with its associated metadata.
 type ApiToken struct {
 	ID          Id

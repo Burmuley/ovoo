@@ -917,15 +917,6 @@ func TestProtectedAddrService_Update_Deactivate(t *testing.T) {
 		Active: true,
 	}
 
-	aliasId := entities.NewId()
-	alias := entities.Address{
-		ID:     aliasId,
-		Type:   entities.AliasAddress,
-		Email:  "alias@test.com",
-		Owner:  user,
-		Active: true,
-	}
-
 	deactivate := false
 	cmd := PrAddrUpdateCmd{
 		PrAddrId: prAddrId,
@@ -934,15 +925,8 @@ func TestProtectedAddrService_Update_Deactivate(t *testing.T) {
 
 	addressRepo.On("GetById", ctx, prAddrId).Return(existingPrAddr, nil)
 
-	// deactivateAliasesForPrAddr: get active aliases forwarding to this praddr
-	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
-		return f.Active != nil && *f.Active && len(f.ForwardAddressIds) > 0
-	})).Return([]entities.Address{alias}, entities.PaginationMetadata{}, nil)
-
-	// Update alias to inactive
-	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
-		return a.ID == aliasId && !a.Active
-	})).Return(nil)
+	// deactivateAliasesForPrAddr: bulk-deactivate active aliases forwarding to this praddr
+	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(nil)
 
 	// Update praddr to inactive
 	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {

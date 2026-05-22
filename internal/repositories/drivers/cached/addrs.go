@@ -130,3 +130,11 @@ func (a *AddrsRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) erro
 	evictPrefix(ctx, a.cache, "addr:")
 	return nil
 }
+
+func (a *AddrsRepo) BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error {
+	if err := a.repo.BatchUpdate(ctx, filter, values); err != nil {
+		return err
+	}
+	evictPrefix(ctx, a.cache, "addr:")
+	return nil
+}

@@ -85,6 +85,28 @@ func (a *AddressGORMRepo) BatchDeleteById(ctx context.Context, ids []entities.Id
 	return nil
 }
 
+func (a *AddressGORMRepo) BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error {
+	updates := &Address{}
+	if values.Active != nil {
+		updates.Active = *values.Active
+	}
+	if values.MetadataComment != nil {
+		updates.Metadata.Comment = *values.MetadataComment
+	}
+	if values.MetadataServiceName != nil {
+		updates.Metadata.ServiceName = *values.MetadataServiceName
+	}
+
+	stmt := a.db.WithContext(ctx).Model(&Address{})
+	_ = applyAddressFilter(stmt, filter)
+
+	if err := stmt.Updates(updates).Error; err != nil {
+		return wrapGormError(err)
+	}
+
+	return nil
+}
+
 // GetById retrieves an address from the database by its ID.
 func (a *AddressGORMRepo) GetById(ctx context.Context, id entities.Id) (entities.Address, error) {
 	addr := Address{}

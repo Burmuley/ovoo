@@ -445,10 +445,7 @@ func TestDeactivateAliasesForPrAddr_NoAliases(t *testing.T) {
 
 	praddrId := entities.NewId()
 
-	active := true
-	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
-		return f.Active != nil && *f.Active == active
-	})).Return([]entities.Address{}, entities.PaginationMetadata{}, nil)
+	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(nil)
 
 	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
 
@@ -461,19 +458,16 @@ func TestDeactivateAliasesForPrAddr_WithAliases(t *testing.T) {
 	ctx := context.Background()
 
 	praddrId := entities.NewId()
-	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
 
-	alias1 := entities.Address{ID: entities.NewId(), Type: entities.AliasAddress, Email: "alias1@test.com", Owner: owner, Active: true}
-	alias2 := entities.Address{ID: entities.NewId(), Type: entities.AliasAddress, Email: "alias2@test.com", Owner: owner, Active: true}
-
-	active := true
-	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
-		return f.Active != nil && *f.Active == active
-	})).Return([]entities.Address{alias1, alias2}, entities.PaginationMetadata{}, nil)
-
-	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
-		return !a.Active
-	})).Return(nil).Times(2)
+	addressRepo.On("BatchUpdate", ctx,
+		mock.MatchedBy(func(f entities.AddressFilter) bool {
+			return f.Active != nil && *f.Active &&
+				len(f.ForwardAddressIds) == 1 && f.ForwardAddressIds[0] == praddrId
+		}),
+		mock.MatchedBy(func(v entities.AddressBulkUpdateFields) bool {
+			return v.Active != nil && !*v.Active
+		}),
+	).Return(nil)
 
 	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
 
@@ -481,15 +475,13 @@ func TestDeactivateAliasesForPrAddr_WithAliases(t *testing.T) {
 	addressRepo.AssertExpectations(t)
 }
 
-func TestDeactivateAliasesForPrAddr_ErrorGettingAliases(t *testing.T) {
+func TestDeactivateAliasesForPrAddr_BatchUpdateError(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
 	praddrId := entities.NewId()
 
-	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(
-		[]entities.Address{}, entities.PaginationMetadata{}, entities.ErrDatabase,
-	)
+	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(entities.ErrDatabase)
 
 	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
 
@@ -526,20 +518,13 @@ func TestDeactivatePrAddrsForUser_WithAddresses(t *testing.T) {
 	praddr := entities.Address{ID: praddrId, Type: entities.ProtectedAddress, Email: "protected@example.com", Owner: owner, Active: true}
 
 	active := true
-	// First GetAll: returns the active praddr
+	// GetAll: returns the active praddr for the user
 	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
 		return f.Active != nil && *f.Active == active && len(f.Owners) > 0
 	})).Return([]entities.Address{praddr}, entities.PaginationMetadata{}, nil).Once()
 
-	// Second GetAll: deactivateAliasesForPrAddr looks up active aliases for the praddr → none
-	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
-		return f.Active != nil && *f.Active == active && len(f.ForwardAddressIds) > 0
-	})).Return([]entities.Address{}, entities.PaginationMetadata{}, nil).Once()
-
-	// Update praddr to inactive
-	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
-		return a.ID == praddrId && !a.Active
-	})).Return(nil)
+	// BatchUpdate: deactivateAliasesForPrAddr bulk-deactivates aliases for praddr
+	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(nil)
 
 	err := deactivatePrAddrsForUser(ctx, repof, userId)
 
@@ -555,7 +540,6 @@ func TestDeactivatePrAddrsForUser_WithAddressesAndAliases(t *testing.T) {
 	owner := entities.User{ID: userId, Type: entities.RegularUser}
 	praddrId := entities.NewId()
 	praddr := entities.Address{ID: praddrId, Type: entities.ProtectedAddress, Email: "protected@example.com", Owner: owner, Active: true}
-	alias := entities.Address{ID: entities.NewId(), Type: entities.AliasAddress, Email: "alias@test.com", Owner: owner, Active: true}
 
 	active := true
 	// GetAll for active praddrs owned by user
@@ -563,15 +547,8 @@ func TestDeactivatePrAddrsForUser_WithAddressesAndAliases(t *testing.T) {
 		return f.Active != nil && *f.Active == active && len(f.Owners) > 0
 	})).Return([]entities.Address{praddr}, entities.PaginationMetadata{}, nil).Once()
 
-	// GetAll for active aliases forwarding to praddr
-	addressRepo.On("GetAll", ctx, mock.MatchedBy(func(f entities.AddressFilter) bool {
-		return f.Active != nil && *f.Active == active && len(f.ForwardAddressIds) > 0
-	})).Return([]entities.Address{alias}, entities.PaginationMetadata{}, nil).Once()
-
-	// Update alias to inactive, then praddr to inactive
-	addressRepo.On("Update", ctx, mock.MatchedBy(func(a entities.Address) bool {
-		return !a.Active
-	})).Return(nil).Times(2)
+	// BatchUpdate: deactivateAliasesForPrAddr bulk-deactivates all active aliases for the praddr
+	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(nil)
 
 	err := deactivatePrAddrsForUser(ctx, repof, userId)
 

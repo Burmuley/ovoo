@@ -50,7 +50,7 @@ func (a *Application) GetPrAddrById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	prAddrId := entities.Id(r.PathValue("id"))
-	prAddr, err := a.svcGw.Aliases.GetById(r.Context(), user, entities.Id(prAddrId))
+	prAddr, err := a.svcGw.PrAddrs.GetById(r.Context(), user, entities.Id(prAddrId))
 	if err != nil {
 		a.errorLogNResponse(w, "getting protected address by id", err)
 		return

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"net/http"
@@ -59,8 +60,10 @@ func validateApiToken(ctx context.Context, svcGw *services.ServiceGateway, apiTo
 	}
 
 	hash := entities.HashApiToken(token.Salt, tokenBody)
-	if hash != token.TokenHash || token.Expired() || !token.Active {
-		return entities.User{}, errors.New("invalid, expired or inactive token")
+
+	if subtle.ConstantTimeCompare([]byte(hash), []byte(token.TokenHash)) != 1 ||
+		token.Expired() || !token.Active || !token.Owner.Active {
+		return entities.User{}, errors.New("invalid, expired or inactive token or user account")
 	}
 
 	return token.Owner, nil

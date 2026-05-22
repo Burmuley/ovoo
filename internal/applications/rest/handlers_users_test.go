@@ -8,14 +8,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 
 // --- GetUserProfile ---
-// NOTE: this handler does NOT return after userFromContext error; it writes a 403 error
-// response and then continues to write a success response with the zero-value user.
 
 func TestGetUserProfile_Success(t *testing.T) {
 	ta := newTestApp(t)
@@ -28,18 +25,14 @@ func TestGetUserProfile_Success(t *testing.T) {
 }
 
 func TestGetUserProfile_NoUser(t *testing.T) {
-	// Bug: handler lacks return after userFromContext error; 403 is written first
-	// but execution continues and writes a second response with the zero-value user.
 	ta := newTestApp(t)
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
 	w := httptest.NewRecorder()
-	require.NotPanics(t, func() { ta.app.GetUserProfile(w, req) })
-	// first WriteHeader(403) wins
+	ta.app.GetUserProfile(w, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
 // --- GetUserById ---
-// NOTE: this handler also lacks return after userFromContext error.
 
 func TestGetUserById_Success(t *testing.T) {
 	ta := newTestApp(t)
@@ -79,17 +72,13 @@ func TestGetUserById_NotFound(t *testing.T) {
 }
 
 func TestGetUserById_NoUser(t *testing.T) {
-	// Bug: handler lacks return after userFromContext error.
-	// With empty user, GetById validates ID via service before calling repo.
 	ta := newTestApp(t)
 	id := entities.NewId()
-	ta.usersRepo.On("GetById", mock.Anything, id).Return(entities.User{}, entities.ErrNotFound)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/"+id.String(), nil)
 	req.SetPathValue("id", id.String())
 	w := httptest.NewRecorder()
-	require.NotPanics(t, func() { ta.app.GetUserById(w, req) })
-	// first WriteHeader(403) wins
+	ta.app.GetUserById(w, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
@@ -193,18 +182,15 @@ func TestCreateUser_Success(t *testing.T) {
 }
 
 // --- UpdateUser ---
-// NOTE: this handler lacks return after userFromContext error.
 
 func TestUpdateUser_NoUser(t *testing.T) {
 	ta := newTestApp(t)
 	id := entities.NewId()
-	// Invalid JSON body causes early return before repo is called
 	body := bytes.NewBufferString(`{bad json`)
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/users/"+id.String(), body)
 	req.SetPathValue("id", id.String())
 	w := httptest.NewRecorder()
-	require.NotPanics(t, func() { ta.app.UpdateUser(w, req) })
-	// first WriteHeader(403) wins
+	ta.app.UpdateUser(w, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
@@ -226,7 +212,7 @@ func TestUpdateUser_WithType(t *testing.T) {
 	w := httptest.NewRecorder()
 	ta.app.UpdateUser(w, req)
 
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 	ta.usersRepo.AssertExpectations(t)
 }
 
@@ -248,8 +234,7 @@ func TestUpdateUser_Success(t *testing.T) {
 	w := httptest.NewRecorder()
 	ta.app.UpdateUser(w, req)
 
-	// handler uses 201 for successful update (code quirk)
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 	ta.usersRepo.AssertExpectations(t)
 }
 
@@ -273,16 +258,12 @@ func TestUpdateUser_NotFound(t *testing.T) {
 }
 
 // --- DeleteUser ---
-// NOTE: this handler lacks return after userFromContext error.
 
 func TestDeleteUser_NoUser(t *testing.T) {
-	// With no user, DeleteUser writes 403 first, then tries to delete.
-	// Empty ID "" fails ULID validation, causing ErrValidation → errorLogNResponse(400).
-	// But 403 was already written.
 	ta := newTestApp(t)
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/users/", nil)
 	w := httptest.NewRecorder()
-	require.NotPanics(t, func() { ta.app.DeleteUser(w, req) })
+	ta.app.DeleteUser(w, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
@@ -341,10 +322,9 @@ func TestDeleteUser_Success(t *testing.T) {
 	req.SetPathValue("id", target.ID.String())
 	req = withUser(req, user)
 	w := httptest.NewRecorder()
-	require.NotPanics(t, func() { ta.app.DeleteUser(w, req) })
+	ta.app.DeleteUser(w, req)
 
-	// handler uses 201 for successful delete (code quirk)
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusNoContent, w.Code)
 	ta.usersRepo.AssertExpectations(t)
 	ta.addrRepo.AssertExpectations(t)
 	ta.tokensRepo.AssertExpectations(t)

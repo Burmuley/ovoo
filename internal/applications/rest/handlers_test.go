@@ -54,6 +54,10 @@ func (m *mockAddressRepo) BatchDeleteById(ctx context.Context, ids []entities.Id
 	return m.Called(ctx, ids).Error(0)
 }
 
+func (m *mockAddressRepo) BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error {
+	return m.Called(ctx, filter, values).Error(0)
+}
+
 type mockChainRepo struct{ mock.Mock }
 
 func (m *mockChainRepo) GetByHash(ctx context.Context, hash entities.Hash) (entities.Chain, error) {

@@ -149,7 +149,7 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 					}
 
 					userEmail, err := validateOIDCToken(r.Context(), oidcToken, prov)
-					if err != nil && r.URL.Path != RootPageURI {
+					if err != nil {
 						logger.Error("invalid OAuth2 credentials", "src", r.RemoteAddr, "error", err.Error())
 						http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)
 						return

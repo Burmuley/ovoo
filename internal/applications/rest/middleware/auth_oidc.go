@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -56,15 +55,18 @@ func validateOIDCToken(ctx context.Context, token string, prov OIDCProvider) (st
 	if err != nil {
 		return "", err
 	}
+
 	claims := struct {
 		Email string
 	}{}
 	if err := idToken.Claims(&claims); err != nil {
 		return "", err
 	}
+
 	if claims.Email == "" {
 		return "", errors.New("token claims got no email")
 	}
+
 	return claims.Email, nil
 }
 
@@ -98,7 +100,14 @@ func handleOIDCCallback(w http.ResponseWriter, r *http.Request, prov OIDCProvide
 		return
 	}
 
-	oauth2Token, err := prov.OAuth2Config.Exchange(r.Context(), r.URL.Query().Get("code"))
+	// fix redirect_url if needed and exchange token
+	redirectUrl := formatRedirectURL(r, prov)
+	oauth2Token, err := prov.OAuth2Config.Exchange(
+		r.Context(),
+		r.URL.Query().Get("code"),
+		oauth2.SetAuthURLParam("redirect_uri", redirectUrl),
+	)
+
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to exchange token: %s", err.Error()), http.StatusBadRequest)
 		return
@@ -127,7 +136,7 @@ func handleOIDCCallback(w http.ResponseWriter, r *http.Request, prov OIDCProvide
 		return
 	}
 
-	cookieLife := int(idToken.Expiry.Sub(time.Now()).Seconds())
+	cookieLife := int(time.Until(idToken.Expiry).Seconds())
 	setSecureCookie(w, r, authCookieName, rawIDToken, cookieLife, "/")
 	http.Redirect(w, r, RootPageURI, http.StatusFound)
 }
@@ -160,22 +169,18 @@ func handleOIDCLogin(w http.ResponseWriter, r *http.Request, prov OIDCProvider) 
 		return_url = RootPageURI
 	}
 
-	state := base64.URLEncoding.EncodeToString([]byte(return_url))
-
 	// set security cookies
+	state := base64.URLEncoding.EncodeToString([]byte(return_url))
 	setSecureCookie(w, r, stateCookieName, state, int(time.Hour.Seconds()), "")
 	setSecureCookie(w, r, nonceCookieName, nonce, int(time.Hour.Seconds()), "")
 
-	//redirect to the provider for authentication
-	if !strings.HasPrefix(prov.OAuth2Config.RedirectURL, "http") {
-		scheme := "https"
-		if r.TLS == nil {
-			scheme = "http"
-		}
-		prov.OAuth2Config.RedirectURL, _ = url.JoinPath(fmt.Sprintf("%s://%s", scheme, r.Host), prov.OAuth2Config.RedirectURL)
-	}
+	// fix redirect_url if needed and redirect client to OIDC provider
+	redirectUrl := formatRedirectURL(r, prov)
 	http.Redirect(w, r,
-		prov.OAuth2Config.AuthCodeURL(state, oidc.Nonce(nonce)),
+		prov.OAuth2Config.AuthCodeURL(
+			state, oidc.Nonce(nonce),
+			oauth2.SetAuthURLParam("redirect_uri", redirectUrl),
+		),
 		http.StatusFound,
 	)
 }
@@ -191,8 +196,7 @@ func handleOIDCLogin(w http.ResponseWriter, r *http.Request, prov OIDCProvider) 
 //   - string: The extracted OIDC token, or an empty string if no valid token is found
 func getOIDCToken(r *http.Request) string {
 	authHeader := r.Header.Get(authorizationHeader)
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token, ok := strings.CutPrefix(authHeader, "Bearer "); ok {
 		if !strings.HasPrefix(token, entities.ApiTokenPrefix) {
 			return token
 		}
@@ -202,6 +206,7 @@ func getOIDCToken(r *http.Request) string {
 
 	if authCookie, err := r.Cookie(authCookieName); err == nil && authCookie != nil {
 		return authCookie.Value
+
 	}
 
 	return ""
@@ -221,7 +226,7 @@ func getOIDCTokenIssuer(token string) (string, error) {
 		return "", errors.New("malformed JWT token: should have 3 parts")
 	}
 
-	payloadBytes, err := base64.RawStdEncoding.DecodeString(parts[1])
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
 		return "", fmt.Errorf("error decoding JWT payload: %w", err)
 	}
@@ -231,8 +236,9 @@ func getOIDCTokenIssuer(token string) (string, error) {
 		return "", fmt.Errorf("error unmarshaling JWT payload: %w", err)
 	}
 
-	iss := payload["iss"].(string)
-	if iss == "" {
+	issRaw, ok := payload["iss"]
+	iss, okType := issRaw.(string)
+	if !ok || !okType || iss == "" {
 		return "", errors.New("issuer not defined in the JWT payload")
 	}
 

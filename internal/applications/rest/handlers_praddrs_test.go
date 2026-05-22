@@ -82,8 +82,6 @@ func TestGetAllPrAddrs_EmptyList(t *testing.T) {
 }
 
 // --- GetPrAddrById ---
-// NOTE: this handler incorrectly delegates to a.svcGw.Aliases.GetById instead of PrAddrs.GetById.
-// Tests reflect the actual (buggy) behavior.
 
 func TestGetPrAddrById_NoUser(t *testing.T) {
 	ta := newTestApp(t)
@@ -99,7 +97,6 @@ func TestGetPrAddrById_NotFound(t *testing.T) {
 	user := testUser()
 	id := entities.NewId()
 
-	// delegates to AliasesService.GetById which calls addrRepo.GetById
 	ta.addrRepo.On("GetById", mock.Anything, id).Return(entities.Address{}, entities.ErrNotFound)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/praddrs/"+id.String(), nil)

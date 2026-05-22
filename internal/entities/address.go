@@ -14,6 +14,12 @@ const (
 	ExternalAddress
 )
 
+type AddressBulkUpdateFields struct {
+	MetadataComment     *string
+	MetadataServiceName *string
+	Active              *bool
+}
+
 // AddressMetadata contains additional information about an address.
 // It includes a comment for user notes and the name of the associated service.
 type AddressMetadata struct {

@@ -3,8 +3,11 @@ package middleware
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 // randString generates a cryptographically secure random string of specified byte length.
@@ -46,4 +49,20 @@ func setSecureCookie(w http.ResponseWriter, r *http.Request, name, value string,
 		Domain:   r.URL.Hostname(),
 	}
 	http.SetCookie(w, c)
+}
+
+// formatRedirectURL resolves the OAuth2 redirect URL for the given OIDC provider.
+// If the configured RedirectURL is a relative path (no "http" prefix), it constructs
+// an absolute URL using the scheme derived from the request's TLS state and the request Host.
+func formatRedirectURL(r *http.Request, prov OIDCProvider) string {
+	redirectUrl := prov.OAuth2Config.RedirectURL
+	if !strings.HasPrefix(redirectUrl, "http") {
+		scheme := "https"
+		if r.TLS == nil {
+			scheme = "http"
+		}
+		redirectUrl, _ = url.JoinPath(fmt.Sprintf("%s://%s", scheme, r.Host), prov.OAuth2Config.RedirectURL)
+	}
+
+	return redirectUrl
 }

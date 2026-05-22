@@ -96,6 +96,11 @@ func (m *MockAddressRepo) BatchDeleteById(ctx context.Context, ids []entities.Id
 	return args.Error(0)
 }
 
+func (m *MockAddressRepo) BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error {
+	args := m.Called(ctx, filter, values)
+	return args.Error(0)
+}
+
 // MockApiTokensRepo is a mock implementation of repositories.TokensReadWriter
 type MockApiTokensRepo struct {
 	mock.Mock

@@ -73,6 +73,7 @@ func (a *Application) CreateApiToken(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "creating new api token: identifying user", err)
+		return
 	}
 
 	req := CreateApiToken{}
@@ -148,6 +149,7 @@ func (a *Application) DeleteApiToken(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
 		a.errorLogNResponse(w, "deleting api token by id: identifying user", err)
+		return
 	}
 
 	tokenId := entities.Id(r.PathValue("id"))
