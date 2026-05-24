@@ -21,7 +21,13 @@
                 </div>
             </CForm>
             <CAlert v-if="result.status === 201" color="success" class="mt-3">
-                Alias <strong>{{ result.json.email }}</strong> was successfully created.
+                Alias was successfully created.
+                <div class="mt-2 d-flex align-items-center gap-2">
+                    <code class="user-select-all">{{ result.json.email }}</code>
+                    <CButton size="sm" color="success" variant="outline" @click="copyAlias">
+                        {{ copied ? 'Copied!' : 'Copy' }}
+                    </CButton>
+                </div>
             </CAlert>
             <CAlert v-else-if="result.status" color="danger" class="mt-3">
                 <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
@@ -42,6 +48,7 @@ const praddrSelected = ref('')
 const svcname = ref('')
 const comment = ref('')
 const result = ref({})
+const copied = ref(false)
 
 const load = async () => {
     const res = await apiFetch('/api/v1/praddrs')
@@ -49,7 +56,14 @@ const load = async () => {
     praddrs.value = data.protected_addresses.map(a => ({ id: a.id, text: a.email }))
 }
 
+const copyAlias = async () => {
+    await navigator.clipboard.writeText(result.value.json.email)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+}
+
 const createAlias = async () => {
+    copied.value = false
     const res = await apiFetch('/api/v1/aliases', {
         method: 'POST',
         body: JSON.stringify({
