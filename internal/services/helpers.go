@@ -182,7 +182,7 @@ func deleteChainsForAliasIds(ctx context.Context, repof *factory.RepoFactory, al
 	return nil
 }
 
-func deactivateAliasesForPrAddr(ctx context.Context, repof *factory.RepoFactory, praddrId entities.Id) error {
+func deactivateAliasesForPrAddr(ctx context.Context, repof *factory.RepoFactory, cuser entities.User, praddrId entities.Id) error {
 	active := true
 	inactive := false
 	return repof.Address.BatchUpdate(
@@ -192,11 +192,11 @@ func deactivateAliasesForPrAddr(ctx context.Context, repof *factory.RepoFactory,
 			Types:             []entities.AddressType{entities.AliasAddress},
 			ForwardAddressIds: []entities.Id{praddrId},
 		},
-		entities.AddressBulkUpdateFields{Active: &inactive},
+		entities.AddressBulkUpdateFields{Active: &inactive, UpdatedById: &cuser.ID},
 	)
 }
 
-func deactivatePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, userId entities.Id) error {
+func deactivatePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, cuser entities.User, userId entities.Id) error {
 	active := true
 	inactive := false
 	praddrs, _, err := repof.Address.GetAll(
@@ -229,7 +229,7 @@ func deactivatePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, u
 			Types:             []entities.AddressType{entities.AliasAddress},
 			ForwardAddressIds: praddrsIds,
 		},
-		entities.AddressBulkUpdateFields{Active: &inactive},
+		entities.AddressBulkUpdateFields{Active: &inactive, UpdatedById: &cuser.ID},
 	); err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func deactivatePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, u
 			Active: &active,
 			Filter: entities.Filter{Ids: praddrsIds},
 		},
-		entities.AddressBulkUpdateFields{Active: &inactive},
+		entities.AddressBulkUpdateFields{Active: &inactive, UpdatedById: &cuser.ID},
 	); err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func deactivatePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, u
 	return nil
 }
 
-func deactivateTokensForUser(ctx context.Context, repof *factory.RepoFactory, userId entities.Id) error {
+func deactivateTokensForUser(ctx context.Context, repof *factory.RepoFactory, cuser entities.User, userId entities.Id) error {
 	active := true
 	tokens, err := repof.ApiTokens.GetAll(ctx, entities.ApiTokenFilter{
 		Active:  &active,
@@ -261,6 +261,7 @@ func deactivateTokensForUser(ctx context.Context, repof *factory.RepoFactory, us
 
 	for _, token := range tokens {
 		token.Active = false
+		token.UpdatedBy = cuser
 		if _, err := repof.ApiTokens.Update(ctx, token); err != nil {
 			return err
 		}

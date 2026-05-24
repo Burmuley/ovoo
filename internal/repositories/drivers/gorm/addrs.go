@@ -100,8 +100,13 @@ func (a *AddressGORMRepo) BatchUpdate(ctx context.Context, filter entities.Addre
 		fields = append(fields, "metadata")
 	}
 
+	if values.UpdatedById != nil {
+		updates.UpdatedByID = values.UpdatedById.String()
+		fields = append(fields, "updated_by_id")
+	}
+
 	stmt := a.db.WithContext(ctx).Select(fields).Model(&Address{})
-	_ = applyAddressFilter(stmt, filter)
+	_ = applyAddressFilter(stmt, filter, false)
 
 	if err := stmt.Updates(updates).Error; err != nil {
 		return wrapGormError(err)
@@ -144,7 +149,7 @@ func (a *AddressGORMRepo) GetByEmail(ctx context.Context, email entities.Email) 
 func (a *AddressGORMRepo) GetAll(ctx context.Context, filter entities.AddressFilter) ([]entities.Address, entities.PaginationMetadata, error) {
 	gorm_addrs := make([]Address, 0)
 	stmt := a.db.WithContext(ctx).Model(&Address{})
-	count := applyAddressFilter(stmt, filter)
+	count := applyAddressFilter(stmt, filter, true)
 	if err := stmt.Preload(clause.Associations).Preload("ForwardAddress." + clause.Associations).Find(&gorm_addrs).Error; err != nil {
 		return nil, entities.PaginationMetadata{}, wrapGormError(err)
 	}
@@ -177,7 +182,7 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filter entities.AddressFil
 // entities.GetPaginationMetadata to compute last-page information.
 // Callers that do not need pagination metadata (e.g. BatchUpdate) may discard
 // the return value.
-func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
+func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter, doCount bool) *int64 {
 	if len(filter.Ids) > 0 {
 		stmt.Where("id IN ?", filter.Ids)
 	}
@@ -218,7 +223,7 @@ func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
 	}
 
 	var count int64 = 0
-	if filter.Count {
+	if doCount {
 		stmt.Count(&count)
 	}
 

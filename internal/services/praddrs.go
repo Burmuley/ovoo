@@ -118,7 +118,7 @@ func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User
 			if *cmd.Active == true && praddr.Active == false {
 				praddr.Active = *cmd.Active
 			} else if *cmd.Active == false && praddr.Active == true {
-				if err := deactivateAliasesForPrAddr(ctx, prs.repof, praddr.ID); err != nil {
+				if err := deactivateAliasesForPrAddr(ctx, prs.repof, cuser, praddr.ID); err != nil {
 					return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
 				}
 				praddr.Active = *cmd.Active
@@ -142,7 +142,6 @@ func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User
 // GetAll retrieves all protected addresses for a given owner
 func (prs *ProtectedAddrService) GetAll(ctx context.Context, cuser entities.User, filter entities.AddressFilter) ([]entities.Address, entities.PaginationMetadata, error) {
 	filter.Types = []entities.AddressType{entities.ProtectedAddress}
-	filter.Count = true
 	// reset Owners filter for non-admins
 	if cuser.Type != entities.AdminUser {
 		filter.Owners = []entities.Id{cuser.ID}

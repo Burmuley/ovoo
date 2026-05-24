@@ -13,7 +13,6 @@ const (
 type Filter struct {
 	Page     int
 	PageSize int
-	Count    bool // flag to include "count" in the SQL
 	Ids      []Id
 }
 

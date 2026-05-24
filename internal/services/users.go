@@ -139,11 +139,11 @@ func (u *UsersService) Update(ctx context.Context, cuser entities.User, cmd User
 			if *cmd.Active == true && user.Active == false {
 				user.Active = *cmd.Active
 			} else if *cmd.Active == false && user.Active == true {
-				if err := deactivatePrAddrsForUser(ctx, u.repof, user.ID); err != nil {
+				if err := deactivatePrAddrsForUser(ctx, u.repof, cuser, user.ID); err != nil {
 					return entities.User{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
 				}
 
-				if err := deactivateTokensForUser(ctx, u.repof, user.ID); err != nil {
+				if err := deactivateTokensForUser(ctx, u.repof, cuser, user.ID); err != nil {
 					return entities.User{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
 				}
 				user.Active = *cmd.Active
@@ -245,7 +245,6 @@ func (u *UsersService) GetByLogin(ctx context.Context, login string) (entities.U
 
 // GetAll retrieves all users
 func (u *UsersService) GetAll(ctx context.Context, cuser entities.User, filter entities.UserFilter) ([]entities.User, entities.PaginationMetadata, error) {
-	filter.Count = true
 	if cuser.Type != entities.AdminUser {
 		var err error
 		if filter, err = entities.NewUserFilter(map[string][]string{

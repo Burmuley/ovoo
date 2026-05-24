@@ -443,11 +443,12 @@ func TestDeactivateAliasesForPrAddr_NoAliases(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	praddrId := entities.NewId()
 
 	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(nil)
 
-	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
+	err := deactivateAliasesForPrAddr(ctx, repof, cuser, praddrId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -457,6 +458,7 @@ func TestDeactivateAliasesForPrAddr_WithAliases(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	praddrId := entities.NewId()
 
 	addressRepo.On("BatchUpdate", ctx,
@@ -465,11 +467,11 @@ func TestDeactivateAliasesForPrAddr_WithAliases(t *testing.T) {
 				len(f.ForwardAddressIds) == 1 && f.ForwardAddressIds[0] == praddrId
 		}),
 		mock.MatchedBy(func(v entities.AddressBulkUpdateFields) bool {
-			return v.Active != nil && !*v.Active
+			return v.Active != nil && !*v.Active && v.UpdatedById != nil && *v.UpdatedById == cuser.ID
 		}),
 	).Return(nil)
 
-	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
+	err := deactivateAliasesForPrAddr(ctx, repof, cuser, praddrId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -479,11 +481,12 @@ func TestDeactivateAliasesForPrAddr_BatchUpdateError(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	praddrId := entities.NewId()
 
 	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(entities.ErrDatabase)
 
-	err := deactivateAliasesForPrAddr(ctx, repof, praddrId)
+	err := deactivateAliasesForPrAddr(ctx, repof, cuser, praddrId)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrDatabase)
@@ -495,6 +498,7 @@ func TestDeactivatePrAddrsForUser_NoAddresses(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 
 	active := true
@@ -502,7 +506,7 @@ func TestDeactivatePrAddrsForUser_NoAddresses(t *testing.T) {
 		return f.Active != nil && *f.Active == active
 	})).Return([]entities.Address{}, entities.PaginationMetadata{}, nil)
 
-	err := deactivatePrAddrsForUser(ctx, repof, userId)
+	err := deactivatePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -512,6 +516,7 @@ func TestDeactivatePrAddrsForUser_WithAddresses(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 	owner := entities.User{ID: userId, Type: entities.RegularUser}
 	praddrId := entities.NewId()
@@ -526,7 +531,7 @@ func TestDeactivatePrAddrsForUser_WithAddresses(t *testing.T) {
 	// BatchUpdate: deactivateAliasesForPrAddr bulk-deactivates aliases for praddr
 	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(nil)
 
-	err := deactivatePrAddrsForUser(ctx, repof, userId)
+	err := deactivatePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -536,6 +541,7 @@ func TestDeactivatePrAddrsForUser_WithAddressesAndAliases(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 	owner := entities.User{ID: userId, Type: entities.RegularUser}
 	praddrId := entities.NewId()
@@ -550,7 +556,7 @@ func TestDeactivatePrAddrsForUser_WithAddressesAndAliases(t *testing.T) {
 	// BatchUpdate: deactivateAliasesForPrAddr bulk-deactivates all active aliases for the praddr
 	addressRepo.On("BatchUpdate", ctx, mock.AnythingOfType("entities.AddressFilter"), mock.AnythingOfType("entities.AddressBulkUpdateFields")).Return(nil)
 
-	err := deactivatePrAddrsForUser(ctx, repof, userId)
+	err := deactivatePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -560,13 +566,14 @@ func TestDeactivatePrAddrsForUser_ErrorGettingAddresses(t *testing.T) {
 	repof, addressRepo, _ := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 
 	addressRepo.On("GetAll", ctx, mock.AnythingOfType("entities.AddressFilter")).Return(
 		[]entities.Address{}, entities.PaginationMetadata{}, entities.ErrDatabase,
 	)
 
-	err := deactivatePrAddrsForUser(ctx, repof, userId)
+	err := deactivatePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrDatabase)
@@ -578,6 +585,7 @@ func TestDeactivateTokensForUser_NoTokens(t *testing.T) {
 	repof, _, tokensRepo := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 
 	active := true
@@ -585,7 +593,7 @@ func TestDeactivateTokensForUser_NoTokens(t *testing.T) {
 		return f.Active != nil && *f.Active == active
 	})).Return([]entities.ApiToken{}, nil)
 
-	err := deactivateTokensForUser(ctx, repof, userId)
+	err := deactivateTokensForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	tokensRepo.AssertExpectations(t)
@@ -595,6 +603,7 @@ func TestDeactivateTokensForUser_WithTokens(t *testing.T) {
 	repof, _, tokensRepo := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 	owner := entities.User{ID: userId, Type: entities.RegularUser}
 	token1 := entities.ApiToken{ID: entities.NewId(), Name: "Token 1", Owner: owner, Active: true}
@@ -606,10 +615,10 @@ func TestDeactivateTokensForUser_WithTokens(t *testing.T) {
 	})).Return([]entities.ApiToken{token1, token2}, nil)
 
 	tokensRepo.On("Update", ctx, mock.MatchedBy(func(tk entities.ApiToken) bool {
-		return !tk.Active
+		return !tk.Active && tk.UpdatedBy.ID == cuser.ID
 	})).Return(entities.ApiToken{}, nil).Times(2)
 
-	err := deactivateTokensForUser(ctx, repof, userId)
+	err := deactivateTokensForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	tokensRepo.AssertExpectations(t)
@@ -619,11 +628,12 @@ func TestDeactivateTokensForUser_ErrorGettingTokens(t *testing.T) {
 	repof, _, tokensRepo := setupDeactivateHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 
 	tokensRepo.On("GetAll", ctx, mock.AnythingOfType("entities.ApiTokenFilter")).Return(nil, entities.ErrDatabase)
 
-	err := deactivateTokensForUser(ctx, repof, userId)
+	err := deactivateTokensForUser(ctx, repof, cuser, userId)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrDatabase)

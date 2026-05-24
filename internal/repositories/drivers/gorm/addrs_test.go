@@ -749,7 +749,7 @@ func TestApplyAddressFilter_NoFilters(t *testing.T) {
 	stmt := db.Model(&Address{})
 	filter := entities.AddressFilter{}
 
-	count := applyAddressFilter(stmt, filter)
+	count := applyAddressFilter(stmt, filter, true)
 
 	assert.NotNil(t, count)
 	assert.Equal(t, int64(0), *count)
@@ -778,7 +778,7 @@ func TestApplyAddressFilter_WithPagination(t *testing.T) {
 		},
 	}
 
-	count := applyAddressFilter(stmt, filter)
+	count := applyAddressFilter(stmt, filter, true)
 
 	assert.NotNil(t, count)
 }
