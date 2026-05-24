@@ -245,6 +245,7 @@ func (u *UsersService) GetByLogin(ctx context.Context, login string) (entities.U
 
 // GetAll retrieves all users
 func (u *UsersService) GetAll(ctx context.Context, cuser entities.User, filter entities.UserFilter) ([]entities.User, entities.PaginationMetadata, error) {
+	filter.Count = true
 	if cuser.Type != entities.AdminUser {
 		var err error
 		if filter, err = entities.NewUserFilter(map[string][]string{

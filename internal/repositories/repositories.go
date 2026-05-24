@@ -6,11 +6,6 @@ import (
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 
-// RepositoryConfig defines methods for importing repository configuration.
-type RepositoryConfig interface {
-	ImportMap(m map[string]string) error
-}
-
 // AddressReader defines methods for reading address data.
 type AddressReader interface {
 	GetById(ctx context.Context, id entities.Id) (entities.Address, error)
@@ -89,6 +84,7 @@ type TokensWriter interface {
 	Delete(ctx context.Context, tokenId entities.Id) error
 	BatchDeleteById(ctx context.Context, ids []entities.Id) error
 	BatchDeleteForUser(ctx context.Context, id entities.Id) error
+	// BatchUpdate()
 }
 
 // TokensReadWriter combines TokensReader and TokensWriter interfaces.

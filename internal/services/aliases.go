@@ -167,6 +167,7 @@ func (als *AliasesService) GetAll(ctx context.Context, cuser entities.User, filt
 	}
 
 	filter.Types = []entities.AddressType{entities.AliasAddress}
+	filter.Count = true
 	// reset Owners filter for non-admins
 	if cuser.Type != entities.AdminUser {
 		filter.Owners = []entities.Id{cuser.ID}

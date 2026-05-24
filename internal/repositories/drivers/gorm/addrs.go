@@ -87,17 +87,20 @@ func (a *AddressGORMRepo) BatchDeleteById(ctx context.Context, ids []entities.Id
 
 func (a *AddressGORMRepo) BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error {
 	updates := &Address{}
+	fields := make([]string, 0)
 	if values.Active != nil {
-		updates.Active = *values.Active
+		fields = append(fields, "active")
 	}
 	if values.MetadataComment != nil {
 		updates.Metadata.Comment = *values.MetadataComment
+		fields = append(fields, "metadata")
 	}
 	if values.MetadataServiceName != nil {
 		updates.Metadata.ServiceName = *values.MetadataServiceName
+		fields = append(fields, "metadata")
 	}
 
-	stmt := a.db.WithContext(ctx).Model(&Address{})
+	stmt := a.db.WithContext(ctx).Select(fields).Model(&Address{})
 	_ = applyAddressFilter(stmt, filter)
 
 	if err := stmt.Updates(updates).Error; err != nil {
@@ -215,7 +218,10 @@ func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter) *int64 {
 	}
 
 	var count int64 = 0
-	stmt.Count(&count)
+	if filter.Count {
+		stmt.Count(&count)
+	}
+
 	if filter.Page != 0 && filter.PageSize != 0 {
 		stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
 	}

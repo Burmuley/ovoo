@@ -13,6 +13,7 @@ const ApiTokenPrefix = "ovtk"
 type ApiTokenBulkUpdateFields struct {
 	Description *string
 	Active      *bool
+	UpdatedById *Id
 }
 
 // ApiToken represents an API token with its associated metadata.

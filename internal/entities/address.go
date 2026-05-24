@@ -18,6 +18,7 @@ type AddressBulkUpdateFields struct {
 	MetadataComment     *string
 	MetadataServiceName *string
 	Active              *bool
+	UpdatedById         *Id
 }
 
 // AddressMetadata contains additional information about an address.
