@@ -310,13 +310,13 @@ func TestUsersService_Delete_Success(t *testing.T) {
 		entities.PaginationMetadata{},
 		nil,
 	)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil)
 
 	// Mock for deleting API tokens
-	tokensRepo.On("BatchDeleteForUser", ctx, userId).Return(nil)
+	tokensRepo.On("BatchDeleteForUser", ctx, mock.Anything, userId).Return(nil)
 
 	// Mock for deleting user
-	usersRepo.On("Delete", ctx, userId).Return(nil)
+	usersRepo.On("Delete", ctx, mock.Anything, userId).Return(nil)
 
 	// Prevent unused mock warning
 	_ = chainRepo

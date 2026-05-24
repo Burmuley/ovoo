@@ -244,7 +244,7 @@ func TestDeletePrAddr_Success(t *testing.T) {
 	ta.addrRepo.On("GetAll", mock.Anything, mock.Anything).
 		Return([]entities.Address{}, entities.PaginationMetadata{}, nil)
 	// DeleteById for the protected address itself
-	ta.addrRepo.On("DeleteById", mock.Anything, prAddr.ID).Return(nil)
+	ta.addrRepo.On("DeleteById", mock.Anything, mock.Anything, prAddr.ID).Return(nil)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/praddrs/"+prAddr.ID.String(), nil)
 	req.SetPathValue("id", prAddr.ID.String())

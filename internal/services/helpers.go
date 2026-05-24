@@ -23,7 +23,7 @@ Parameters:
 Returns:
 - error: describes any error encountered during the process.
 */
-func deletePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, userId entities.Id) error {
+func deletePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, cuser entities.User, userId entities.Id) error {
 	// get all protected addresses
 	praddrs, _, err := repof.Address.GetAll(ctx, entities.AddressFilter{
 		Filter: entities.Filter{Page: 0, PageSize: 0},
@@ -36,7 +36,7 @@ func deletePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, userI
 
 	// delete aliases for each protected address
 	for _, praddr := range praddrs {
-		if err := deleteAliasesForPrAddr(ctx, repof, praddr); err != nil {
+		if err := deleteAliasesForPrAddr(ctx, repof, cuser, praddr); err != nil {
 			return err
 		}
 	}
@@ -47,7 +47,7 @@ func deletePrAddrsForUser(ctx context.Context, repof *factory.RepoFactory, userI
 		praddrsIds = append(praddrsIds, addr.ID)
 	}
 
-	if err := repof.Address.BatchDeleteById(ctx, praddrsIds); err != nil {
+	if err := repof.Address.BatchDeleteById(ctx, cuser, praddrsIds); err != nil {
 		return err
 	}
 
@@ -69,7 +69,7 @@ Parameters:
 Returns:
 - error: describes any error encountered during the process.
 */
-func deleteAliasesForPrAddr(ctx context.Context, repof *factory.RepoFactory, praddr entities.Address) error {
+func deleteAliasesForPrAddr(ctx context.Context, repof *factory.RepoFactory, cuser entities.User, praddr entities.Address) error {
 	filter := entities.AddressFilter{
 		Filter:            entities.Filter{Page: 0, PageSize: 0},
 		Types:             []entities.AddressType{entities.AliasAddress},
@@ -88,7 +88,7 @@ func deleteAliasesForPrAddr(ctx context.Context, repof *factory.RepoFactory, pra
 			aliasIds = append(aliasIds, alias.ID)
 		}
 
-		if err := deleteAliasIds(ctx, repof, aliasIds); err != nil {
+		if err := deleteAliasIds(ctx, repof, cuser, aliasIds); err != nil {
 			return err
 		}
 	}
@@ -111,12 +111,12 @@ Parameters:
 Returns:
 - error: describes any error encountered during the process.
 */
-func deleteAliasIds(ctx context.Context, repof *factory.RepoFactory, aliasIds []entities.Id) error {
-	if err := deleteChainsForAliasIds(ctx, repof, aliasIds); err != nil {
+func deleteAliasIds(ctx context.Context, repof *factory.RepoFactory, cuser entities.User, aliasIds []entities.Id) error {
+	if err := deleteChainsForAliasIds(ctx, repof, cuser, aliasIds); err != nil {
 		return err
 	}
 
-	if err := repof.Address.BatchDeleteById(ctx, aliasIds); err != nil {
+	if err := repof.Address.BatchDeleteById(ctx, cuser, aliasIds); err != nil {
 		return err
 	}
 
@@ -141,7 +141,7 @@ Parameters:
 Returns:
 - error: describes any error encountered during the process.
 */
-func deleteChainsForAliasIds(ctx context.Context, repof *factory.RepoFactory, aliasIds []entities.Id) error {
+func deleteChainsForAliasIds(ctx context.Context, repof *factory.RepoFactory, cuser entities.User, aliasIds []entities.Id) error {
 	chainsFwd, err := repof.Chain.GetByFilters(ctx, entities.ChainFilter{
 		Filter:        entities.Filter{Page: 0, PageSize: 0},
 		OrigToAddrIds: aliasIds,
@@ -170,12 +170,12 @@ func deleteChainsForAliasIds(ctx context.Context, repof *factory.RepoFactory, al
 		}
 	}
 
-	if err := repof.Chain.BatchDelete(ctx, chainIds); err != nil {
+	if err := repof.Chain.BatchDelete(ctx, cuser, chainIds); err != nil {
 		return err
 	}
 
 	// clean up Reply Alias addresses belong to chains
-	if err := repof.Address.BatchDeleteById(ctx, chainAddrs); err != nil {
+	if err := repof.Address.BatchDeleteById(ctx, cuser, chainAddrs); err != nil {
 		return err
 	}
 

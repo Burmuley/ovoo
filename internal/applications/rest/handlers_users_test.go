@@ -314,9 +314,9 @@ func TestDeleteUser_Success(t *testing.T) {
 	// deletePrAddrsForUser: GetAll returns empty
 	ta.addrRepo.On("GetAll", mock.Anything, mock.Anything).
 		Return([]entities.Address{}, entities.PaginationMetadata{}, nil)
-	ta.addrRepo.On("BatchDeleteById", mock.Anything, mock.Anything).Return(nil)
-	ta.tokensRepo.On("BatchDeleteForUser", mock.Anything, target.ID).Return(nil)
-	ta.usersRepo.On("Delete", mock.Anything, target.ID).Return(nil)
+	ta.addrRepo.On("BatchDeleteById", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ta.tokensRepo.On("BatchDeleteForUser", mock.Anything, mock.Anything, target.ID).Return(nil)
+	ta.usersRepo.On("Delete", mock.Anything, mock.Anything, target.ID).Return(nil)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/users/"+target.ID.String(), nil)
 	req.SetPathValue("id", target.ID.String())

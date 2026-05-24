@@ -65,7 +65,7 @@ func (cs *ChainsService) DeleteByHash(ctx context.Context, cuser entities.User, 
 		return entities.Chain{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	chain, err := cs.repof.Chain.Delete(ctx, hash)
+	chain, err := cs.repof.Chain.Delete(ctx, cuser, hash)
 	if err != nil {
 		return entities.Chain{}, err
 	}

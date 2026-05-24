@@ -57,7 +57,7 @@ func TestChainsRepo_GetByHash_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Remove from DB without going through the cached layer.
-	_, err = e.rawChains.Delete(ctx, chain.Hash)
+	_, err = e.rawChains.Delete(ctx, user, chain.Hash)
 	require.NoError(t, err)
 
 	// Cache still holds the chain.
@@ -142,8 +142,8 @@ func TestChainsRepo_BatchCreate_EvictsAll(t *testing.T) {
 	require.NoError(t, err)
 
 	// Build a new chain to batch-create.
-	newChain := insertChain(t, e.rawChains, user)   // insert via raw so we have the struct
-	_, err = e.rawChains.Delete(ctx, newChain.Hash) // remove it so we can re-create via cached
+	newChain := insertChain(t, e.rawChains, user)          // insert via raw so we have the struct
+	_, err = e.rawChains.Delete(ctx, user, newChain.Hash) // remove it so we can re-create via cached
 	require.NoError(t, err)
 	require.NoError(t, e.cachedChains.BatchCreate(ctx, []entities.Chain{newChain}))
 
@@ -168,7 +168,7 @@ func TestChainsRepo_Delete_Success(t *testing.T) {
 	_, err = e.cachedChains.GetByFilters(ctx, filter)
 	require.NoError(t, err)
 
-	deleted, err := e.cachedChains.Delete(ctx, chain.Hash)
+	deleted, err := e.cachedChains.Delete(ctx, user, chain.Hash)
 	assert.NoError(t, err)
 	assert.Equal(t, chain.Hash, deleted.Hash)
 
@@ -184,7 +184,7 @@ func TestChainsRepo_Delete_Success(t *testing.T) {
 
 func TestChainsRepo_Delete_NotFound(t *testing.T) {
 	e := setupChainsTest(t)
-	_, err := e.cachedChains.Delete(context.Background(), entities.NewHash("a@x.com", "b@x.com"))
+	_, err := e.cachedChains.Delete(context.Background(), entities.User{}, entities.NewHash("a@x.com", "b@x.com"))
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 }
 
@@ -204,7 +204,7 @@ func TestChainsRepo_BatchDelete_EvictsAll(t *testing.T) {
 	_, err = e.cachedChains.GetByFilters(ctx, filter)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedChains.BatchDelete(ctx, []entities.Hash{c1.Hash, c2.Hash}))
+	require.NoError(t, e.cachedChains.BatchDelete(ctx, user, []entities.Hash{c1.Hash, c2.Hash}))
 
 	// All caches evicted.
 	_, err = e.cachedChains.GetByHash(ctx, c1.Hash)

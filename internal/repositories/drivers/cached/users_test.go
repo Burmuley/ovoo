@@ -211,7 +211,7 @@ func TestUsersRepo_Delete_NoCachedEntry(t *testing.T) {
 	ctx := context.Background()
 	user := insertUser(t, e.rawUsers)
 
-	require.NoError(t, e.cachedUsers.Delete(ctx, user.ID))
+	require.NoError(t, e.cachedUsers.Delete(ctx, user, user.ID))
 
 	_, err := e.cachedUsers.GetById(ctx, user.ID)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -230,7 +230,7 @@ func TestUsersRepo_Delete_WithCachedEntry(t *testing.T) {
 	_, err = e.cachedUsers.GetByLogin(ctx, user.Login)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedUsers.Delete(ctx, user.ID))
+	require.NoError(t, e.cachedUsers.Delete(ctx, user, user.ID))
 
 	_, err = e.cachedUsers.GetById(ctx, user.ID)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -240,7 +240,7 @@ func TestUsersRepo_Delete_WithCachedEntry(t *testing.T) {
 
 func TestUsersRepo_Delete_NotFound(t *testing.T) {
 	e := setupUsersTest(t)
-	err := e.cachedUsers.Delete(context.Background(), entities.NewId())
+	err := e.cachedUsers.Delete(context.Background(), entities.User{}, entities.NewId())
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 }
 
@@ -258,7 +258,7 @@ func TestUsersRepo_Delete_LoginCacheStaleWhenIdNotCached(t *testing.T) {
 	require.NoError(t, err)
 
 	// Delete through the cached layer (id-key NOT in cache — no opportunistic eviction).
-	require.NoError(t, e.cachedUsers.Delete(ctx, user.ID))
+	require.NoError(t, e.cachedUsers.Delete(ctx, user, user.ID))
 
 	// Id-key correctly gone from DB.
 	_, err = e.cachedUsers.GetById(ctx, user.ID)

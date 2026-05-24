@@ -94,12 +94,12 @@ func (t *TokensRepo) BatchCreate(ctx context.Context, tokens []entities.ApiToken
 	return nil
 }
 
-func (t *TokensRepo) Delete(ctx context.Context, tokenId entities.Id) error {
+func (t *TokensRepo) Delete(ctx context.Context, cuser entities.User, tokenId entities.Id) error {
 	// Opportunistic cache lookup: if the token is already cached we can scope the
 	// user-list eviction to that owner rather than clearing all user lists.
 	cached, hasCached := getFromCache[entities.ApiToken](ctx, t.cache, tokenIdKey(tokenId))
 
-	if err := t.repo.Delete(ctx, tokenId); err != nil {
+	if err := t.repo.Delete(ctx, cuser, tokenId); err != nil {
 		return err
 	}
 
@@ -112,16 +112,16 @@ func (t *TokensRepo) Delete(ctx context.Context, tokenId entities.Id) error {
 	return nil
 }
 
-func (t *TokensRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
-	if err := t.repo.BatchDeleteById(ctx, ids); err != nil {
+func (t *TokensRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	if err := t.repo.BatchDeleteById(ctx, cuser, ids); err != nil {
 		return err
 	}
 	evictPrefix(ctx, t.cache, "token:")
 	return nil
 }
 
-func (t *TokensRepo) BatchDeleteForUser(ctx context.Context, id entities.Id) error {
-	if err := t.repo.BatchDeleteForUser(ctx, id); err != nil {
+func (t *TokensRepo) BatchDeleteForUser(ctx context.Context, cuser entities.User, id entities.Id) error {
+	if err := t.repo.BatchDeleteForUser(ctx, cuser, id); err != nil {
 		return err
 	}
 	evictPrefix(ctx, t.cache, tokenUserPrefix(id))

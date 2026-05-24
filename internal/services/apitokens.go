@@ -168,7 +168,6 @@ func (t *ApiTokensService) Delete(ctx context.Context, cuser entities.User, toke
 		return entities.ApiToken{}, entities.ErrNotAuthorized
 	}
 
-	token.UpdatedBy = cuser
-	err = t.repof.ApiTokens.Delete(ctx, tokenId)
+	err = t.repof.ApiTokens.Delete(ctx, cuser, tokenId)
 	return entities.ApiToken{}, err
 }

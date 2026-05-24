@@ -259,7 +259,7 @@ func TestDeleteChain_NotFound(t *testing.T) {
 	user := testUser()
 	hash := entities.NewHash("from@example.com", "to@example.com")
 
-	ta.chainRepo.On("Delete", mock.Anything, hash).Return(entities.Chain{}, entities.ErrNotFound)
+	ta.chainRepo.On("Delete", mock.Anything, mock.Anything, hash).Return(entities.Chain{}, entities.ErrNotFound)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/chains/"+hash.String(), nil)
 	req.SetPathValue("hash", hash.String())
@@ -276,7 +276,7 @@ func TestDeleteChain_Success(t *testing.T) {
 	user := testUser()
 	hash := entities.NewHash("from@example.com", "to@example.com")
 
-	ta.chainRepo.On("Delete", mock.Anything, hash).Return(entities.Chain{}, nil)
+	ta.chainRepo.On("Delete", mock.Anything, mock.Anything, hash).Return(entities.Chain{}, nil)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/chains/"+hash.String(), nil)
 	req.SetPathValue("hash", hash.String())

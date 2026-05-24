@@ -579,8 +579,8 @@ func TestAliasesService_DeleteById_Success_Owner(t *testing.T) {
 
 	// Mocks for deleteAliasIds -> deleteChainsForAliasIds
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
 
 	err := service.DeleteById(ctx, user, aliasId)
 
@@ -625,8 +625,8 @@ func TestAliasesService_DeleteById_Success_Admin(t *testing.T) {
 
 	// Mocks for deleteAliasIds -> deleteChainsForAliasIds
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
 
 	err := service.DeleteById(ctx, admin, aliasId)
 

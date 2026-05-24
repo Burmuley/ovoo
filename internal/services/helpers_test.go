@@ -39,6 +39,7 @@ func TestDeletePrAddrsForUser_NoAddresses(t *testing.T) {
 	repof, addressRepo, _ := setupHelpersTest()
 	ctx := context.Background()
 
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
 	userId := entities.NewId()
 
 	// No protected addresses for user
@@ -49,9 +50,9 @@ func TestDeletePrAddrsForUser_NoAddresses(t *testing.T) {
 	)
 
 	// Batch delete with empty list
-	addressRepo.On("BatchDeleteById", ctx, []entities.Id{}).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, []entities.Id{}).Return(nil)
 
-	err := deletePrAddrsForUser(ctx, repof, userId)
+	err := deletePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -95,11 +96,12 @@ func TestDeletePrAddrsForUser_WithAddresses(t *testing.T) {
 	).Once()
 
 	// Batch delete protected addresses
-	addressRepo.On("BatchDeleteById", ctx, []entities.Id{prAddrId}).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, []entities.Id{prAddrId}).Return(nil)
 
 	_ = chainRepo
 
-	err := deletePrAddrsForUser(ctx, repof, userId)
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deletePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -153,10 +155,11 @@ func TestDeletePrAddrsForUser_WithAddressesAndAliases(t *testing.T) {
 
 	// Mocks for deleteChainsForAliasIds
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil).Times(3)
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil).Times(3)
 
-	err := deletePrAddrsForUser(ctx, repof, userId)
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deletePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -188,7 +191,8 @@ func TestDeleteAliasesForPrAddr_NoAliases(t *testing.T) {
 		nil,
 	)
 
-	err := deleteAliasesForPrAddr(ctx, repof, prAddr)
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deleteAliasesForPrAddr(ctx, repof, cuser, prAddr)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -230,10 +234,11 @@ func TestDeleteAliasesForPrAddr_WithAliases(t *testing.T) {
 
 	// Mocks for deleteChainsForAliasIds
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
 
-	err := deleteAliasesForPrAddr(ctx, repof, prAddr)
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deleteAliasesForPrAddr(ctx, repof, cuser, prAddr)
 
 	assert.NoError(t, err)
 	addressRepo.AssertExpectations(t)
@@ -246,10 +251,11 @@ func TestDeleteAliasIds_EmptyList(t *testing.T) {
 
 	// Empty chains
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
 
-	err := deleteAliasIds(ctx, repof, []entities.Id{})
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deleteAliasIds(ctx, repof, cuser, []entities.Id{})
 
 	assert.NoError(t, err)
 	chainRepo.AssertExpectations(t)
@@ -264,10 +270,11 @@ func TestDeleteAliasIds_WithAliases(t *testing.T) {
 
 	// Empty chains
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
 
-	err := deleteAliasIds(ctx, repof, []entities.Id{aliasId})
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deleteAliasIds(ctx, repof, cuser, []entities.Id{aliasId})
 
 	assert.NoError(t, err)
 	chainRepo.AssertExpectations(t)
@@ -282,10 +289,11 @@ func TestDeleteChainsForAliasIds_NoChains(t *testing.T) {
 
 	// No chains found
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil)
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil)
 
-	err := deleteChainsForAliasIds(ctx, repof, []entities.Id{aliasId})
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deleteChainsForAliasIds(ctx, repof, cuser, []entities.Id{aliasId})
 
 	assert.NoError(t, err)
 	chainRepo.AssertExpectations(t)
@@ -360,12 +368,12 @@ func TestDeleteChainsForAliasIds_WithChains(t *testing.T) {
 	})).Return([]entities.Chain{replyChain}, nil).Once()
 
 	// Batch delete chains
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
 
 	// Batch delete reply alias addresses
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil)
 
-	err := deleteChainsForAliasIds(ctx, repof, []entities.Id{aliasId})
+	err := deleteChainsForAliasIds(ctx, repof, user, []entities.Id{aliasId})
 
 	assert.NoError(t, err)
 	chainRepo.AssertExpectations(t)
@@ -381,7 +389,8 @@ func TestDeleteChainsForAliasIds_ErrorGettingForwardChains(t *testing.T) {
 	// Error getting forward chains
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return(nil, entities.ErrDatabase).Once()
 
-	err := deleteChainsForAliasIds(ctx, repof, []entities.Id{aliasId})
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deleteChainsForAliasIds(ctx, repof, cuser, []entities.Id{aliasId})
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrDatabase)
@@ -412,7 +421,8 @@ func TestDeleteAliasesForPrAddr_ErrorGettingAliases(t *testing.T) {
 		entities.ErrDatabase,
 	)
 
-	err := deleteAliasesForPrAddr(ctx, repof, prAddr)
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deleteAliasesForPrAddr(ctx, repof, cuser, prAddr)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrDatabase)
@@ -431,7 +441,8 @@ func TestDeletePrAddrsForUser_ErrorGettingAddresses(t *testing.T) {
 		entities.ErrDatabase,
 	)
 
-	err := deletePrAddrsForUser(ctx, repof, userId)
+	cuser := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	err := deletePrAddrsForUser(ctx, repof, cuser, userId)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrDatabase)

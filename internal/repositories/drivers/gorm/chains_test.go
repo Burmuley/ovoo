@@ -353,7 +353,7 @@ func TestChainsGORMRepo_Delete(t *testing.T) {
 	err := repo.Create(ctx, chain)
 	require.NoError(t, err)
 
-	deleted, err := repo.Delete(ctx, chain.Hash)
+	deleted, err := repo.Delete(ctx, user, chain.Hash)
 
 	assert.NoError(t, err)
 	assert.Equal(t, chain.Hash, deleted.Hash)
@@ -365,10 +365,10 @@ func TestChainsGORMRepo_Delete(t *testing.T) {
 }
 
 func TestChainsGORMRepo_Delete_NotFound(t *testing.T) {
-	repo, _ := setupChainsTestDB(t)
+	repo, user := setupChainsTestDB(t)
 	ctx := context.Background()
 
-	_, err := repo.Delete(ctx, entities.Hash("nonexistent"))
+	_, err := repo.Delete(ctx, user, entities.Hash("nonexistent"))
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -388,7 +388,7 @@ func TestChainsGORMRepo_BatchDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	hashes := []entities.Hash{chain1.Hash, chain2.Hash}
-	err = repo.BatchDelete(ctx, hashes)
+	err = repo.BatchDelete(ctx, user, hashes)
 
 	assert.NoError(t, err)
 

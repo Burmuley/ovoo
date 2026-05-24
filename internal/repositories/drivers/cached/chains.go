@@ -79,8 +79,8 @@ func (c *ChainsRepo) BatchCreate(ctx context.Context, chains []entities.Chain) e
 	return nil
 }
 
-func (c *ChainsRepo) Delete(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
-	chain, err := c.repo.Delete(ctx, hash)
+func (c *ChainsRepo) Delete(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
+	chain, err := c.repo.Delete(ctx, cuser, hash)
 	if err != nil {
 		return entities.Chain{}, err
 	}
@@ -89,8 +89,8 @@ func (c *ChainsRepo) Delete(ctx context.Context, hash entities.Hash) (entities.C
 	return chain, nil
 }
 
-func (c *ChainsRepo) BatchDelete(ctx context.Context, hashes []entities.Hash) error {
-	if err := c.repo.BatchDelete(ctx, hashes); err != nil {
+func (c *ChainsRepo) BatchDelete(ctx context.Context, cuser entities.User, hashes []entities.Hash) error {
+	if err := c.repo.BatchDelete(ctx, cuser, hashes); err != nil {
 		return err
 	}
 	evictPrefix(ctx, c.cache, "chain:")

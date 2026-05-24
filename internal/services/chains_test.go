@@ -268,7 +268,7 @@ func TestChainsService_DeleteByHash_Success_AdminUser(t *testing.T) {
 		CreatedAt:   time.Now(),
 	}
 
-	chainRepo.On("Delete", ctx, hash).Return(deletedChain, nil)
+	chainRepo.On("Delete", ctx, mock.Anything, hash).Return(deletedChain, nil)
 
 	chain, err := service.DeleteByHash(ctx, admin, hash)
 
@@ -316,7 +316,7 @@ func TestChainsService_DeleteByHash_Success_MilterUser(t *testing.T) {
 		CreatedAt:   time.Now(),
 	}
 
-	chainRepo.On("Delete", ctx, hash).Return(deletedChain, nil)
+	chainRepo.On("Delete", ctx, mock.Anything, hash).Return(deletedChain, nil)
 
 	chain, err := service.DeleteByHash(ctx, milter, hash)
 

@@ -684,7 +684,7 @@ func TestProtectedAddrService_DeleteById_Success_Owner(t *testing.T) {
 	)
 
 	// Mock for deleting the protected address
-	addressRepo.On("DeleteById", ctx, prAddrId).Return(nil)
+	addressRepo.On("DeleteById", ctx, mock.Anything, prAddrId).Return(nil)
 
 	// Prevent unused mock warning
 	_ = chainRepo
@@ -729,7 +729,7 @@ func TestProtectedAddrService_DeleteById_Success_Admin(t *testing.T) {
 	)
 
 	// Mock for deleting the protected address
-	addressRepo.On("DeleteById", ctx, prAddrId).Return(nil)
+	addressRepo.On("DeleteById", ctx, mock.Anything, prAddrId).Return(nil)
 
 	_ = chainRepo
 
@@ -778,11 +778,11 @@ func TestProtectedAddrService_DeleteById_WithAliases(t *testing.T) {
 
 	// Mocks for deleteChainsForAliasIds
 	chainRepo.On("GetByFilters", ctx, mock.AnythingOfType("entities.ChainFilter")).Return([]entities.Chain{}, nil).Twice()
-	chainRepo.On("BatchDelete", ctx, mock.AnythingOfType("[]entities.Hash")).Return(nil)
-	addressRepo.On("BatchDeleteById", ctx, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
+	chainRepo.On("BatchDelete", ctx, mock.Anything, mock.AnythingOfType("[]entities.Hash")).Return(nil)
+	addressRepo.On("BatchDeleteById", ctx, mock.Anything, mock.AnythingOfType("[]entities.Id")).Return(nil).Twice()
 
 	// Mock for deleting the protected address
-	addressRepo.On("DeleteById", ctx, prAddrId).Return(nil)
+	addressRepo.On("DeleteById", ctx, mock.Anything, prAddrId).Return(nil)
 
 	err := service.DeleteById(ctx, user, prAddrId)
 

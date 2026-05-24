@@ -100,7 +100,7 @@ func TestAddrsRepo_GetByEmail_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Remove from DB without going through the cached layer.
-	require.NoError(t, e.rawAddrs.DeleteById(ctx, addr.ID))
+	require.NoError(t, e.rawAddrs.DeleteById(ctx, owner, addr.ID))
 
 	// Cache still holds the original result.
 	result, err := e.cachedAddrs.GetByEmail(ctx, addr.Email)
@@ -249,7 +249,7 @@ func TestAddrsRepo_DeleteById_NoCachedEntry(t *testing.T) {
 	owner := insertUser(t, e.rawUsers)
 	addr := insertAddress(t, e.rawAddrs, owner)
 
-	require.NoError(t, e.cachedAddrs.DeleteById(ctx, addr.ID))
+	require.NoError(t, e.cachedAddrs.DeleteById(ctx, owner, addr.ID))
 
 	_, err := e.cachedAddrs.GetById(ctx, addr.ID)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -270,7 +270,7 @@ func TestAddrsRepo_DeleteById_WithCachedEntry(t *testing.T) {
 	_, err = e.cachedAddrs.GetByEmail(ctx, addr.Email)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedAddrs.DeleteById(ctx, addr.ID))
+	require.NoError(t, e.cachedAddrs.DeleteById(ctx, owner, addr.ID))
 
 	// Both cache entries must be gone — DB confirms deletion.
 	_, err = e.cachedAddrs.GetById(ctx, addr.ID)
@@ -283,7 +283,7 @@ func TestAddrsRepo_DeleteById_WithCachedEntry(t *testing.T) {
 
 func TestAddrsRepo_DeleteById_NotFound(t *testing.T) {
 	e := setupAddrsTest(t)
-	err := e.cachedAddrs.DeleteById(context.Background(), entities.NewId())
+	err := e.cachedAddrs.DeleteById(context.Background(), entities.User{}, entities.NewId())
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 }
 
@@ -302,7 +302,7 @@ func TestAddrsRepo_DeleteById_EmailCacheStaleWhenIdNotCached(t *testing.T) {
 	require.NoError(t, err)
 
 	// Delete through the cached layer (id-key NOT in cache — no opportunistic eviction).
-	require.NoError(t, e.cachedAddrs.DeleteById(ctx, addr.ID))
+	require.NoError(t, e.cachedAddrs.DeleteById(ctx, owner, addr.ID))
 
 	// Id-key correctly gone from DB.
 	_, err = e.cachedAddrs.GetById(ctx, addr.ID)
@@ -329,7 +329,7 @@ func TestAddrsRepo_BatchDeleteById_EvictsCache(t *testing.T) {
 	_, err = e.cachedAddrs.GetById(ctx, a2.ID)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedAddrs.BatchDeleteById(ctx, []entities.Id{a1.ID, a2.ID}))
+	require.NoError(t, e.cachedAddrs.BatchDeleteById(ctx, owner, []entities.Id{a1.ID, a2.ID}))
 
 	_, err = e.cachedAddrs.GetById(ctx, a1.ID)
 	assert.ErrorIs(t, err, entities.ErrNotFound)

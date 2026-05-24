@@ -346,7 +346,7 @@ func TestDeleteApiToken_Success(t *testing.T) {
 	token := testToken(user.ID)
 
 	ta.tokensRepo.On("GetById", mock.Anything, token.ID).Return(token, nil)
-	ta.tokensRepo.On("Delete", mock.Anything, token.ID).Return(nil)
+	ta.tokensRepo.On("Delete", mock.Anything, mock.Anything, token.ID).Return(nil)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/tokens/"+token.ID.String(), nil)
 	req.SetPathValue("id", token.ID.String())

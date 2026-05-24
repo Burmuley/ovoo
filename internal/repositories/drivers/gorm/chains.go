@@ -97,11 +97,17 @@ func (c *ChainsGORMRepo) BatchCreate(ctx context.Context, chains []entities.Chai
 
 // Delete removes a Chain entity from the repository based on its hash.
 // It returns an error if the deletion process fails.
-func (c *ChainsGORMRepo) Delete(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
+func (c *ChainsGORMRepo) Delete(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
 	chain, err := c.GetByHash(ctx, hash)
 	if err != nil {
 		return entities.Chain{}, err
 	}
+
+	if err := c.db.WithContext(ctx).Model(&Chain{}).Where("hash = ?", hash).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return entities.Chain{}, wrapGormError(err)
+	}
+
 	if err := c.db.WithContext(ctx).Unscoped().Delete(&Chain{}, "hash = ?", hash.String()).Error; err != nil {
 		return entities.Chain{}, wrapGormError(err)
 	}
@@ -109,7 +115,12 @@ func (c *ChainsGORMRepo) Delete(ctx context.Context, hash entities.Hash) (entiti
 	return chain, nil
 }
 
-func (c *ChainsGORMRepo) BatchDelete(ctx context.Context, hashes []entities.Hash) error {
+func (c *ChainsGORMRepo) BatchDelete(ctx context.Context, cuser entities.User, hashes []entities.Hash) error {
+	if err := c.db.WithContext(ctx).Model(&Chain{}).Where("hash IN ?", hashes).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return wrapGormError(err)
+	}
+
 	if err := c.db.WithContext(ctx).Unscoped().Delete(&Chain{}, "hash IN ?", hashes).Error; err != nil {
 		return wrapGormError(err)
 	}

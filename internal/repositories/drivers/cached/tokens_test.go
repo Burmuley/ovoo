@@ -235,7 +235,7 @@ func TestTokensRepo_Delete_NoCachedToken(t *testing.T) {
 	_, err := e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedTokens.Delete(ctx, token.ID))
+	require.NoError(t, e.cachedTokens.Delete(ctx, user, token.ID))
 
 	// Id-key miss confirms deletion.
 	_, err = e.cachedTokens.GetById(ctx, token.ID)
@@ -263,7 +263,7 @@ func TestTokensRepo_Delete_WithCachedToken(t *testing.T) {
 	_, err = e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedTokens.Delete(ctx, token.ID))
+	require.NoError(t, e.cachedTokens.Delete(ctx, user, token.ID))
 
 	// Both caches must be gone.
 	_, err = e.cachedTokens.GetById(ctx, token.ID)
@@ -276,7 +276,7 @@ func TestTokensRepo_Delete_WithCachedToken(t *testing.T) {
 
 func TestTokensRepo_Delete_NotFound(t *testing.T) {
 	e := setupTokensTest(t)
-	err := e.cachedTokens.Delete(context.Background(), entities.NewId())
+	err := e.cachedTokens.Delete(context.Background(), entities.User{}, entities.NewId())
 	assert.ErrorIs(t, err, entities.ErrNotFound)
 }
 
@@ -298,7 +298,7 @@ func TestTokensRepo_BatchDeleteById_EvictsAll(t *testing.T) {
 	_, err = e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedTokens.BatchDeleteById(ctx, []entities.Id{t1.ID, t2.ID}))
+	require.NoError(t, e.cachedTokens.BatchDeleteById(ctx, user, []entities.Id{t1.ID, t2.ID}))
 
 	_, err = e.cachedTokens.GetById(ctx, t1.ID)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -324,7 +324,7 @@ func TestTokensRepo_BatchDeleteForUser_EvictsUserList(t *testing.T) {
 	_, err := e.cachedTokens.GetAll(ctx, filter)
 	require.NoError(t, err)
 
-	require.NoError(t, e.cachedTokens.BatchDeleteForUser(ctx, user.ID))
+	require.NoError(t, e.cachedTokens.BatchDeleteForUser(ctx, user, user.ID))
 
 	// Cache evicted; DB now returns empty list.
 	result, err := e.cachedTokens.GetAll(ctx, filter)

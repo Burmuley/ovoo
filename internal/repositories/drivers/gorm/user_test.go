@@ -196,7 +196,7 @@ func TestUserGORMRepo_Delete(t *testing.T) {
 	err := repo.Create(ctx, user)
 	require.NoError(t, err)
 
-	err = repo.Delete(ctx, user.ID)
+	err = repo.Delete(ctx, user, user.ID)
 	assert.NoError(t, err)
 
 	// Verify the user was deleted
@@ -209,7 +209,7 @@ func TestUserGORMRepo_Delete_NotFound(t *testing.T) {
 	repo := setupUserTestDB(t)
 	ctx := context.Background()
 
-	err := repo.Delete(ctx, entities.NewId())
+	err := repo.Delete(ctx, entities.User{}, entities.NewId())
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotFound)

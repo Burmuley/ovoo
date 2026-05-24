@@ -47,11 +47,11 @@ func (m *mockAddressRepo) BatchCreate(ctx context.Context, addresses []entities.
 func (m *mockAddressRepo) Update(ctx context.Context, address entities.Address) error {
 	return m.Called(ctx, address).Error(0)
 }
-func (m *mockAddressRepo) DeleteById(ctx context.Context, id entities.Id) error {
-	return m.Called(ctx, id).Error(0)
+func (m *mockAddressRepo) DeleteById(ctx context.Context, cuser entities.User, id entities.Id) error {
+	return m.Called(ctx, cuser, id).Error(0)
 }
-func (m *mockAddressRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
-	return m.Called(ctx, ids).Error(0)
+func (m *mockAddressRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	return m.Called(ctx, cuser, ids).Error(0)
 }
 
 func (m *mockAddressRepo) BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error {
@@ -77,12 +77,12 @@ func (m *mockChainRepo) Create(ctx context.Context, chain entities.Chain) error 
 func (m *mockChainRepo) BatchCreate(ctx context.Context, chains []entities.Chain) error {
 	return m.Called(ctx, chains).Error(0)
 }
-func (m *mockChainRepo) Delete(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
-	args := m.Called(ctx, hash)
+func (m *mockChainRepo) Delete(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
+	args := m.Called(ctx, cuser, hash)
 	return args.Get(0).(entities.Chain), args.Error(1)
 }
-func (m *mockChainRepo) BatchDelete(ctx context.Context, hashes []entities.Hash) error {
-	return m.Called(ctx, hashes).Error(0)
+func (m *mockChainRepo) BatchDelete(ctx context.Context, cuser entities.User, hashes []entities.Hash) error {
+	return m.Called(ctx, cuser, hashes).Error(0)
 }
 
 type mockUsersRepo struct{ mock.Mock }
@@ -108,8 +108,8 @@ func (m *mockUsersRepo) BatchCreate(ctx context.Context, users []entities.User) 
 func (m *mockUsersRepo) Update(ctx context.Context, user entities.User) error {
 	return m.Called(ctx, user).Error(0)
 }
-func (m *mockUsersRepo) Delete(ctx context.Context, id entities.Id) error {
-	return m.Called(ctx, id).Error(0)
+func (m *mockUsersRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
+	return m.Called(ctx, cuser, id).Error(0)
 }
 
 type mockTokensRepo struct{ mock.Mock }
@@ -135,14 +135,14 @@ func (m *mockTokensRepo) Update(ctx context.Context, token entities.ApiToken) (e
 func (m *mockTokensRepo) BatchCreate(ctx context.Context, tokens []entities.ApiToken) error {
 	return m.Called(ctx, tokens).Error(0)
 }
-func (m *mockTokensRepo) Delete(ctx context.Context, tokenId entities.Id) error {
-	return m.Called(ctx, tokenId).Error(0)
+func (m *mockTokensRepo) Delete(ctx context.Context, cuser entities.User, tokenId entities.Id) error {
+	return m.Called(ctx, cuser, tokenId).Error(0)
 }
-func (m *mockTokensRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
-	return m.Called(ctx, ids).Error(0)
+func (m *mockTokensRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	return m.Called(ctx, cuser, ids).Error(0)
 }
-func (m *mockTokensRepo) BatchDeleteForUser(ctx context.Context, id entities.Id) error {
-	return m.Called(ctx, id).Error(0)
+func (m *mockTokensRepo) BatchDeleteForUser(ctx context.Context, cuser entities.User, id entities.Id) error {
+	return m.Called(ctx, cuser, id).Error(0)
 }
 
 // --- test helpers ---

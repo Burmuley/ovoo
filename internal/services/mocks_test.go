@@ -43,8 +43,8 @@ func (m *MockUsersRepo) Update(ctx context.Context, user entities.User) error {
 	return args.Error(0)
 }
 
-func (m *MockUsersRepo) Delete(ctx context.Context, id entities.Id) error {
-	args := m.Called(ctx, id)
+func (m *MockUsersRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
+	args := m.Called(ctx, cuser, id)
 	return args.Error(0)
 }
 
@@ -86,13 +86,13 @@ func (m *MockAddressRepo) Update(ctx context.Context, address entities.Address) 
 	return args.Error(0)
 }
 
-func (m *MockAddressRepo) DeleteById(ctx context.Context, id entities.Id) error {
-	args := m.Called(ctx, id)
+func (m *MockAddressRepo) DeleteById(ctx context.Context, cuser entities.User, id entities.Id) error {
+	args := m.Called(ctx, cuser, id)
 	return args.Error(0)
 }
 
-func (m *MockAddressRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
-	args := m.Called(ctx, ids)
+func (m *MockAddressRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	args := m.Called(ctx, cuser, ids)
 	return args.Error(0)
 }
 
@@ -134,18 +134,18 @@ func (m *MockApiTokensRepo) BatchCreate(ctx context.Context, tokens []entities.A
 	return args.Error(0)
 }
 
-func (m *MockApiTokensRepo) Delete(ctx context.Context, tokenId entities.Id) error {
-	args := m.Called(ctx, tokenId)
+func (m *MockApiTokensRepo) Delete(ctx context.Context, cuser entities.User, tokenId entities.Id) error {
+	args := m.Called(ctx, cuser, tokenId)
 	return args.Error(0)
 }
 
-func (m *MockApiTokensRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
-	args := m.Called(ctx, ids)
+func (m *MockApiTokensRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	args := m.Called(ctx, cuser, ids)
 	return args.Error(0)
 }
 
-func (m *MockApiTokensRepo) BatchDeleteForUser(ctx context.Context, id entities.Id) error {
-	args := m.Called(ctx, id)
+func (m *MockApiTokensRepo) BatchDeleteForUser(ctx context.Context, cuser entities.User, id entities.Id) error {
+	args := m.Called(ctx, cuser, id)
 	return args.Error(0)
 }
 
@@ -177,12 +177,12 @@ func (m *MockChainRepo) BatchCreate(ctx context.Context, chains []entities.Chain
 	return args.Error(0)
 }
 
-func (m *MockChainRepo) Delete(ctx context.Context, hash entities.Hash) (entities.Chain, error) {
-	args := m.Called(ctx, hash)
+func (m *MockChainRepo) Delete(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
+	args := m.Called(ctx, cuser, hash)
 	return args.Get(0).(entities.Chain), args.Error(1)
 }
 
-func (m *MockChainRepo) BatchDelete(ctx context.Context, hashes []entities.Hash) error {
-	args := m.Called(ctx, hashes)
+func (m *MockChainRepo) BatchDelete(ctx context.Context, cuser entities.User, hashes []entities.Hash) error {
+	args := m.Called(ctx, cuser, hashes)
 	return args.Error(0)
 }

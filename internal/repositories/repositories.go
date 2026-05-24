@@ -18,8 +18,8 @@ type AddressWriter interface {
 	Create(ctx context.Context, address entities.Address) error
 	BatchCreate(ctx context.Context, addresses []entities.Address) error
 	Update(ctx context.Context, address entities.Address) error
-	DeleteById(ctx context.Context, id entities.Id) error
-	BatchDeleteById(ctx context.Context, ids []entities.Id) error
+	DeleteById(ctx context.Context, cuser entities.User, id entities.Id) error
+	BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error
 	BatchUpdate(ctx context.Context, filter entities.AddressFilter, values entities.AddressBulkUpdateFields) error
 }
 
@@ -39,8 +39,8 @@ type ChainReader interface {
 type ChainWriter interface {
 	Create(ctx context.Context, chain entities.Chain) error
 	BatchCreate(ctx context.Context, chains []entities.Chain) error
-	Delete(ctx context.Context, hash entities.Hash) (entities.Chain, error)
-	BatchDelete(ctx context.Context, hashes []entities.Hash) error
+	Delete(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error)
+	BatchDelete(ctx context.Context, cuser entities.User, hashes []entities.Hash) error
 }
 
 // ChainReadWriter combines ChainReader and ChainWriter interfaces.
@@ -61,7 +61,7 @@ type UsersWriter interface {
 	Create(ctx context.Context, user entities.User) error
 	BatchCreate(ctx context.Context, users []entities.User) error
 	Update(ctx context.Context, user entities.User) error
-	Delete(ctx context.Context, id entities.Id) error
+	Delete(ctx context.Context, cuser entities.User, id entities.Id) error
 }
 
 // UsersReadWriter combines UsersReader and UsersWriter interfaces.
@@ -81,9 +81,9 @@ type TokensWriter interface {
 	Create(ctx context.Context, token entities.ApiToken) error
 	Update(ctx context.Context, token entities.ApiToken) (entities.ApiToken, error)
 	BatchCreate(ctx context.Context, tokens []entities.ApiToken) error
-	Delete(ctx context.Context, tokenId entities.Id) error
-	BatchDeleteById(ctx context.Context, ids []entities.Id) error
-	BatchDeleteForUser(ctx context.Context, id entities.Id) error
+	Delete(ctx context.Context, cuser entities.User, tokenId entities.Id) error
+	BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error
+	BatchDeleteForUser(ctx context.Context, cuser entities.User, id entities.Id) error
 	// BatchUpdate()
 }
 

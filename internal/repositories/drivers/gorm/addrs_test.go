@@ -224,7 +224,7 @@ func TestAddressGORMRepo_DeleteById(t *testing.T) {
 	err := repo.Create(ctx, address)
 	require.NoError(t, err)
 
-	err = repo.DeleteById(ctx, address.ID)
+	err = repo.DeleteById(ctx, user, address.ID)
 	assert.NoError(t, err)
 
 	// Verify the address was deleted
@@ -234,10 +234,10 @@ func TestAddressGORMRepo_DeleteById(t *testing.T) {
 }
 
 func TestAddressGORMRepo_DeleteById_NotFound(t *testing.T) {
-	repo, _ := setupAddressTestDB(t)
+	repo, user := setupAddressTestDB(t)
 	ctx := context.Background()
 
-	err := repo.DeleteById(ctx, entities.NewId())
+	err := repo.DeleteById(ctx, user, entities.NewId())
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -268,7 +268,7 @@ func TestAddressGORMRepo_BatchDeleteById(t *testing.T) {
 	require.NoError(t, err)
 
 	ids := []entities.Id{addresses[0].ID, addresses[1].ID}
-	err = repo.BatchDeleteById(ctx, ids)
+	err = repo.BatchDeleteById(ctx, user, ids)
 
 	assert.NoError(t, err)
 

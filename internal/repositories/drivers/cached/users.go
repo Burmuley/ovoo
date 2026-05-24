@@ -105,12 +105,12 @@ func (u *UsersRepo) Update(ctx context.Context, user entities.User) error {
 	return nil
 }
 
-func (u *UsersRepo) Delete(ctx context.Context, id entities.Id) error {
+func (u *UsersRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
 	// Opportunistic cache lookup: if the user is already cached we can evict the
 	// login key precisely without an extra DB round-trip.
 	cached, hasCached := getFromCache[entities.User](ctx, u.cache, userIdKey(id))
 
-	if err := u.repo.Delete(ctx, id); err != nil {
+	if err := u.repo.Delete(ctx, cuser, id); err != nil {
 		return err
 	}
 

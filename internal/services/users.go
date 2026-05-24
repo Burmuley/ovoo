@@ -180,17 +180,17 @@ func (u *UsersService) Delete(ctx context.Context, cuser entities.User, id entit
 	}
 
 	// delete protected addressed and related aliases/chains/reply_aliases
-	if err := deletePrAddrsForUser(ctx, u.repof, user.ID); err != nil {
+	if err := deletePrAddrsForUser(ctx, u.repof, cuser, user.ID); err != nil {
 		return entities.User{}, err
 	}
 
 	// delete API tokens
-	if err := u.repof.ApiTokens.BatchDeleteForUser(ctx, user.ID); err != nil {
+	if err := u.repof.ApiTokens.BatchDeleteForUser(ctx, cuser, user.ID); err != nil {
 		return entities.User{}, err
 	}
 
 	// delete user
-	if err := u.repof.Users.Delete(ctx, user.ID); err != nil {
+	if err := u.repof.Users.Delete(ctx, cuser, user.ID); err != nil {
 		return entities.User{}, err
 	}
 

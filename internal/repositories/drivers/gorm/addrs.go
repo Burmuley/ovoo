@@ -54,9 +54,14 @@ func (a *AddressGORMRepo) Update(ctx context.Context, address entities.Address) 
 }
 
 // DeleteById removes an address from the database by its ID.
-func (a *AddressGORMRepo) DeleteById(ctx context.Context, id entities.Id) error {
+func (a *AddressGORMRepo) DeleteById(ctx context.Context, cuser entities.User, id entities.Id) error {
 	if _, err := a.GetById(ctx, id); err != nil {
 		return err
+	}
+
+	if err := a.db.WithContext(ctx).Model(&Address{}).Where("id = ?", id).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return wrapGormError(err)
 	}
 
 	if err := a.db.WithContext(ctx).Model(&Address{}).Unscoped().
@@ -77,7 +82,12 @@ Parameters:
 The function performs a hard delete (unscoped) of all Address records matching the given IDs.
 It returns an error if the deletion fails; otherwise, it returns nil.
 */
-func (a *AddressGORMRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
+func (a *AddressGORMRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	if err := a.db.WithContext(ctx).Model(&Address{}).Where("id IN ?", ids).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return wrapGormError(err)
+	}
+
 	if err := a.db.WithContext(ctx).Model(&Address{}).Unscoped().Delete(&Address{}, "id IN ?", ids).Error; err != nil {
 		return wrapGormError(err)
 	}

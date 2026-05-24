@@ -282,9 +282,9 @@ func TestDeleteAlias_Success(t *testing.T) {
 	ta.addrRepo.On("GetById", mock.Anything, alias.ID).Return(alias, nil)
 	// deleteChainsForAliasIds: two GetByFilters calls, then BatchDelete, then BatchDeleteById for reply aliases
 	ta.chainRepo.On("GetByFilters", mock.Anything, mock.Anything).Return(nil, nil).Twice()
-	ta.chainRepo.On("BatchDelete", mock.Anything, mock.Anything).Return(nil)
+	ta.chainRepo.On("BatchDelete", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	// BatchDeleteById called twice: once for empty chain addrs, once for the alias itself
-	ta.addrRepo.On("BatchDeleteById", mock.Anything, mock.Anything).Return(nil).Twice()
+	ta.addrRepo.On("BatchDeleteById", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/v1/aliases/"+alias.ID.String(), nil)
 	req.SetPathValue("id", alias.ID.String())

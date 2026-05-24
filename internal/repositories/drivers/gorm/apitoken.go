@@ -55,9 +55,14 @@ func (t *TokenGORMRepo) BatchCreate(ctx context.Context, tokens []entities.ApiTo
 // It first checks if the token exists by calling GetById.
 // If the token exists, it performs a hard delete (unscoped) from the database.
 // Returns an error if the token doesn't exist or if the delete operation fails.
-func (t *TokenGORMRepo) Delete(ctx context.Context, id entities.Id) error {
+func (t *TokenGORMRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
 	if _, err := t.GetById(ctx, id); err != nil {
 		return err
+	}
+
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("id = ?", id).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return wrapGormError(err)
 	}
 
 	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Unscoped().
@@ -67,10 +72,12 @@ func (t *TokenGORMRepo) Delete(ctx context.Context, id entities.Id) error {
 	return nil
 }
 
-func (t *TokenGORMRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
-	// BatchDeleteById removes multiple API tokens from the database based on their IDs.
-	// It performs a hard delete (unscoped) for all tokens whose IDs are provided in the 'ids' slice.
-	// Returns an error if the delete operation fails.
+func (t *TokenGORMRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("id IN ?", ids).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return wrapGormError(err)
+	}
+
 	if err := t.db.WithContext(ctx).Unscoped().Delete(&ApiToken{}, "id IN ?", ids).Error; err != nil {
 		return wrapGormError(err)
 	}
@@ -81,7 +88,12 @@ func (t *TokenGORMRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) 
 // BatchDeleteForUser removes all API tokens belonging to a specific user from the database.
 // It performs a hard delete (unscoped) for all tokens where the 'owner_id' matches the provided user ID.
 // Returns an error if the delete operation fails.
-func (t *TokenGORMRepo) BatchDeleteForUser(ctx context.Context, id entities.Id) error {
+func (t *TokenGORMRepo) BatchDeleteForUser(ctx context.Context, cuser entities.User, id entities.Id) error {
+	if err := t.db.WithContext(ctx).Model(&ApiToken{}).Where("owner_id = ?", id).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return wrapGormError(err)
+	}
+
 	if err := t.db.WithContext(ctx).Unscoped().Delete(&ApiToken{}, "owner_id = ?", id).Error; err != nil {
 		return wrapGormError(err)
 	}

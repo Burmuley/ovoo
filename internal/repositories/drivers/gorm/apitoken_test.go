@@ -168,7 +168,7 @@ func TestTokenGORMRepo_Delete(t *testing.T) {
 	err := repo.Create(ctx, token)
 	require.NoError(t, err)
 
-	err = repo.Delete(ctx, token.ID)
+	err = repo.Delete(ctx, user, token.ID)
 	assert.NoError(t, err)
 
 	// Verify the token was deleted
@@ -178,10 +178,10 @@ func TestTokenGORMRepo_Delete(t *testing.T) {
 }
 
 func TestTokenGORMRepo_Delete_NotFound(t *testing.T) {
-	repo, _ := setupTokenTestDB(t)
+	repo, user := setupTokenTestDB(t)
 	ctx := context.Background()
 
-	err := repo.Delete(ctx, entities.NewId())
+	err := repo.Delete(ctx, user, entities.NewId())
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -218,7 +218,7 @@ func TestTokenGORMRepo_BatchDeleteById(t *testing.T) {
 	require.NoError(t, err)
 
 	ids := []entities.Id{tokens[0].ID, tokens[1].ID}
-	err = repo.BatchDeleteById(ctx, ids)
+	err = repo.BatchDeleteById(ctx, user, ids)
 
 	assert.NoError(t, err)
 
@@ -260,7 +260,7 @@ func TestTokenGORMRepo_BatchDeleteForUser(t *testing.T) {
 	err := repo.BatchCreate(ctx, tokens)
 	require.NoError(t, err)
 
-	err = repo.BatchDeleteForUser(ctx, user.ID)
+	err = repo.BatchDeleteForUser(ctx, user, user.ID)
 
 	assert.NoError(t, err)
 
@@ -438,7 +438,7 @@ func TestTokenGORMRepo_BatchDeleteById_EmptyList(t *testing.T) {
 	}
 	require.NoError(t, repo.Create(ctx, token))
 
-	err := repo.BatchDeleteById(ctx, []entities.Id{})
+	err := repo.BatchDeleteById(ctx, user, []entities.Id{})
 	assert.NoError(t, err)
 
 	// Token must still exist
@@ -451,7 +451,7 @@ func TestTokenGORMRepo_BatchDeleteForUser_NoTokens(t *testing.T) {
 	repo, user := setupTokenTestDB(t)
 	ctx := context.Background()
 
-	err := repo.BatchDeleteForUser(ctx, user.ID)
+	err := repo.BatchDeleteForUser(ctx, user, user.ID)
 	assert.NoError(t, err)
 }
 

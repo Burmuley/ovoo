@@ -106,12 +106,12 @@ func (a *AddrsRepo) Update(ctx context.Context, address entities.Address) error 
 	return nil
 }
 
-func (a *AddrsRepo) DeleteById(ctx context.Context, id entities.Id) error {
+func (a *AddrsRepo) DeleteById(ctx context.Context, cuser entities.User, id entities.Id) error {
 	// Opportunistic cache lookup: if we already have the address cached we can
 	// evict the email key precisely without an extra DB round-trip.
 	cached, hasCached := getFromCache[entities.Address](ctx, a.cache, addrIdKey(id))
 
-	if err := a.repo.DeleteById(ctx, id); err != nil {
+	if err := a.repo.DeleteById(ctx, cuser, id); err != nil {
 		return err
 	}
 
@@ -123,8 +123,8 @@ func (a *AddrsRepo) DeleteById(ctx context.Context, id entities.Id) error {
 	return nil
 }
 
-func (a *AddrsRepo) BatchDeleteById(ctx context.Context, ids []entities.Id) error {
-	if err := a.repo.BatchDeleteById(ctx, ids); err != nil {
+func (a *AddrsRepo) BatchDeleteById(ctx context.Context, cuser entities.User, ids []entities.Id) error {
+	if err := a.repo.BatchDeleteById(ctx, cuser, ids); err != nil {
 		return err
 	}
 	evictPrefix(ctx, a.cache, "addr:")

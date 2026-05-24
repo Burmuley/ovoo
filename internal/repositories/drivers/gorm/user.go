@@ -53,9 +53,14 @@ func (u *UserGORMRepo) Update(ctx context.Context, user entities.User) error {
 }
 
 // Delete removes a user from the database by ID.
-func (u *UserGORMRepo) Delete(ctx context.Context, id entities.Id) error {
+func (u *UserGORMRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
 	if _, err := u.GetById(ctx, id); err != nil {
 		return err
+	}
+
+	if err := u.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).
+		Updates(map[string]any{"updated_by_id": cuser.ID.String()}).Error; err != nil {
+		return wrapGormError(err)
 	}
 
 	if err := u.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).Unscoped().

@@ -542,7 +542,7 @@ func TestApiTokensService_Delete_Success_Owner(t *testing.T) {
 	}
 
 	tokensRepo.On("GetById", ctx, tokenId).Return(existingToken, nil)
-	tokensRepo.On("Delete", ctx, tokenId).Return(nil)
+	tokensRepo.On("Delete", ctx, mock.Anything, tokenId).Return(nil)
 
 	_, err := service.Delete(ctx, owner, tokenId)
 
@@ -577,7 +577,7 @@ func TestApiTokensService_Delete_Success_Admin(t *testing.T) {
 	}
 
 	tokensRepo.On("GetById", ctx, tokenId).Return(existingToken, nil)
-	tokensRepo.On("Delete", ctx, tokenId).Return(nil)
+	tokensRepo.On("Delete", ctx, mock.Anything, tokenId).Return(nil)
 
 	_, err := service.Delete(ctx, admin, tokenId)
 
