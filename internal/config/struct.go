@@ -80,10 +80,11 @@ type ConfigDBDriverGORM struct {
 // Ovoo Milter configuration
 
 type MilterConfig struct {
-	Api        ConfigMilterAPIConn `koanf:"api"`
-	Domains    []string            `koanf:"domains"`
-	ListenAddr string              `koanf:"listen_addr"`
-	Log        ConfigLogging       `koanf:"log"`
+	Api             ConfigMilterAPIConn `koanf:"api"`
+	Domains         []string            `koanf:"domains"`
+	ListenAddr      string              `koanf:"listen_addr"`
+	Log             ConfigLogging       `koanf:"log"`
+	MailDisplayName string              `koanf:"mail_display_name"`
 }
 
 type ConfigMilterAPIConn struct {

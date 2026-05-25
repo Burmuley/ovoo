@@ -39,13 +39,13 @@ func ovooCLIWith(rt http.RoundTripper) OvooClient {
 // --- NewClient ---
 
 func TestNewClient_EmptyDomain(t *testing.T) {
-	_, err := NewClient("http://localhost", "tok", false, []string{}, 5*time.Second)
+	_, err := NewClient("http://localhost", "tok", false, []string{}, 5*time.Second, "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "domain")
 }
 
 func TestNewClient_ValidParams(t *testing.T) {
-	cli, err := NewClient("http://localhost", "mytoken", false, []string{"ovoo.com"}, 3*time.Second)
+	cli, err := NewClient("http://localhost", "mytoken", false, []string{"ovoo.com"}, 3*time.Second, "Ovoo Mail")
 	require.NoError(t, err)
 	assert.Equal(t, "http://localhost", cli.server)
 	assert.Equal(t, "mytoken", cli.token)

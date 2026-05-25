@@ -32,9 +32,14 @@ func startMilter(cfg *config.MilterConfig) error {
 	if apiToken == "" {
 		return errors.New("missing 'auth_token' configuration parameter")
 	}
+	displayName := cfg.MailDisplayName
 	client, err := milter.NewClient(
-		apiAddr, apiToken, cfg.Api.TLSSkipVerify, cfg.Domains,
+		apiAddr,
+		apiToken,
+		cfg.Api.TLSSkipVerify,
+		cfg.Domains,
 		time.Duration(cfg.Api.Timeout)*time.Second,
+		displayName,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating Ovoo API client: %w", err)

@@ -80,6 +80,11 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 		trx.Headers().Set("dkim-signature", "")
 		trx.Headers().Set("x-google-dkim-signature", "") // google specific signature
 
+		// delete ARC sealing headers
+		trx.Headers().Set("ARC-Seal", "")
+		trx.Headers().Set("ARC-Message-Signature", "")
+		trx.Headers().Set("ARC-Authentication-Results", "")
+
 		return mailfilter.Accept, nil
 	}
 }

@@ -1,6 +1,6 @@
-# Ovoo – Privacy Mail Gateway
+# Ovoo — Anonymous Email Aliasing & Forwarding
 
-Ovoo is your personal email privacy guardian that you can host yourself. Imagine creating unlimited unique email addresses that all forward to your real inbox - without ever revealing your actual email address to anyone. Just like premium email privacy services, but completely under your control.
+Ovoo is your personal email privacy guardian that you can host yourself, which can helps you to hide your real email address. Imagine creating unlimited unique email addresses that all forward to your real inbox - without ever revealing your actual email address to anyone. Just like premium email privacy services, but completely under your control.
 
 Whether you're signing up for a newsletter, shopping online, or managing business communications, Ovoo lets you create disposable or permanent email aliases that protect your privacy while ensuring you never miss an important message.
 
@@ -10,7 +10,7 @@ Ovoo works with two simple concepts:
 * `Protected address` - Your real email address where you want to receive messages
 * `Alias` - A randomly generated email address that forwards messages to your protected address. Even when you reply, your real email stays hidden
 
-Setting up Ovoo is straightforward - you just need one server running the Ovoo software and an email server (MTA) to handle the actual email delivery.
+Setting up Ovoo is straightforward - you just need one server running the Ovoo software and an email server (MTA) to handle the actual email delivery (which can be on the same host).
 
 You can find example configurations for the Postfix email server in [examples/postfix](./docs/examples/postfix).
 
@@ -25,7 +25,7 @@ This is the central brain of Ovoo, providing a REST API service built with Go. I
 * Control user access through modern authentication methods like OpenID Connect (OIDC), API Keys, or simple username/password
 * Use a friendly web interface built with Vue.js to manage everything
 
-Want to integrate with other tools? Check out the full API documentation in [openapi.yaml](./openapi.yaml).
+Want to integrate with other tools? Check out the full OpenAPI documentation in [openapi.yaml](./openapi.yaml).
 
 #### REST API Overview
 
@@ -57,6 +57,7 @@ Ovoo ecosystem, in other words if it can find an `Alias` in the database, it wil
 - [x] REST API and core mail flow logic
 - [x] Milter and integration with Postfix
 - [x] WebUI for simple access
+- [x] Multiple domain support
 - [ ] NoSQL databases support
 - [ ] Chrome browser plugin
 - [ ] Safari browser plugin

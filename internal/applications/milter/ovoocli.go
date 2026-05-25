@@ -10,8 +10,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
+
+const defaultEmailDisplayName = "Ovoo Hidden Mail"
 
 type OvooChainAddressData struct {
 	Email string `json:"email"`
@@ -41,13 +44,18 @@ type OvooError struct {
 }
 
 type OvooClient struct {
-	client  *http.Client
-	server  string
-	token   string
-	domains []string
+	client      *http.Client
+	server      string
+	token       string
+	domains     []string
+	displayName string
 }
 
-func NewClient(server string, authToken string, tlsSkipVerify bool, domains []string, timeout time.Duration) (OvooClient, error) {
+func NewClient(server string, authToken string, tlsSkipVerify bool, domains []string, timeout time.Duration, displayName string) (OvooClient, error) {
+	displayName = strings.TrimSpace(displayName)
+	if len(displayName) == 0 {
+		displayName = defaultEmailDisplayName
+	}
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify},
@@ -58,7 +66,13 @@ func NewClient(server string, authToken string, tlsSkipVerify bool, domains []st
 	if len(domains) == 0 {
 		return OvooClient{}, errors.New("at least one domain must be configured")
 	}
-	return OvooClient{client: client, server: server, token: authToken, domains: domains}, nil
+	return OvooClient{
+		client:      client,
+		server:      server,
+		token:       authToken,
+		domains:     domains,
+		displayName: displayName,
+	}, nil
 }
 
 func (o OvooClient) createRequest(ctx context.Context, server, path, method string, body io.Reader, headers map[string]string, queryParams map[string]string) (*http.Request, error) {

@@ -25,7 +25,7 @@ func chainServer(t *testing.T, chain OvooChainData) OvooClient {
 		_ = json.NewEncoder(w).Encode(chain)
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second)
+	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second, "Mail Display Name")
 	require.NoError(t, err)
 	return cli
 }
@@ -38,7 +38,7 @@ func errorServer(t *testing.T) OvooClient {
 		_, _ = w.Write([]byte(`{"Error":[{"status":"error","detail":"internal error"}]}`))
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second)
+	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second, "Mail Display Name")
 	require.NoError(t, err)
 	return cli
 }
@@ -157,9 +157,9 @@ func TestAddressRewriter_CreateChainError(t *testing.T) {
 
 func TestAddressRewriter_ForwardChain(t *testing.T) {
 	chain := OvooChainData{
-		FromEmail:       "reply@ovoo.com",
-		ToEmail:         "user@gmail.com",
-		OrigToAddress:   OvooChainAddressData{Email: "alias@ovoo.com", Type: "alias"},
+		FromEmail:     "reply@ovoo.com",
+		ToEmail:       "user@gmail.com",
+		OrigToAddress: OvooChainAddressData{Email: "alias@ovoo.com", Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -235,9 +235,9 @@ func TestAddressRewriter_MailFromArgsPassthrough(t *testing.T) {
 
 func TestAddressRewriter_ReplyChain(t *testing.T) {
 	chain := OvooChainData{
-		FromEmail:       "alias@ovoo.com",
-		ToEmail:         "ext1@external.com",
-		OrigToAddress:   OvooChainAddressData{Email: "reply-alias@ovoo.com", Type: "reply_alias"},
+		FromEmail:     "alias@ovoo.com",
+		ToEmail:       "ext1@external.com",
+		OrigToAddress: OvooChainAddressData{Email: "reply-alias@ovoo.com", Type: "reply_alias"},
 	}
 	cli := chainServer(t, chain)
 
