@@ -85,6 +85,9 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 		trx.Headers().Set("ARC-Message-Signature", "")
 		trx.Headers().Set("ARC-Authentication-Results", "")
 
+		// delete Received-SPF header for privacy
+		trx.Headers().Set("Received-SPF", "")
+
 		return mailfilter.Accept, nil
 	}
 }
