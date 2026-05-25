@@ -156,13 +156,13 @@ func buildTestApplication(t *testing.T, addrRepo *mockAddressRepo) *Application 
 		ApiTokens: new(mockTokensRepo),
 	}
 
-	aliasesSvc, err := services.NewAliasesService("test.com", []string{"alpha", "bravo", "charlie"}, repof)
+	aliasesSvc, err := services.NewAliasesService([]string{"test.com"}, []string{"alpha", "bravo", "charlie"}, repof)
 	require.NoError(t, err)
 	prAddrsSvc, err := services.NewProtectedAddrService(repof)
 	require.NoError(t, err)
 	usersSvc, err := services.NewUsersService(repof)
 	require.NoError(t, err)
-	chainsSvc, err := services.NewChainsService("test.com", repof)
+	chainsSvc, err := services.NewChainsService(repof)
 	require.NoError(t, err)
 	tokensSvc, err := services.NewApiTokensService(repof)
 	require.NoError(t, err)

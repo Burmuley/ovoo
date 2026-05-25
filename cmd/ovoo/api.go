@@ -11,8 +11,8 @@ import (
 	"github.com/Burmuley/ovoo/internal/services"
 )
 
-func makeServices(repoFactory *factory.RepoFactory, domain string, dict []string) (*services.ServiceGateway, error) {
-	aliases, err := services.NewAliasesService(domain, dict, repoFactory)
+func makeServices(repoFactory *factory.RepoFactory, domains []string, dict []string) (*services.ServiceGateway, error) {
+	aliases, err := services.NewAliasesService(domains, dict, repoFactory)
 	if err != nil {
 		return nil, fmt.Errorf("initializing aliases service: %w", err)
 	}
@@ -22,7 +22,7 @@ func makeServices(repoFactory *factory.RepoFactory, domain string, dict []string
 		return nil, fmt.Errorf("initializing protected addresses service: %w", err)
 	}
 
-	chains, err := services.NewChainsService(domain, repoFactory)
+	chains, err := services.NewChainsService(repoFactory)
 	if err != nil {
 		return nil, fmt.Errorf("initializing chains service: %w", err)
 	}
@@ -69,7 +69,7 @@ func startApi(cfg *config.APIConfig) error {
 	}
 
 	// initialize services
-	svcGw, err := makeServices(repos, cfg.Domain, dict)
+	svcGw, err := makeServices(repos, cfg.Domains, dict)
 	if err != nil {
 		return fmt.Errorf("error initializing services gateway: %w", err)
 	}

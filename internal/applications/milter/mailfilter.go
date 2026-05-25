@@ -17,11 +17,14 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 			return mailfilter.Reject, err
 		}
 
-		// check recipients matching the our target domain
+		// check recipients matching any of our configured domains
 		var matchingRcpts []*addr.RcptTo
 		for _, rcpt := range trx.RcptTos() {
-			if strings.Contains(rcpt.Addr, ovooCli.domain) {
-				matchingRcpts = append(matchingRcpts, rcpt)
+			for _, domain := range ovooCli.domains {
+				if strings.Contains(rcpt.Addr, domain) {
+					matchingRcpts = append(matchingRcpts, rcpt)
+					break
+				}
 			}
 		}
 

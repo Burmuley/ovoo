@@ -7,6 +7,10 @@
                     <CFormLabel>Protected Address</CFormLabel>
                     <Dropdown text="Select address" :items="praddrs" @filter-selected="praddrSelected = $event" />
                 </div>
+                <div class="mb-3" v-if="domains.length > 1">
+                    <CFormLabel>Domain</CFormLabel>
+                    <Dropdown text="Select domain" :items="domainItems" @filter-selected="domainSelected = $event" />
+                </div>
                 <div class="mb-3">
                     <CFormLabel for="svcname">Service Name</CFormLabel>
                     <CFormInput id="svcname" v-model="svcname" placeholder="e.g. GitHub" />
@@ -45,6 +49,9 @@ const emit = defineEmits(['done'])
 
 const praddrs = ref([])
 const praddrSelected = ref('')
+const domains = ref([])
+const domainItems = ref([])
+const domainSelected = ref('')
 const svcname = ref('')
 const comment = ref('')
 const result = ref({})
@@ -56,6 +63,16 @@ const load = async () => {
     praddrs.value = data.protected_addresses.map(a => ({ id: a.id, text: a.email }))
 }
 
+const loadDomains = async () => {
+    const res = await apiFetch('/api/v1/domains')
+    const data = await res.json()
+    domains.value = data.domains
+    domainItems.value = data.domains.map(d => ({ id: d, text: d }))
+    if (domains.value.length > 0) {
+        domainSelected.value = domains.value[0]
+    }
+}
+
 const copyAlias = async () => {
     await navigator.clipboard.writeText(result.value.json.email)
     copied.value = true
@@ -64,18 +81,25 @@ const copyAlias = async () => {
 
 const createAlias = async () => {
     copied.value = false
+    const body = {
+        protected_address_id: praddrSelected.value.toString(),
+        metadata: {
+            service_name: svcname.value,
+            comment: comment.value,
+        },
+    }
+    if (domainSelected.value) {
+        body.domain = domainSelected.value
+    }
     const res = await apiFetch('/api/v1/aliases', {
         method: 'POST',
-        body: JSON.stringify({
-            protected_address_id: praddrSelected.value.toString(),
-            metadata: {
-                service_name: svcname.value,
-                comment: comment.value,
-            },
-        }),
+        body: JSON.stringify(body),
     })
     result.value = { status: res.status, json: await res.json() }
 }
 
-onMounted(load)
+onMounted(() => {
+    load()
+    loadDomains()
+})
 </script>

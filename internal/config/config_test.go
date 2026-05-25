@@ -23,7 +23,7 @@ func writeTempConfig(t *testing.T, content string) string {
 func TestLoadConfig_APIConfig_Full(t *testing.T) {
 	path := writeTempConfig(t, `{
 		"api": {
-			"domain": "example.com",
+			"domains": ["example.com"],
 			"listen_addr": "0.0.0.0:8808",
 			"logging": {"destination": "stdout", "level": "debug"},
 			"tls": {"cert": "/tls/cert.pem", "key": "/tls/key.pem"},
@@ -58,7 +58,7 @@ func TestLoadConfig_APIConfig_Full(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	assert.Equal(t, "example.com", cfg.Domain)
+	assert.Equal(t, []string{"example.com"}, cfg.Domains)
 	assert.Equal(t, "0.0.0.0:8808", cfg.ListenAddr)
 	assert.Equal(t, "stdout", cfg.Log.Destination)
 	assert.Equal(t, "debug", cfg.Log.Level)
@@ -86,7 +86,7 @@ func TestLoadConfig_APIConfig_Full(t *testing.T) {
 func TestLoadConfig_APIConfig_OptionalFieldsAbsent(t *testing.T) {
 	path := writeTempConfig(t, `{
 		"api": {
-			"domain": "example.com",
+			"domains": ["example.com"],
 			"database": {
 				"driver": "gorm",
 				"log_level": "silent",
@@ -99,7 +99,7 @@ func TestLoadConfig_APIConfig_OptionalFieldsAbsent(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	assert.Equal(t, "example.com", cfg.Domain)
+	assert.Equal(t, []string{"example.com"}, cfg.Domains)
 	assert.Nil(t, cfg.Cache)
 	assert.Nil(t, cfg.DefaultAdmin)
 	assert.Empty(t, cfg.OIDC)
@@ -112,7 +112,7 @@ func TestLoadConfig_APIConfig_EmptyJSON(t *testing.T) {
 	cfg, err := LoadConfig[APIConfig](APISection, path)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
-	assert.Equal(t, "", cfg.Domain)
+	assert.Nil(t, cfg.Domains)
 	assert.Nil(t, cfg.Cache)
 }
 
@@ -182,7 +182,7 @@ func TestLoadConfig_MilterConfig_Full(t *testing.T) {
 	// so MilterConfig fields must be nested under "api" in the JSON.
 	path := writeTempConfig(t, `{
 		"milter": {
-			"domain": "example.com",
+			"domains": ["example.com"],
 			"listen_addr": "127.0.0.1:6785",
 			"api": {
 				"addr": "https://api.example.com",
@@ -197,7 +197,7 @@ func TestLoadConfig_MilterConfig_Full(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 
-	assert.Equal(t, "example.com", cfg.Domain)
+	assert.Equal(t, []string{"example.com"}, cfg.Domains)
 	assert.Equal(t, "127.0.0.1:6785", cfg.ListenAddr)
 	assert.Equal(t, "https://api.example.com", cfg.Api.Addr)
 	assert.Equal(t, "secret-token", cfg.Api.AuthToken)

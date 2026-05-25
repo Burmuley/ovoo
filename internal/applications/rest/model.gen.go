@@ -229,6 +229,11 @@ type GetApiTokenDetailsResponse = ApiTokenData
 // GetApiTokensResponse defines model for getApiTokensResponse.
 type GetApiTokensResponse = []ApiTokenData
 
+// GetDomainsResponse defines model for getDomainsResponse.
+type GetDomainsResponse struct {
+	Domains []string `json:"domains"`
+}
+
 // GetEmailChainDetailsResponse defines model for getEmailChainDetailsResponse.
 type GetEmailChainDetailsResponse = ChainData
 
@@ -267,6 +272,8 @@ type UpdateUserResponse = UserData
 
 // CreateAliasRequest defines model for createAliasRequest.
 type CreateAliasRequest struct {
+	// Domain Target domain for alias generation; defaults to first configured domain
+	Domain             *string         `json:"domain,omitempty"`
 	Metadata           AddressMetadata `json:"metadata"`
 	ProtectedAddressId string          `json:"protected_address_id"`
 }
@@ -355,6 +362,8 @@ type GetAliasesParams struct {
 
 // CreateAliasJSONBody defines parameters for CreateAlias.
 type CreateAliasJSONBody struct {
+	// Domain Target domain for alias generation; defaults to first configured domain
+	Domain             *string         `json:"domain,omitempty"`
 	Metadata           AddressMetadata `json:"metadata"`
 	ProtectedAddressId string          `json:"protected_address_id"`
 }

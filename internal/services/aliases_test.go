@@ -21,7 +21,7 @@ func setupAliasesService(t *testing.T) (*AliasesService, *MockAddressRepo, *Mock
 		Chain:   chainRepo,
 	}
 
-	service, err := NewAliasesService("test.com", []string{"word1", "word2", "word3"}, repof)
+	service, err := NewAliasesService([]string{"test.com"}, []string{"word1", "word2", "word3"}, repof)
 	require.NoError(t, err)
 
 	return service, addressRepo, chainRepo
@@ -29,7 +29,7 @@ func setupAliasesService(t *testing.T) (*AliasesService, *MockAddressRepo, *Mock
 
 func TestNewAliasesService(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService("test.com", []string{"word1", "word2"}, repof)
+	service, err := NewAliasesService([]string{"test.com"}, []string{"word1", "word2"}, repof)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, service)
@@ -37,7 +37,7 @@ func TestNewAliasesService(t *testing.T) {
 
 func TestNewAliasesService_InvalidDomain(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService("x", []string{"word1", "word2"}, repof)
+	service, err := NewAliasesService([]string{"x"}, []string{"word1", "word2"}, repof)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)
@@ -47,7 +47,7 @@ func TestNewAliasesService_InvalidDomain(t *testing.T) {
 
 func TestNewAliasesService_EmptyDomain(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService("", []string{"word1", "word2"}, repof)
+	service, err := NewAliasesService([]string{}, []string{"word1", "word2"}, repof)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)
@@ -56,7 +56,7 @@ func TestNewAliasesService_EmptyDomain(t *testing.T) {
 
 func TestNewAliasesService_EmptyWordsDictionary(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService("test.com", []string{}, repof)
+	service, err := NewAliasesService([]string{"test.com"}, []string{}, repof)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)
@@ -65,7 +65,7 @@ func TestNewAliasesService_EmptyWordsDictionary(t *testing.T) {
 }
 
 func TestNewAliasesService_NilRepoFactory(t *testing.T) {
-	service, err := NewAliasesService("test.com", []string{"word1", "word2"}, nil)
+	service, err := NewAliasesService([]string{"test.com"}, []string{"word1", "word2"}, nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)

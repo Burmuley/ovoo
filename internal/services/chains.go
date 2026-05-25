@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Burmuley/ovoo/internal/entities"
@@ -12,22 +13,16 @@ import (
 
 // ChainsService represents a use case for managing chains
 type ChainsService struct {
-	repof  *factory.RepoFactory
-	domain string
+	repof *factory.RepoFactory
 }
 
 // NewChainsService creates a new instance of ChainsUsecase
-// It takes a RepoFabric as a parameter and returns a pointer to ChainsUsecase and an error
-func NewChainsService(domain string, repof *factory.RepoFactory) (*ChainsService, error) {
+func NewChainsService(repof *factory.RepoFactory) (*ChainsService, error) {
 	if repof == nil {
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
-	if len(domain) == 0 {
-		return nil, fmt.Errorf("%w: domain should be defined", entities.ErrConfiguration)
-	}
-
-	return &ChainsService{domain: domain, repof: repof}, nil
+	return &ChainsService{repof: repof}, nil
 }
 
 func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
@@ -118,9 +113,12 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 		return entities.Chain{}, fmt.Errorf("creating source address: %w", err)
 	}
 
+	// Extract domain from the alias email (toEmail) for reply alias generation.
+	domain := toEmail[strings.LastIndex(toEmail, "@")+1:]
+
 	// Generate ReplyAlias(FromAddress, ToAddress)
 	// (creates Address record with ForwardAddress set to original external sender)
-	ralias, err := genReplyAlias(ctx, cs.repof, fromEmail, toEmail, cs.domain, &src, owner)
+	ralias, err := genReplyAlias(ctx, cs.repof, fromEmail, toEmail, domain, &src, owner)
 	if err != nil {
 		return entities.Chain{}, fmt.Errorf("generating reply alias: %w", err)
 	}

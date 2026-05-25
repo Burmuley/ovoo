@@ -26,8 +26,6 @@ import (
 
 const (
 	DefaultListenAddr string = "127.0.0.1:8808"
-	loginURI                 = "/auth/login"
-	callbackURI              = "/auth/callback"
 )
 
 //go:embed data/**
@@ -160,6 +158,9 @@ func (a *Application) Start() error {
 	mux.HandleFunc("POST /api/v1/users/apitokens", a.CreateApiToken)
 	mux.HandleFunc("PATCH /api/v1/users/apitokens/{id}", a.UpdateApiToken)
 	mux.HandleFunc("DELETE /api/v1/users/apitokens/{id}", a.DeleteApiToken)
+
+	// domains route
+	mux.HandleFunc("GET /api/v1/domains", a.GetDomains)
 
 	// aliases routes
 	mux.HandleFunc("GET /api/v1/aliases", a.GetAliases)

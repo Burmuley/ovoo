@@ -89,6 +89,7 @@ func (a *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
 			ServiceName: req.Metadata.ServiceName,
 		},
 		ProtectedAddressId: req.ProtectedAddressId,
+		Domain:             req.Domain,
 	})
 
 	if err != nil {

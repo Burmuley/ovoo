@@ -594,6 +594,24 @@ paths:
         schema:
           type: string
         required: true
+  /api/v1/domains:
+    get:
+      summary: Get configured alias domains
+      description: >-
+        Returns the list of email domains configured for alias generation.
+      operationId: getDomains
+      tags:
+        - System
+      parameters: []
+      responses:
+        "200":
+          $ref: "#/components/responses/getDomainsResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+      security:
+        - OAuth2: []
+        - BasicAuthentication: []
+        - ApiToken: []
   /api/v1/version:
     get:
       summary: Get runtime version details
@@ -923,10 +941,12 @@ components:
             properties:
               protected_address_id:
                 type: string
+              domain:
+                type: string
+                description: "Target domain for alias generation; defaults to first configured domain"
               metadata:
                 $ref: "#/components/schemas/addressMetadata"
             required:
-              - email
               - protected_address_id
               - metadata
     updateAliasRequest:
@@ -1269,6 +1289,19 @@ components:
             type: array
             items:
               $ref: "#/components/schemas/apiTokenData"
+    getDomainsResponse:
+      description: List of configured alias domains
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - domains
+            properties:
+              domains:
+                type: array
+                items:
+                  type: string
     getSystemVersionResponse:
       description: Nested mappings are not allowed in compact mappings
       headers: {}

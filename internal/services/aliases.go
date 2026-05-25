@@ -13,6 +13,7 @@ import (
 
 type AliasCreateCmd struct {
 	ProtectedAddressId string
+	Domain             *string
 	Metadata           struct {
 		Comment     *string
 		ServiceName *string
@@ -31,14 +32,20 @@ type AliasUpdateCmd struct {
 // AliasesService handles operations related to alias addresses.
 type AliasesService struct {
 	repof           *factory.RepoFactory
-	domain          string
+	domains         []string
 	wordsDictionary []string
 }
 
 // NewAliasesService creates a new AliasesUsecase instance.
-func NewAliasesService(domain string, wordsDict []string, repoFabric *factory.RepoFactory) (*AliasesService, error) {
-	if len(domain) < 2 {
-		return nil, fmt.Errorf("%w: invalid domain defined", entities.ErrConfiguration)
+func NewAliasesService(domains []string, wordsDict []string, repoFabric *factory.RepoFactory) (*AliasesService, error) {
+	if len(domains) < 1 {
+		return nil, fmt.Errorf("%w: at least one domain must be defined", entities.ErrConfiguration)
+	}
+
+	for _, d := range domains {
+		if len(d) < 2 {
+			return nil, fmt.Errorf("%w: invalid domain %q defined", entities.ErrConfiguration, d)
+		}
 	}
 
 	if len(wordsDict) == 0 {
@@ -49,7 +56,12 @@ func NewAliasesService(domain string, wordsDict []string, repoFabric *factory.Re
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
-	return &AliasesService{repof: repoFabric, domain: domain, wordsDictionary: wordsDict}, nil
+	return &AliasesService{repof: repoFabric, domains: domains, wordsDictionary: wordsDict}, nil
+}
+
+// Domains returns the list of configured alias domains.
+func (als *AliasesService) Domains() []string {
+	return als.domains
 }
 
 // Create generates a new alias address and stores it.
@@ -81,7 +93,15 @@ func (als *AliasesService) Create(
 		return entities.Address{}, fmt.Errorf("%w: can not create alias for inactive protected address", entities.ErrValidation)
 	}
 
-	aliasEmail, err := entities.GenAliasEmail(als.domain, als.wordsDictionary)
+	domain := als.domains[0]
+	if cmd.Domain != nil {
+		if !slices.Contains(als.domains, *cmd.Domain) {
+			return entities.Address{}, fmt.Errorf("%w: unknown domain %q", entities.ErrValidation, *cmd.Domain)
+		}
+		domain = *cmd.Domain
+	}
+
+	aliasEmail, err := entities.GenAliasEmail(domain, als.wordsDictionary)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
 	}

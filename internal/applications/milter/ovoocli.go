@@ -41,13 +41,13 @@ type OvooError struct {
 }
 
 type OvooClient struct {
-	client *http.Client
-	server string
-	token  string
-	domain string
+	client  *http.Client
+	server  string
+	token   string
+	domains []string
 }
 
-func NewClient(server string, authToken string, tlsSkipVerify bool, domain string, timeout time.Duration) (OvooClient, error) {
+func NewClient(server string, authToken string, tlsSkipVerify bool, domains []string, timeout time.Duration) (OvooClient, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify},
@@ -55,10 +55,10 @@ func NewClient(server string, authToken string, tlsSkipVerify bool, domain strin
 		Timeout: timeout,
 	}
 
-	if domain == "" {
-		return OvooClient{}, errors.New("missing value for configuration option 'domain'")
+	if len(domains) == 0 {
+		return OvooClient{}, errors.New("at least one domain must be configured")
 	}
-	return OvooClient{client: client, server: server, token: authToken, domain: domain}, nil
+	return OvooClient{client: client, server: server, token: authToken, domains: domains}, nil
 }
 
 func (o OvooClient) createRequest(ctx context.Context, server, path, method string, body io.Reader, headers map[string]string, queryParams map[string]string) (*http.Request, error) {

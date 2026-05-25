@@ -6,7 +6,7 @@ type APIConfig struct {
 	Cache        *ConfigCache          `koanf:"cache"`
 	Database     ConfigDB              `koanf:"database"`
 	DefaultAdmin *ConfigDefaultAdmin   `koanf:"default_admin"`
-	Domain       string                `koanf:"domain"`
+	Domains      []string              `koanf:"domains"`
 	ListenAddr   string                `koanf:"listen_addr"`
 	Log          ConfigLogging         `koanf:"logging"`
 	OIDC         map[string]ConfigOIDC `koanf:"oidc"`
@@ -81,7 +81,7 @@ type ConfigDBDriverGORM struct {
 
 type MilterConfig struct {
 	Api        ConfigMilterAPIConn `koanf:"api"`
-	Domain     string              `koanf:"domain"`
+	Domains    []string            `koanf:"domains"`
 	ListenAddr string              `koanf:"listen_addr"`
 	Log        ConfigLogging       `koanf:"log"`
 }

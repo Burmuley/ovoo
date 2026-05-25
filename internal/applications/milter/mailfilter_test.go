@@ -25,7 +25,7 @@ func chainServer(t *testing.T, chain OvooChainData) OvooClient {
 		_ = json.NewEncoder(w).Encode(chain)
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, "ovoo.com", 5*time.Second)
+	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second)
 	require.NoError(t, err)
 	return cli
 }
@@ -38,7 +38,7 @@ func errorServer(t *testing.T) OvooClient {
 		_, _ = w.Write([]byte(`{"Error":[{"status":"error","detail":"internal error"}]}`))
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, "ovoo.com", 5*time.Second)
+	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second)
 	require.NoError(t, err)
 	return cli
 }
@@ -46,7 +46,7 @@ func errorServer(t *testing.T) OvooClient {
 // stubClient returns an OvooClient with no HTTP transport, suitable for tests that never
 // reach the CreateChain call.
 func stubClient() OvooClient {
-	return OvooClient{domain: "ovoo.com"}
+	return OvooClient{domains: []string{"ovoo.com"}}
 }
 
 // --- getHeaderAddr ---

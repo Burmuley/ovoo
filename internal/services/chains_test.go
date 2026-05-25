@@ -22,7 +22,7 @@ func setupChainsService(t *testing.T) (*ChainsService, *MockChainRepo, *MockAddr
 		Address: addressRepo,
 	}
 
-	service, err := NewChainsService("test.com", repof)
+	service, err := NewChainsService(repof)
 	require.NoError(t, err)
 
 	return service, chainRepo, addressRepo
@@ -30,28 +30,18 @@ func setupChainsService(t *testing.T) (*ChainsService, *MockChainRepo, *MockAddr
 
 func TestNewChainsService(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewChainsService("test.com", repof)
+	service, err := NewChainsService(repof)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, service)
 }
 
 func TestNewChainsService_NilRepoFactory(t *testing.T) {
-	service, err := NewChainsService("test.com", nil)
+	service, err := NewChainsService(nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)
 	assert.ErrorIs(t, err, entities.ErrConfiguration)
-}
-
-func TestNewChainsService_EmptyDomain(t *testing.T) {
-	repof := &factory.RepoFactory{}
-	service, err := NewChainsService("", repof)
-
-	assert.Error(t, err)
-	assert.Nil(t, service)
-	assert.ErrorIs(t, err, entities.ErrConfiguration)
-	assert.Contains(t, err.Error(), "domain should be defined")
 }
 
 func TestChainsService_GetByHash_Success_AdminUser(t *testing.T) {

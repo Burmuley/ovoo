@@ -33,7 +33,7 @@ func startMilter(cfg *config.MilterConfig) error {
 		return errors.New("missing 'auth_token' configuration parameter")
 	}
 	client, err := milter.NewClient(
-		apiAddr, apiToken, cfg.Api.TLSSkipVerify, cfg.Domain,
+		apiAddr, apiToken, cfg.Api.TLSSkipVerify, cfg.Domains,
 		time.Duration(cfg.Api.Timeout)*time.Second,
 	)
 	if err != nil {
