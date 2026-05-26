@@ -211,7 +211,7 @@ func applyAddressFilter(stmt *gorm.DB, filter entities.AddressFilter, doCount bo
 
 	if len(filter.ServiceNames) > 0 {
 		for _, val := range filter.ServiceNames {
-			stmt.Or(datatypes.JSONQuery("metadata").Likes(val, "service_name"))
+			stmt.Where(datatypes.JSONQuery("metadata").Likes(val, "service_name"))
 		}
 	}
 
