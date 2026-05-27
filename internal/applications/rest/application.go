@@ -271,6 +271,10 @@ func parseProvidersCfg(cfg map[string]config.ConfigOIDC) (map[string]middleware.
 		scopes := []string{"openid", "profile", "email"}
 		if len(config.ExtraScopes) > 0 {
 			scopes = append(scopes, config.ExtraScopes...)
+			p.ExtraScopes = config.ExtraScopes
+		}
+		if len(config.ExtraURLParams) > 0 {
+			p.ExtraURLParams = config.ExtraURLParams
 		}
 		p.OAuth2Config = &oauth2.Config{
 			ClientID:     config.ClientId,

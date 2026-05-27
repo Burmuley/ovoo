@@ -38,10 +38,11 @@ type ConfigDefaultAdmin struct {
 }
 
 type ConfigOIDC struct {
-	ClientId     string   `koanf:"client_id"`
-	ClientSecret string   `koanf:"client_secret"`
-	Issuer       string   `koanf:"issuer"`
-	ExtraScopes  []string `koanf:"extra_scopes"`
+	ClientId       string            `koanf:"client_id"`
+	ClientSecret   string            `koanf:"client_secret"`
+	Issuer         string            `koanf:"issuer"`
+	ExtraScopes    []string          `koanf:"extra_scopes"`     // extra scopes to include in request
+	ExtraURLParams map[string]string `koanf:"extra_url_params"` // extra parameters to include in authorization URL
 }
 
 type ConfigCache struct {

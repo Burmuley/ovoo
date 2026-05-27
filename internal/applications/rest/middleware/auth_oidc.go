@@ -36,11 +36,12 @@ var (
 )
 
 type OIDCProvider struct {
-	OAuth2Config *oauth2.Config
-	OIDCProvider *oidc.Provider
-	OIDCConfig   *oidc.Config
-	Issuer       string
-	ExtraScopes  []string
+	OAuth2Config   *oauth2.Config
+	OIDCProvider   *oidc.Provider
+	OIDCConfig     *oidc.Config
+	Issuer         string
+	ExtraScopes    []string
+	ExtraURLParams map[string]string
 }
 
 // SetOIDCConfigs stores the OIDC provider configurations and populates the list
@@ -306,11 +307,17 @@ func handleOIDCLogin(w http.ResponseWriter, r *http.Request, prov OIDCProvider) 
 	setSecureCookie(w, r, nonceCookieName, nonce, int(time.Hour.Seconds()), "")
 
 	redirectUrl := formatRedirectURL(r, prov)
+	opts := []oauth2.AuthCodeOption{
+		oidc.Nonce(nonce),
+		oauth2.SetAuthURLParam("redirect_uri", redirectUrl),
+	}
+	if len(prov.ExtraURLParams) > 0 {
+		for key, val := range prov.ExtraURLParams {
+			opts = append(opts, oauth2.SetAuthURLParam(key, val))
+		}
+	}
 	http.Redirect(w, r,
-		prov.OAuth2Config.AuthCodeURL(
-			state, oidc.Nonce(nonce),
-			oauth2.SetAuthURLParam("redirect_uri", redirectUrl),
-		),
+		prov.OAuth2Config.AuthCodeURL(state, opts...),
 		http.StatusFound,
 	)
 }
