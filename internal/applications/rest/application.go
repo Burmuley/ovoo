@@ -268,7 +268,7 @@ func parseProvidersCfg(cfg map[string]config.ConfigOIDC) (map[string]middleware.
 			return nil, err
 		}
 
-		scopes := []string{"openid", "profile", "email", "offline_access"}
+		scopes := []string{"openid", "profile", "email"}
 		if len(config.ExtraScopes) > 0 {
 			scopes = append(scopes, config.ExtraScopes...)
 		}
