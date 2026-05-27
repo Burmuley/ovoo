@@ -273,7 +273,7 @@ func parseProvidersCfg(cfg map[string]config.ConfigOIDC) (map[string]middleware.
 			ClientSecret: config.ClientSecret,
 			Endpoint:     p.OIDCProvider.Endpoint(),
 			RedirectURL:  fmt.Sprintf("/auth/%s/callback", name),
-			Scopes:       []string{"openid", "profile", "email"},
+			Scopes:       []string{"openid", "profile", "email", "offline_access"},
 		}
 		p.OIDCConfig = &oidc.Config{
 			ClientID: config.ClientId,
