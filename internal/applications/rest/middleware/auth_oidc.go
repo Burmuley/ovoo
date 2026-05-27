@@ -40,6 +40,7 @@ type OIDCProvider struct {
 	OIDCProvider *oidc.Provider
 	OIDCConfig   *oidc.Config
 	Issuer       string
+	ExtraScopes  []string
 }
 
 // SetOIDCConfigs stores the OIDC provider configurations and populates the list
@@ -267,7 +268,7 @@ func handleOIDCCallback(w http.ResponseWriter, r *http.Request, prov OIDCProvide
 	}
 
 	if oauth2Token.RefreshToken == "" {
-		logger.Warn("OIDC provider returned no refresh token; verify that offline_access scope is supported")
+		logger.Warn("OIDC provider returned no refresh token")
 	}
 
 	setNewOIDCCookies(w, r, oauth2Token, providerName)

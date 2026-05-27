@@ -38,9 +38,10 @@ type ConfigDefaultAdmin struct {
 }
 
 type ConfigOIDC struct {
-	ClientId     string `koanf:"client_id"`
-	ClientSecret string `koanf:"client_secret"`
-	Issuer       string `koanf:"issuer"`
+	ClientId     string   `koanf:"client_id"`
+	ClientSecret string   `koanf:"client_secret"`
+	Issuer       string   `koanf:"issuer"`
+	ExtraScopes  []string `koanf:"extra_scopes"`
 }
 
 type ConfigCache struct {
