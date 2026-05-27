@@ -22,6 +22,7 @@ import { apiFetch } from '../utils/api'
 const providers = ref([])
 
 function login(provider) {
+    sessionStorage.setItem('oidcProvider', provider)
     window.location.href = `/auth/${provider}/login`
 }
 

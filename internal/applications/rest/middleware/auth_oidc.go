@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Burmuley/ovoo/internal/entities"
@@ -16,9 +17,22 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	refreshTokenMaxAge = 30 * 24 * 3600 // 30 days in seconds
+	userInfoCacheTTL   = 60 * time.Second
+)
+
+type cachedUserInfo struct {
+	email     string
+	expiresAt time.Time
+}
+
+var userInfoCache sync.Map
+
 var (
 	oidcLoginUriReg    = regexp.MustCompile(`/auth/(\w+)/login`)
 	oidcCallbackUriReg = regexp.MustCompile(`/auth/(\w+)/callback`)
+	oidcRefreshUriReg  = regexp.MustCompile(`/auth/(\w+)/refresh`)
 )
 
 type OIDCProvider struct {
@@ -28,6 +42,11 @@ type OIDCProvider struct {
 	Issuer       string
 }
 
+// SetOIDCConfigs stores the OIDC provider configurations and populates the list
+// of provider names used for the /auth/providers endpoint.
+//
+// Parameters:
+//   - configs: map of provider name to OIDCProvider configuration
 func SetOIDCConfigs(configs map[string]OIDCProvider) {
 	oidcConfigs = configs
 	oidcProviderNames = make([]string, 0, len(oidcConfigs))
@@ -36,59 +55,171 @@ func SetOIDCConfigs(configs map[string]OIDCProvider) {
 	}
 }
 
-// validateOIDCToken validates an OIDC token and extracts the user's email from its claims.
-// It creates a verifier using the provider configuration, verifies the token, and extracts
-// the email claim from the token. If the token is invalid, verification fails, or the token
-// doesn't contain an email claim, an error is returned.
+// validateAccessTokenViaUserInfo validates an access token by calling the OIDC provider's
+// UserInfo endpoint and returns the user's email address. Results are cached for
+// userInfoCacheTTL seconds to avoid per-request network calls to the provider.
 //
 // Parameters:
-//   - ctx: Context for the verification operation
-//   - token: The OIDC token string to validate
-//   - prov: The OIDCProvider configuration to use for validation
+//   - ctx: context for the UserInfo request
+//   - accessToken: the OAuth2 access token to validate
+//   - prov: the OIDCProvider configuration to use for the UserInfo call
 //
 // Returns:
-//   - string: The email address extracted from the token claims
-//   - error: An error if token verification fails or no email claim is present
-func validateOIDCToken(ctx context.Context, token string, prov OIDCProvider) (string, error) {
-	verifier := prov.OIDCProvider.Verifier(&oidc.Config{ClientID: prov.OAuth2Config.ClientID})
-	idToken, err := verifier.Verify(ctx, token)
+//   - string: the email address from the UserInfo response
+//   - error: an error if the UserInfo call fails or the response contains no email
+func validateAccessTokenViaUserInfo(ctx context.Context, accessToken string, prov OIDCProvider) (string, error) {
+	if v, ok := userInfoCache.Load(accessToken); ok {
+		if entry := v.(cachedUserInfo); time.Now().Before(entry.expiresAt) {
+			return entry.email, nil
+		}
+	}
+
+	userInfo, err := prov.OIDCProvider.UserInfo(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: accessToken}))
 	if err != nil {
 		return "", err
 	}
 
-	claims := struct {
-		Email string
-	}{}
-	if err := idToken.Claims(&claims); err != nil {
-		return "", err
+	if userInfo.Email == "" {
+		return "", errors.New("userinfo response contains no email")
 	}
 
-	if claims.Email == "" {
-		return "", errors.New("token claims got no email")
-	}
+	userInfoCache.Store(accessToken, cachedUserInfo{
+		email:     userInfo.Email,
+		expiresAt: time.Now().Add(userInfoCacheTTL),
+	})
 
-	return claims.Email, nil
+	return userInfo.Email, nil
 }
 
-// handleOIDCCallback handles the callback from the OIDC provider after user authentication.
-// It validates the state and nonce parameters, exchanges the authorization code for an
-// OAuth2 token, verifies the ID token, and sets an authentication cookie.
-//
-// The function performs the following steps:
-// 1. Verifies that the state parameter matches the value stored in the cookie
-// 2. Exchanges the authorization code for an OAuth2 token
-// 3. Extracts the ID token from the OAuth2 token
-// 4. Verifies the ID token with the OIDC provider
-// 5. Checks that the nonce in the ID token matches the value stored in the cookie
-// 6. Sets an authentication cookie with the ID token and redirects to the root page
+// getBearerToken extracts an OAuth2 access token from the Authorization header.
+// Returns an empty string if the header is absent or if the token belongs to an
+// API key (identified by the ApiTokenPrefix).
 //
 // Parameters:
-//   - w: HTTP response writer to write response and set cookies
-//   - r: HTTP request containing callback parameters
-//   - prov: The OIDCProvider configuration to use for token exchange
+//   - r: the HTTP request to read the Authorization header from
 //
-// The function handles errors by returning appropriate HTTP error responses
-func handleOIDCCallback(w http.ResponseWriter, r *http.Request, prov OIDCProvider) {
+// Returns:
+//   - string: the extracted bearer token, or an empty string if not present
+func getBearerToken(r *http.Request) string {
+	token, ok := strings.CutPrefix(r.Header.Get(authorizationHeader), "Bearer ")
+	if !ok {
+		return ""
+	}
+
+	if strings.HasPrefix(token, entities.ApiTokenPrefix) {
+		return ""
+	}
+
+	return token
+}
+
+// resolveProviderForAccessToken identifies the OIDC provider for a given access token.
+// Resolution is attempted in the following order:
+// 1. Parse the token as a JWT and match the "iss" claim against known providers.
+// 2. Read the ovoo_provider cookie and look up the named provider.
+// 3. If exactly one provider is configured, use it without any token inspection.
+//
+// Parameters:
+//   - r: the HTTP request, used to read the ovoo_provider cookie
+//   - token: the access token string to identify the provider for
+//
+// Returns:
+//   - OIDCProvider: the matching provider configuration
+//   - error: an error if no provider can be determined
+func resolveProviderForAccessToken(r *http.Request, token string) (OIDCProvider, error) {
+	if prov, err := getJWTTokenProvider(token); err == nil {
+		return prov, nil
+	}
+
+	if provCookie, err := r.Cookie(providerCookieName); err == nil {
+		if prov, ok := oidcConfigs[provCookie.Value]; ok {
+			return prov, nil
+		}
+	}
+
+	if len(oidcConfigs) == 1 {
+		for _, prov := range oidcConfigs {
+			return prov, nil
+		}
+	}
+
+	return OIDCProvider{}, errors.New("cannot determine OIDC provider for access token")
+}
+
+// refreshAccessToken uses a refresh token to obtain a new access token from the provider.
+//
+// Parameters:
+//   - ctx: context for the token endpoint request
+//   - prov: the OIDCProvider whose token endpoint will be called
+//   - refreshToken: the refresh token string to exchange
+//
+// Returns:
+//   - *oauth2.Token: the new token containing at least a fresh access token
+//   - error: an error if the token endpoint request fails or returns an error response
+func refreshAccessToken(ctx context.Context, prov OIDCProvider, refreshToken string) (*oauth2.Token, error) {
+	return prov.OAuth2Config.TokenSource(ctx, &oauth2.Token{RefreshToken: refreshToken}).Token()
+}
+
+// setNewOIDCCookies writes ovoo_access and ovoo_provider cookies from the given token,
+// and ovoo_refresh if the token contains a refresh token. ovoo_provider is always
+// written so the middleware can identify the provider for subsequent UserInfo calls
+// even when no refresh token is present. When a refresh token is present, both
+// ovoo_refresh and ovoo_provider are written with a refreshTokenMaxAge TTL.
+//
+// Parameters:
+//   - w: HTTP response writer to set the cookies on
+//   - r: HTTP request used to determine the Secure flag and domain
+//   - token: the OAuth2 token to persist; RefreshToken may be empty
+//   - providerName: the provider key to store in the ovoo_provider cookie
+func setNewOIDCCookies(w http.ResponseWriter, r *http.Request, token *oauth2.Token, providerName string) {
+	accessTTL := 3600
+	if !token.Expiry.IsZero() {
+		if secs := int(time.Until(token.Expiry).Seconds()); secs > 0 {
+			accessTTL = secs
+		}
+	}
+
+	setSecureCookie(w, r, accessCookieName, token.AccessToken, accessTTL, "/")
+	setSecureCookie(w, r, providerCookieName, providerName, accessTTL, "/")
+
+	if token.RefreshToken != "" {
+		setSecureCookie(w, r, refreshCookieName, token.RefreshToken, refreshTokenMaxAge, "/")
+		// extend provider cookie lifetime to match the longer-lived refresh token
+		setSecureCookie(w, r, providerCookieName, providerName, refreshTokenMaxAge, "/")
+	}
+}
+
+// clearOIDCCookies expires the ovoo_access, ovoo_refresh, and ovoo_provider cookies
+// by setting their MaxAge to -1.
+//
+// Parameters:
+//   - w: HTTP response writer to set the expired cookies on
+//   - r: HTTP request used to determine the Secure flag and domain
+func clearOIDCCookies(w http.ResponseWriter, r *http.Request) {
+	setSecureCookie(w, r, accessCookieName, "", -1, "/")
+	setSecureCookie(w, r, refreshCookieName, "", -1, "/")
+	setSecureCookie(w, r, providerCookieName, "", -1, "/")
+}
+
+// handleOIDCCallback completes the OAuth2 authorization code exchange initiated by
+// handleOIDCLogin. The ID token is verified only to validate the nonce; it is not
+// stored. The access token and refresh token are stored in HttpOnly cookies.
+//
+// The function performs the following steps:
+// 1. Verifies the state query parameter against the ovoo_state cookie.
+// 2. Exchanges the authorization code for an OAuth2 token.
+// 3. Verifies the ID token signature and nonce for replay protection.
+// 4. Stores the access token, refresh token, and provider name in HttpOnly cookies.
+// 5. Redirects the browser to RootPageURI.
+//
+// Parameters:
+//   - w: HTTP response writer used to set cookies and issue the redirect
+//   - r: HTTP request containing the state and code query parameters
+//   - prov: the OIDCProvider configuration to use for token exchange and verification
+//   - providerName: the provider key stored in the ovoo_provider cookie
+//
+// The function handles errors by writing appropriate HTTP error responses.
+func handleOIDCCallback(w http.ResponseWriter, r *http.Request, prov OIDCProvider, providerName string) {
 	state, err := r.Cookie(stateCookieName)
 	if err != nil {
 		http.Error(w, "state not found", http.StatusBadRequest)
@@ -100,19 +231,18 @@ func handleOIDCCallback(w http.ResponseWriter, r *http.Request, prov OIDCProvide
 		return
 	}
 
-	// fix redirect_url if needed and exchange token
 	redirectUrl := formatRedirectURL(r, prov)
 	oauth2Token, err := prov.OAuth2Config.Exchange(
 		r.Context(),
 		r.URL.Query().Get("code"),
 		oauth2.SetAuthURLParam("redirect_uri", redirectUrl),
 	)
-
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to exchange token: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
+	// verify the ID token only to validate the nonce -- it is not stored
 	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
 	if !ok {
 		http.Error(w, "no id_token field in oauth2 token", http.StatusBadRequest)
@@ -136,45 +266,44 @@ func handleOIDCCallback(w http.ResponseWriter, r *http.Request, prov OIDCProvide
 		return
 	}
 
-	cookieLife := int(time.Until(idToken.Expiry).Seconds())
-	setSecureCookie(w, r, authCookieName, rawIDToken, cookieLife, "/")
+	if oauth2Token.RefreshToken == "" {
+		logger.Warn("OIDC provider returned no refresh token; verify that offline_access scope is supported")
+	}
+
+	setNewOIDCCookies(w, r, oauth2Token, providerName)
 	http.Redirect(w, r, RootPageURI, http.StatusFound)
 }
 
-// handleOIDCLogin handles the OIDC login process by generating security parameters,
-// setting appropriate cookies, and redirecting the user to the OIDC provider.
+// handleOIDCLogin initiates the OIDC authorization code flow by generating security
+// parameters, setting cookies, and redirecting the browser to the provider.
 //
-// It performs the following steps:
-// 1. Generates a random nonce for security
-// 2. Extracts the return_url from query parameters (defaults to RootPageURI)
-// 3. Encodes the return_url as state parameter
-// 4. Sets secure cookies for state and nonce with 1-hour expiration
-// 5. Redirects the user to the OIDC provider's authorization endpoint
+// The function performs the following steps:
+// 1. Generates a cryptographically random nonce.
+// 2. Reads the optional return_url query parameter (defaults to RootPageURI).
+// 3. Encodes the return URL as the OAuth2 state parameter.
+// 4. Sets ovoo_state and ovoo_nonce cookies with a one-hour expiry.
+// 5. Redirects the browser to the provider's authorization endpoint.
 //
 // Parameters:
-//   - w: HTTP response writer used to set cookies and redirect
-//   - r: HTTP request containing query parameters including optional return_url
-//   - prov: The OIDCProvider configuration to use for the login flow
+//   - w: HTTP response writer used to set cookies and issue the redirect
+//   - r: HTTP request containing the optional return_url query parameter
+//   - prov: the OIDCProvider configuration to use for the authorization URL
 func handleOIDCLogin(w http.ResponseWriter, r *http.Request, prov OIDCProvider) {
-	// generate random nonce
 	nonce, err := randString(16)
 	if err != nil {
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
 
-	// generate state from the return url
 	return_url := r.URL.Query().Get("return_url")
 	if return_url == "" {
 		return_url = RootPageURI
 	}
 
-	// set security cookies
 	state := base64.URLEncoding.EncodeToString([]byte(return_url))
 	setSecureCookie(w, r, stateCookieName, state, int(time.Hour.Seconds()), "")
 	setSecureCookie(w, r, nonceCookieName, nonce, int(time.Hour.Seconds()), "")
 
-	// fix redirect_url if needed and redirect client to OIDC provider
 	redirectUrl := formatRedirectURL(r, prov)
 	http.Redirect(w, r,
 		prov.OAuth2Config.AuthCodeURL(
@@ -185,41 +314,72 @@ func handleOIDCLogin(w http.ResponseWriter, r *http.Request, prov OIDCProvider) 
 	)
 }
 
-// getOIDCToken extracts an OIDC token from the HTTP request.
-// It checks for a Bearer token in the Authorization header first,
-// and then falls back to checking for an authentication cookie.
+// handleOIDCRefresh exchanges the ovoo_refresh cookie for a new access token and
+// returns it as a JSON response. On success, ovoo_access and ovoo_refresh cookies
+// are updated. If the provider does not rotate the refresh token, the existing
+// refresh token is re-written to reset its cookie TTL.
+//
+// The function performs the following steps:
+// 1. Reads the ovoo_refresh cookie; returns 400 if absent or empty.
+// 2. Calls the provider token endpoint with the refresh token grant.
+// 3. On failure, clears all OIDC cookies and returns 401.
+// 4. On success, updates cookies and writes {"access_token","expires_in"} as JSON.
 //
 // Parameters:
-//   - r: The HTTP request to extract the token from
-//
-// Returns:
-//   - string: The extracted OIDC token, or an empty string if no valid token is found
-func getOIDCToken(r *http.Request) string {
-	authHeader := r.Header.Get(authorizationHeader)
-	if token, ok := strings.CutPrefix(authHeader, "Bearer "); ok {
-		if !strings.HasPrefix(token, entities.ApiTokenPrefix) {
-			return token
+//   - w: HTTP response writer used to set cookies and write the JSON response
+//   - r: HTTP request used to read the ovoo_refresh cookie
+//   - prov: the OIDCProvider configuration to use for token refresh
+//   - providerName: the provider key passed to setNewOIDCCookies
+func handleOIDCRefresh(w http.ResponseWriter, r *http.Request, prov OIDCProvider, providerName string) {
+	refreshCookie, err := r.Cookie(refreshCookieName)
+	if err != nil || refreshCookie.Value == "" {
+		http.Error(w, "refresh token not found", http.StatusBadRequest)
+		return
+	}
+
+	newToken, err := refreshAccessToken(r.Context(), prov, refreshCookie.Value)
+	if err != nil {
+		logger.Error("failed to refresh access token", "provider", providerName, "error", err.Error())
+		clearOIDCCookies(w, r)
+		http.Error(w, "session expired", http.StatusUnauthorized)
+		return
+	}
+
+	// providers that don't rotate refresh tokens omit it from the response;
+	// carry the existing token forward so setNewOIDCCookies resets its TTL
+	if newToken.RefreshToken == "" {
+		newToken.RefreshToken = refreshCookie.Value
+	}
+
+	setNewOIDCCookies(w, r, newToken, providerName)
+
+	expiresIn := 3600
+	if !newToken.Expiry.IsZero() {
+		if secs := int(time.Until(newToken.Expiry).Seconds()); secs > 0 {
+			expiresIn = secs
 		}
-
-		return ""
 	}
 
-	if authCookie, err := r.Cookie(authCookieName); err == nil && authCookie != nil {
-		return authCookie.Value
-
-	}
-
-	return ""
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(struct {
+		AccessToken string `json:"access_token"`
+		ExpiresIn   int    `json:"expires_in"`
+	}{
+		AccessToken: newToken.AccessToken,
+		ExpiresIn:   expiresIn,
+	})
 }
 
-// getOIDCTokenIssuer extracts the issuer claim from a JWT token.
+// getOIDCTokenIssuer extracts the issuer ("iss") claim from a JWT token payload
+// without verifying the token's signature.
 //
 // Parameters:
-//   - token: The JWT token string to parse
+//   - token: the JWT token string (three base64url-encoded segments joined by dots)
 //
 // Returns:
-//   - string: The issuer claim value
-//   - error: An error if the token is malformed or issuer claim is missing
+//   - string: the issuer claim value
+//   - error: an error if the token is malformed or the issuer claim is absent
 func getOIDCTokenIssuer(token string) (string, error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
@@ -245,14 +405,14 @@ func getOIDCTokenIssuer(token string) (string, error) {
 	return iss, nil
 }
 
-// getProviderByIssuer looks up an OIDC provider configuration by issuer URL.
+// getProviderByIssuer looks up an OIDC provider configuration by its issuer URL.
 //
 // Parameters:
-//   - iss: The issuer URL to look up
+//   - iss: the issuer URL to search for
 //
 // Returns:
-//   - OIDCProvider: The matching provider configuration if found
-//   - bool: Whether a matching provider was found
+//   - OIDCProvider: the matching provider configuration
+//   - bool: true if a matching provider was found, false otherwise
 func getProviderByIssuer(iss string) (OIDCProvider, bool) {
 	for _, provCfg := range oidcConfigs {
 		if provCfg.Issuer == iss {
@@ -263,16 +423,15 @@ func getProviderByIssuer(iss string) (OIDCProvider, bool) {
 	return OIDCProvider{}, false
 }
 
-// getJWTTokenProvider extracts the token issuer and returns the corresponding OIDC provider.
-// It first gets the issuer from the JWT token claims, then looks up the matching provider
-// configuration.
+// getJWTTokenProvider extracts the issuer from a JWT token and returns the
+// corresponding OIDC provider configuration.
 //
 // Parameters:
-//   - token: The JWT token string to parse
+//   - token: the JWT token string to parse
 //
 // Returns:
-//   - OIDCProvider: The OIDC provider configuration for the token issuer
-//   - error: An error if the token is invalid or no matching provider is found
+//   - OIDCProvider: the OIDC provider configuration for the token's issuer
+//   - error: an error if the token is malformed or no matching provider is found
 func getJWTTokenProvider(token string) (OIDCProvider, error) {
 	iss, err := getOIDCTokenIssuer(token)
 	if err != nil {
