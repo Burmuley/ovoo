@@ -220,3 +220,40 @@ type ChainFilter struct {
 	FromAddrsIds    []Id
 	ToAddrIds       []Id
 }
+
+type CustomDomainFilter struct {
+	Filter
+	Active   *bool
+	Verified *bool
+	Owners   []Id
+}
+
+func NewCustomDomainFilter(input map[string][]string) (CustomDomainFilter, error) {
+	cdf := CustomDomainFilter{}
+	filter, err := NewFilter(input)
+	if err != nil {
+		return CustomDomainFilter{}, err
+	}
+
+	cdf.Filter = filter
+	for filter, vals := range input {
+		switch filter {
+		case "owner":
+			ids := make([]Id, 0, len(vals))
+			for _, val := range vals {
+				ids = append(ids, Id(val))
+			}
+			cdf.Owners = ids
+		case "active":
+			if len(vals) > 0 {
+				active, err := strconv.ParseBool(vals[len(vals)-1])
+				if err != nil {
+					return CustomDomainFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
+				}
+				cdf.Active = &active
+			}
+		}
+	}
+
+	return cdf, nil
+}

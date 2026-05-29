@@ -20,6 +20,7 @@ type RepoFactory struct {
 	Address   repositories.AddressReadWriter
 	ApiTokens repositories.TokensReadWriter
 	Chain     repositories.ChainReadWriter
+	Domain    repositories.CustomDomainsReadWriter
 }
 
 // New creates a new RepoFactory instance based on the provided repository type and configuration.

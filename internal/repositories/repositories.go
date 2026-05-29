@@ -92,3 +92,19 @@ type TokensReadWriter interface {
 	TokensReader
 	TokensWriter
 }
+
+type CustomDomainsReader interface {
+	GetById(ctx context.Context, id entities.Id) (entities.CustomDomain, error)
+	GetAll(ctx context.Context, filter entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error)
+}
+
+type CustomDomainWriter interface {
+	Create(ctx context.Context, domain entities.CustomDomain) error
+	Update(ctx context.Context, domain entities.CustomDomain) (entities.CustomDomain, error)
+	Delete(ctx context.Context, cuser entities.User, id entities.Id) error
+}
+
+type CustomDomainsReadWriter interface {
+	CustomDomainsReader
+	CustomDomainWriter
+}

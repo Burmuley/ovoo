@@ -205,6 +205,39 @@ func insertChain(t *testing.T, repo repositories.ChainReadWriter, user entities.
 	return chain
 }
 
+type domainsTestEnv struct {
+	rawUsers      repositories.UsersReadWriter
+	rawDomains    repositories.CustomDomainsReadWriter
+	cachedDomains *CustomDomainRepo
+}
+
+func setupDomainsTest(t *testing.T) domainsTestEnv {
+	t.Helper()
+	db := newDB(t)
+	c := newMemoryCache(t)
+	rawU, err := gormrepo.NewUserGORMRepo(db)
+	require.NoError(t, err)
+	rawD, err := gormrepo.NewCustomDomainGORMRepo(db)
+	require.NoError(t, err)
+	cd, err := NewCachedCustomDomainRepo(c, rawD, &cacheCfg)
+	require.NoError(t, err)
+	return domainsTestEnv{rawU, rawD, cd}
+}
+
+func insertDomain(t *testing.T, repo repositories.CustomDomainsReadWriter, owner entities.User) entities.CustomDomain {
+	t.Helper()
+	id := entities.NewId()
+	d := entities.CustomDomain{
+		ID:        id,
+		Name:      "domain-" + string(id) + ".example.com",
+		Owner:     owner,
+		Active:    true,
+		UpdatedBy: owner,
+	}
+	require.NoError(t, repo.Create(context.Background(), d))
+	return d
+}
+
 func insertToken(t *testing.T, repo repositories.TokensReadWriter, owner entities.User) entities.ApiToken {
 	t.Helper()
 	id := entities.NewId()

@@ -1,6 +1,8 @@
 package gorm
 
-import "github.com/Burmuley/ovoo/internal/entities"
+import (
+	"github.com/Burmuley/ovoo/internal/entities"
+)
 
 // userFromEntity converts an entities.User to a User
 func userFromEntity(e entities.User) User {
@@ -61,6 +63,15 @@ func userToEntity(u User) entities.User {
 	}
 
 	return eu
+}
+
+func userToEntityList(users []User) []entities.User {
+	eusers := make([]entities.User, 0, len(users))
+	for _, user := range users {
+		eusers = append(eusers, userToEntity(user))
+	}
+
+	return eusers
 }
 
 // addressFromEntity converts an entities.Address to an Address
@@ -244,4 +255,65 @@ func apiTokenToEntity(t ApiToken) entities.ApiToken {
 		UpdatedAt:   t.UpdatedAt,
 		UpdatedBy:   userToEntity(t.UpdatedBy),
 	}
+}
+
+func apiTokenToEntityList(tokens []ApiToken) []entities.ApiToken {
+	etokens := make([]entities.ApiToken, 0, len(tokens))
+	for _, token := range tokens {
+		etokens = append(etokens, apiTokenToEntity(token))
+	}
+
+	return etokens
+}
+
+func customDomainFromEntity(e entities.CustomDomain) CustomDomain {
+	return CustomDomain{
+		Model: Model{
+			ID:        e.ID.String(),
+			CreatedAt: e.CreatedAt,
+			UpdatedAt: e.UpdatedAt,
+		},
+		Name:              e.Name,
+		OwnerID:           e.Owner.ID.String(),
+		Owner:             userFromEntity(e.Owner),
+		Active:            e.Active,
+		UpdatedByID:       e.UpdatedBy.ID.String(),
+		UpdatedBy:         userFromEntity(e.UpdatedBy),
+		Verified:          e.Verified,
+		VerifiedAt:        e.VerifiedAt,
+		VerificationToken: e.VerificationToken,
+	}
+}
+
+func customDomainFromEntityList(edomains []entities.CustomDomain) []CustomDomain {
+	gdomains := make([]CustomDomain, 0, len(edomains))
+	for _, edomain := range edomains {
+		gdomains = append(gdomains, customDomainFromEntity(edomain))
+	}
+
+	return gdomains
+}
+
+func customDomainToEntity(d CustomDomain) entities.CustomDomain {
+	return entities.CustomDomain{
+		ID:                entities.Id(d.ID),
+		Name:              d.Name,
+		Owner:             userToEntity(d.Owner),
+		CreatedAt:         d.CreatedAt,
+		UpdatedAt:         d.UpdatedAt,
+		UpdatedBy:         userToEntity(d.UpdatedBy),
+		Active:            d.Active,
+		Verified:          d.Verified,
+		VerifiedAt:        d.VerifiedAt,
+		VerificationToken: d.VerificationToken,
+	}
+}
+
+func customDomainToEntityList(domains []CustomDomain) []entities.CustomDomain {
+	edomains := make([]entities.CustomDomain, 0, len(domains))
+	for _, domain := range domains {
+		edomains = append(edomains, customDomainToEntity(domain))
+	}
+
+	return edomains
 }

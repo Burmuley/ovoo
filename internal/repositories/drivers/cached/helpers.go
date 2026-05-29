@@ -12,11 +12,6 @@ import (
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 
-const (
-// singleItemTTL = 5 * time.Minute
-// listTTL       = 1 * time.Minute
-)
-
 func durationSeconds(d int) time.Duration {
 	return time.Duration(d) * time.Second
 }
@@ -136,4 +131,16 @@ func userListPrefix() string { return "user:list:" }
 
 func userListKey(filter entities.UserFilter) string {
 	return filterKey(userListPrefix(), filter)
+}
+
+// --- CustomDomain key builders
+
+func customDomainIdKey(id entities.Id) string {
+	return "domain:id:" + id.String()
+}
+
+func customDomainListPrefix() string { return "domain:list" }
+
+func customDomainKeyList(filter entities.CustomDomainFilter) string {
+	return filterKey(customDomainListPrefix(), filter)
 }

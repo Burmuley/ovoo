@@ -261,6 +261,107 @@ func TestNewUserFilter(t *testing.T) {
 	}
 }
 
+func TestNewCustomDomainFilter(t *testing.T) {
+	trueVal := true
+	falseVal := false
+
+	tests := []struct {
+		name    string
+		input   map[string][]string
+		want    CustomDomainFilter
+		wantErr error
+	}{
+		{
+			name: "valid owners with default pagination",
+			input: map[string][]string{
+				"owner": {"owner1", "owner2"},
+			},
+			want: CustomDomainFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				Owners: []Id{"owner1", "owner2"},
+			},
+		},
+		{
+			name:  "active true",
+			input: map[string][]string{"active": {"true"}},
+			want: CustomDomainFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				Active: &trueVal,
+			},
+		},
+		{
+			name:  "active false",
+			input: map[string][]string{"active": {"false"}},
+			want: CustomDomainFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+				Active: &falseVal,
+			},
+		},
+		{
+			name:    "invalid active value",
+			input:   map[string][]string{"active": {"notabool"}},
+			wantErr: ErrValidation,
+		},
+		{
+			name:    "invalid page",
+			input:   map[string][]string{"page": {"invalid"}},
+			wantErr: ErrValidation,
+		},
+		{
+			name:  "unknown key silently ignored",
+			input: map[string][]string{"unknown": {"value"}},
+			want: CustomDomainFilter{
+				Filter: Filter{Page: DefaulPageNumber, PageSize: DefaultPageSize},
+			},
+		},
+		{
+			name: "page and page_size explicit",
+			input: map[string][]string{
+				"owner":     {"owner1"},
+				"page":      {"2"},
+				"page_size": {"10"},
+			},
+			want: CustomDomainFilter{
+				Filter: Filter{Page: 2, PageSize: 10},
+				Owners: []Id{"owner1"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewCustomDomainFilter(tt.input)
+			if tt.wantErr != nil {
+				if !errors.Is(err, tt.wantErr) {
+					t.Errorf("NewCustomDomainFilter() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got.Page != tt.want.Page {
+				t.Errorf("Page = %v, want %v", got.Page, tt.want.Page)
+			}
+			if got.PageSize != tt.want.PageSize {
+				t.Errorf("PageSize = %v, want %v", got.PageSize, tt.want.PageSize)
+			}
+			if len(got.Owners) != len(tt.want.Owners) {
+				t.Errorf("Owners length = %v, want %v", len(got.Owners), len(tt.want.Owners))
+			}
+			if tt.want.Active != nil {
+				if got.Active == nil {
+					t.Errorf("Active = nil, want %v", *tt.want.Active)
+				} else if *got.Active != *tt.want.Active {
+					t.Errorf("Active = %v, want %v", *got.Active, *tt.want.Active)
+				}
+			} else if got.Active != nil {
+				t.Errorf("Active = %v, want nil", *got.Active)
+			}
+		})
+	}
+}
+
 func TestNewApiTokensFilter(t *testing.T) {
 	trueVal := true
 	falseVal := false

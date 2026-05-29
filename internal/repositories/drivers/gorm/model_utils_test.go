@@ -447,6 +447,110 @@ func TestApiTokenToEntity(t *testing.T) {
 	assert.True(t, gormToken.UpdatedAt.Equal(token.UpdatedAt))
 }
 
+func createTestCustomDomain(owner entities.User) entities.CustomDomain {
+	return entities.CustomDomain{
+		ID:                entities.NewId(),
+		Name:              "example.com",
+		Owner:             owner,
+		Active:            true,
+		Verified:          false,
+		VerificationToken: "verify-token",
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+		UpdatedBy:         owner,
+	}
+}
+
+func TestCustomDomainFromEntity(t *testing.T) {
+	owner := createTestUser()
+	domain := createTestCustomDomain(owner)
+
+	gormDomain := customDomainFromEntity(domain)
+
+	assert.Equal(t, string(domain.ID), gormDomain.ID)
+	assert.Equal(t, domain.Name, gormDomain.Name)
+	assert.Equal(t, string(owner.ID), gormDomain.Owner.ID)
+	assert.Equal(t, domain.Active, gormDomain.Active)
+	assert.Equal(t, domain.Verified, gormDomain.Verified)
+	assert.Equal(t, domain.VerificationToken, gormDomain.VerificationToken)
+	assert.True(t, domain.CreatedAt.Equal(gormDomain.CreatedAt))
+	assert.True(t, domain.UpdatedAt.Equal(gormDomain.UpdatedAt))
+}
+
+func TestCustomDomainToEntity(t *testing.T) {
+	owner := User{
+		Model: Model{ID: string(entities.NewId())},
+		Login: "owner@example.com",
+	}
+
+	gormDomain := CustomDomain{
+		Model: Model{
+			ID:        string(entities.NewId()),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		Name:              "example.com",
+		Owner:             owner,
+		Active:            true,
+		Verified:          false,
+		VerificationToken: "verify-token",
+		UpdatedBy:         owner,
+	}
+
+	domain := customDomainToEntity(gormDomain)
+
+	assert.Equal(t, entities.Id(gormDomain.ID), domain.ID)
+	assert.Equal(t, gormDomain.Name, domain.Name)
+	assert.Equal(t, entities.Id(owner.ID), domain.Owner.ID)
+	assert.Equal(t, gormDomain.Active, domain.Active)
+	assert.Equal(t, gormDomain.Verified, domain.Verified)
+	assert.Equal(t, gormDomain.VerificationToken, domain.VerificationToken)
+	assert.True(t, gormDomain.CreatedAt.Equal(domain.CreatedAt))
+	assert.True(t, gormDomain.UpdatedAt.Equal(domain.UpdatedAt))
+}
+
+func TestCustomDomainFromEntityList(t *testing.T) {
+	owner := createTestUser()
+	domains := []entities.CustomDomain{
+		createTestCustomDomain(owner),
+		createTestCustomDomain(owner),
+	}
+	domains[1].ID = entities.NewId()
+	domains[1].Name = "other.com"
+
+	gormDomains := customDomainFromEntityList(domains)
+
+	assert.Len(t, gormDomains, 2)
+	assert.Equal(t, string(domains[0].ID), gormDomains[0].ID)
+	assert.Equal(t, string(domains[1].ID), gormDomains[1].ID)
+}
+
+func TestCustomDomainToEntityList(t *testing.T) {
+	owner := User{
+		Model: Model{ID: string(entities.NewId())},
+		Login: "owner@example.com",
+	}
+
+	gormDomains := []CustomDomain{
+		{
+			Model: Model{ID: string(entities.NewId())},
+			Name:  "example.com",
+			Owner: owner,
+		},
+		{
+			Model: Model{ID: string(entities.NewId())},
+			Name:  "other.com",
+			Owner: owner,
+		},
+	}
+
+	domains := customDomainToEntityList(gormDomains)
+
+	assert.Len(t, domains, 2)
+	assert.Equal(t, entities.Id(gormDomains[0].ID), domains[0].ID)
+	assert.Equal(t, entities.Id(gormDomains[1].ID), domains[1].ID)
+}
+
 func TestApiTokenFromEntityList(t *testing.T) {
 	owner := createTestUser()
 	tokens := []entities.ApiToken{

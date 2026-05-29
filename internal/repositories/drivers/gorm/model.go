@@ -102,3 +102,22 @@ type ApiToken struct {
 func (t ApiToken) TableName() string {
 	return "tokens"
 }
+
+// CustomDomain represents custom domain defined by user
+type CustomDomain struct {
+	Model
+	Name              string    `gorm:"column:name"`
+	OwnerID           string    `gorm:"column:owner_id"`
+	Owner             User      `gorm:"foreignKey:OwnerID"`
+	Active            bool      `gorm:"column:active;default:true"`
+	UpdatedByID       string    `gorm:"column:updated_by_id"`
+	UpdatedBy         User      `gorm:"foreignKey:UpdatedByID"`
+	Verified          bool      `gorm:"column:verified;default:false"`
+	VerifiedAt        time.Time `gorm:"column:verified_at"`
+	VerificationToken string    `gorm:"column:verification_token"`
+}
+
+// TableName specifies the table name for CustomDomain
+func (cd CustomDomain) TableName() string {
+	return "custom_domains"
+}

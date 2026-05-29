@@ -134,10 +134,7 @@ func (t *TokenGORMRepo) GetAll(ctx context.Context, filter entities.ApiTokenFilt
 		return nil, wrapGormError(err)
 	}
 
-	tokens := make([]entities.ApiToken, 0, len(gorm_tokens))
-	for _, token := range gorm_tokens {
-		tokens = append(tokens, apiTokenToEntity(token))
-	}
+	tokens := apiTokenToEntityList(gorm_tokens)
 
 	return tokens, nil
 }

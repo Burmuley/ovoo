@@ -164,10 +164,7 @@ func (a *AddressGORMRepo) GetAll(ctx context.Context, filter entities.AddressFil
 		return nil, entities.PaginationMetadata{}, wrapGormError(err)
 	}
 
-	addrs := make([]entities.Address, 0, len(gorm_addrs))
-	for _, addr := range gorm_addrs {
-		addrs = append(addrs, addressToEntity(addr))
-	}
+	addrs := addressToEntityList(gorm_addrs)
 
 	return addrs, entities.GetPaginationMetadata(filter.Page, filter.PageSize, *count), nil
 }

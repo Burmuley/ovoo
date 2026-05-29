@@ -99,10 +99,7 @@ func (u *UserGORMRepo) GetAll(ctx context.Context, filter entities.UserFilter) (
 		return nil, entities.PaginationMetadata{}, wrapGormError(err)
 	}
 
-	users := make([]entities.User, 0, len(gorm_users))
-	for _, user := range gorm_users {
-		users = append(users, userToEntity(user))
-	}
+	users := userToEntityList(gorm_users)
 
 	return users, entities.GetPaginationMetadata(filter.Page, filter.PageSize, *count), nil
 }
