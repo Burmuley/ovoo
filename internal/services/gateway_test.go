@@ -17,8 +17,9 @@ func TestNew_AllServicesProvided(t *testing.T) {
 	prAddrsService := &ProtectedAddrService{repof: repof}
 	chainsService := &ChainsService{repof: repof}
 	tokensService := &ApiTokensService{repof: repof}
+	domainsService := &DomainsService{repof: repof}
 
-	gateway, err := New(aliasesService, usersService, prAddrsService, chainsService, tokensService)
+	gateway, err := New(aliasesService, usersService, prAddrsService, chainsService, tokensService, domainsService)
 
 	require.NoError(t, err)
 	assert.NotNil(t, gateway)
@@ -27,6 +28,7 @@ func TestNew_AllServicesProvided(t *testing.T) {
 	assert.Equal(t, prAddrsService, gateway.PrAddrs)
 	assert.Equal(t, chainsService, gateway.Chains)
 	assert.Equal(t, tokensService, gateway.Tokens)
+	assert.Equal(t, domainsService, gateway.Domains)
 }
 
 func TestNew_MissingService(t *testing.T) {
@@ -70,9 +72,10 @@ func TestNew_DuplicateServices(t *testing.T) {
 	prAddrsService := &ProtectedAddrService{repof: repof}
 	chainsService := &ChainsService{repof: repof}
 	tokensService := &ApiTokensService{repof: repof}
+	domainsService := &DomainsService{repof: repof}
 
 	// Second aliases service should override the first one
-	gateway, err := New(aliasesService1, aliasesService2, usersService, prAddrsService, chainsService, tokensService)
+	gateway, err := New(aliasesService1, aliasesService2, usersService, prAddrsService, chainsService, tokensService, domainsService)
 
 	require.NoError(t, err)
 	assert.NotNil(t, gateway)
@@ -89,6 +92,7 @@ func TestCheckNilServices_AllFieldsSet(t *testing.T) {
 		PrAddrs: &ProtectedAddrService{repof: repof},
 		Chains:  &ChainsService{repof: repof},
 		Tokens:  &ApiTokensService{repof: repof},
+		Domains: &DomainsService{repof: repof},
 	}
 
 	err := checkNilServices(gw)

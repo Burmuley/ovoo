@@ -153,12 +153,10 @@ func (a *Application) DeleteApiToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tokenId := entities.Id(r.PathValue("id"))
-	token, err := a.svcGw.Tokens.Delete(r.Context(), cuser, tokenId)
-	if err != nil {
+	if _, err := a.svcGw.Tokens.Delete(r.Context(), cuser, tokenId); err != nil {
 		a.errorLogNResponse(w, "deleting token by id", err)
 		return
 	}
 
-	resp := DeleteApiTokenResponse(tokenTApiTokenData(token))
-	a.successResponse(w, resp, http.StatusOK)
+	a.successResponse(w, struct{}{}, http.StatusOK)
 }

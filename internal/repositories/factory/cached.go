@@ -37,5 +37,12 @@ func newCachedRepoFactory(cache cache.Cache, repoFactory *RepoFactory, config *c
 		}
 	}
 
+	{
+		var err error
+		if cachedRF.Domain, err = cached.NewCachedCustomDomainRepo(cache, repoFactory.Domain, config); err != nil {
+			return nil, err
+		}
+	}
+
 	return cachedRF, nil
 }

@@ -89,6 +89,7 @@ func New(
 		ctrl.svcGw.Users == nil,
 		ctrl.svcGw.PrAddrs == nil,
 		ctrl.svcGw.Chains == nil,
+		ctrl.svcGw.Domains == nil,
 	}...) {
 		return nil, errors.New("all services should be set in service gateway")
 	}
@@ -159,8 +160,12 @@ func (a *Application) Start() error {
 	mux.HandleFunc("PATCH /api/v1/users/apitokens/{id}", a.UpdateApiToken)
 	mux.HandleFunc("DELETE /api/v1/users/apitokens/{id}", a.DeleteApiToken)
 
-	// domains route
+	// domains routes
 	mux.HandleFunc("GET /api/v1/domains", a.GetDomains)
+	mux.HandleFunc("POST /api/v1/domains", a.CreateDomain)
+	mux.HandleFunc("PATCH /api/v1/domains/{id}", a.UpdateDomain)
+	mux.HandleFunc("DELETE /api/v1/domains/{id}", a.DeleteDomain)
+	mux.HandleFunc("POST /api/v1/domains/{id}/verify", a.VerifyDomain)
 
 	// aliases routes
 	mux.HandleFunc("GET /api/v1/aliases", a.GetAliases)

@@ -15,6 +15,24 @@ const (
 	OAuth2Scopes              oAuth2ContextKey              = "OAuth2.Scopes"
 )
 
+// Defines values for DomainSource.
+const (
+	Global   DomainSource = "global"
+	Personal DomainSource = "personal"
+)
+
+// Valid indicates whether the value is a known member of the DomainSource enum.
+func (e DomainSource) Valid() bool {
+	switch e {
+	case Global:
+		return true
+	case Personal:
+		return true
+	default:
+		return false
+	}
+}
+
 // AddressMetadata defines model for addressMetadata.
 type AddressMetadata struct {
 	Comment     *string `json:"comment,omitempty"`
@@ -100,6 +118,30 @@ type ChainData struct {
 	ToEmail         string           `json:"to_email"`
 }
 
+// DomainData defines model for domainData.
+type DomainData struct {
+	Active bool `json:"active"`
+
+	// Id Domain ULID
+	Id string `json:"id"`
+
+	// Name Domain name (e.g. example.com)
+	Name  string    `json:"name"`
+	Owner *UserData `json:"owner,omitempty"`
+
+	// Source Enum defining type of the custom domain.
+	Source DomainSource `json:"source"`
+
+	// Verified Present only for personal domains
+	Verified *bool `json:"verified,omitempty"`
+
+	// VerifiedAt Present only for personal domains
+	VerifiedAt *time.Time `json:"verified_at,omitempty"`
+}
+
+// DomainSource Enum defining type of the custom domain.
+type DomainSource string
+
 // Error defines model for error.
 type Error struct {
 	// Detail Error details
@@ -111,11 +153,11 @@ type Error struct {
 
 // PaginationMetadata defines model for paginationMetadata.
 type PaginationMetadata struct {
-	CurrentPage  float32 `json:"current_page"`
-	FirstPage    float32 `json:"first_page"`
-	LastPage     float32 `json:"last_page"`
-	PageSize     float32 `json:"page_size"`
-	TotalRecords float32 `json:"total_records"`
+	CurrentPage  int `json:"current_page"`
+	FirstPage    int `json:"first_page"`
+	LastPage     int `json:"last_page"`
+	PageSize     int `json:"page_size"`
+	TotalRecords int `json:"total_records"`
 }
 
 // ProtectedAddressData defines model for protectedAddressData.
@@ -146,7 +188,7 @@ type UserData struct {
 	Active *bool `json:"active,omitempty"`
 
 	// FailedAttempts number of failed authentication attempts
-	FailedAttempts *float32 `json:"failed_attempts,omitempty"`
+	FailedAttempts *int `json:"failed_attempts,omitempty"`
 
 	// FirstName user first name
 	FirstName string `json:"first_name"`
@@ -197,6 +239,9 @@ type CreateAliasResponse = AliasData
 // CreateApiTokenResponse defines model for createApiTokenResponse.
 type CreateApiTokenResponse = ApiTokenDataOnCreate
 
+// CreateDomainResponse defines model for createDomainResponse.
+type CreateDomainResponse = DomainData
+
 // CreateEmailChainResponse defines model for createEmailChainResponse.
 type CreateEmailChainResponse = ChainData
 
@@ -205,9 +250,6 @@ type CreatePrAddrResponse = ProtectedAddressData
 
 // CreateUserResponse defines model for createUserResponse.
 type CreateUserResponse = UserData
-
-// DeleteApiTokenResponse defines model for deleteApiTokenResponse.
-type DeleteApiTokenResponse = ApiTokenData
 
 // ErrorResponse defines model for errorResponse.
 type ErrorResponse struct {
@@ -231,7 +273,7 @@ type GetApiTokensResponse = []ApiTokenData
 
 // GetDomainsResponse defines model for getDomainsResponse.
 type GetDomainsResponse struct {
-	Domains []string `json:"domains"`
+	Domains []DomainData `json:"domains"`
 }
 
 // GetEmailChainDetailsResponse defines model for getEmailChainDetailsResponse.
@@ -264,6 +306,9 @@ type UpdateAliasResponse = AliasData
 // UpdateApiTokenResponse defines model for updateApiTokenResponse.
 type UpdateApiTokenResponse = ApiTokenData
 
+// UpdateDomainResponse defines model for updateDomainResponse.
+type UpdateDomainResponse = DomainData
+
 // UpdatePrAddrResponse defines model for updatePrAddrResponse.
 type UpdatePrAddrResponse = ProtectedAddressData
 
@@ -281,8 +326,17 @@ type CreateAliasRequest struct {
 // CreateApiToken defines model for createApiToken.
 type CreateApiToken struct {
 	Description *string `json:"description,omitempty"`
-	ExpireIn    float32 `json:"expire_in"`
+	ExpireIn    int     `json:"expire_in"`
 	Name        string  `json:"name"`
+}
+
+// CreateDomainRequest defines model for createDomainRequest.
+type CreateDomainRequest struct {
+	// Name Domain name (e.g. example.com)
+	Name string `json:"name"`
+
+	// Source Enum defining type of the custom domain.
+	Source *DomainSource `json:"source,omitempty"`
 }
 
 // CreateEmailChain defines model for createEmailChain.
@@ -317,6 +371,11 @@ type UpdateApiToken struct {
 	Active      *bool   `json:"active,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Name        *string `json:"name,omitempty"`
+}
+
+// UpdateDomainRequest defines model for updateDomainRequest.
+type UpdateDomainRequest struct {
+	Active *bool `json:"active,omitempty"`
 }
 
 // UpdateProtectedAddressRequest defines model for updateProtectedAddressRequest.
@@ -374,6 +433,20 @@ type UpdateAliasJSONBody struct {
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
+// CreateDomainJSONBody defines parameters for CreateDomain.
+type CreateDomainJSONBody struct {
+	// Name Domain name (e.g. example.com)
+	Name string `json:"name"`
+
+	// Source Enum defining type of the custom domain.
+	Source *DomainSource `json:"source,omitempty"`
+}
+
+// UpdateDomainJSONBody defines parameters for UpdateDomain.
+type UpdateDomainJSONBody struct {
+	Active *bool `json:"active,omitempty"`
+}
+
 // GetPrAddrsParams defines parameters for GetPrAddrs.
 type GetPrAddrsParams struct {
 	Id    *string `form:"id,omitempty" json:"id,omitempty"`
@@ -419,7 +492,7 @@ type CreateUserJSONBody struct {
 // CreateApiTokenJSONBody defines parameters for CreateApiToken.
 type CreateApiTokenJSONBody struct {
 	Description *string `json:"description,omitempty"`
-	ExpireIn    float32 `json:"expire_in"`
+	ExpireIn    int     `json:"expire_in"`
 	Name        string  `json:"name"`
 }
 
@@ -449,6 +522,12 @@ type CreateAliasJSONRequestBody CreateAliasJSONBody
 
 // UpdateAliasJSONRequestBody defines body for UpdateAlias for application/json ContentType.
 type UpdateAliasJSONRequestBody UpdateAliasJSONBody
+
+// CreateDomainJSONRequestBody defines body for CreateDomain for application/json ContentType.
+type CreateDomainJSONRequestBody CreateDomainJSONBody
+
+// UpdateDomainJSONRequestBody defines body for UpdateDomain for application/json ContentType.
+type UpdateDomainJSONRequestBody UpdateDomainJSONBody
 
 // CreatePrAddrJSONRequestBody defines body for CreatePrAddr for application/json ContentType.
 type CreatePrAddrJSONRequestBody CreatePrAddrJSONBody

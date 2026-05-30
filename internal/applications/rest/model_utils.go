@@ -151,12 +151,37 @@ Returns:
     The API-ready pagination metadata, with all numeric fields
     converted to float32.
 */
+func customDomainTDomainData(d entities.CustomDomain) DomainData {
+	source := Global
+	if !d.Global {
+		source = Personal
+	}
+
+	dd := DomainData{
+		Active: d.Active,
+		Id:     d.ID.String(),
+		Name:   d.Name,
+		Source: source,
+	}
+
+	if !d.Global {
+		owner := userTResponse(d.Owner)
+		dd.Owner = &owner
+		dd.Verified = &d.Verified
+		if !d.VerifiedAt.IsZero() {
+			dd.VerifiedAt = &d.VerifiedAt
+		}
+	}
+
+	return dd
+}
+
 func pgmTMetadata(pgm entities.PaginationMetadata) PaginationMetadata {
 	return PaginationMetadata{
-		CurrentPage:  float32(pgm.CurrentPage),
-		FirstPage:    float32(pgm.FirstPage),
-		LastPage:     float32(pgm.LastPage),
-		PageSize:     float32(pgm.PageSize),
-		TotalRecords: float32(pgm.TotalRecords),
+		CurrentPage:  pgm.CurrentPage,
+		FirstPage:    pgm.FirstPage,
+		LastPage:     pgm.LastPage,
+		PageSize:     pgm.PageSize,
+		TotalRecords: pgm.TotalRecords,
 	}
 }

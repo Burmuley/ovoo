@@ -13,6 +13,7 @@ type ServiceGateway struct {
 	PrAddrs *ProtectedAddrService
 	Chains  *ChainsService
 	Tokens  *ApiTokensService
+	Domains *DomainsService
 }
 
 // New creates a new ServiceGateway instance with the provided service implementations.
@@ -39,6 +40,8 @@ func New(services ...any) (*ServiceGateway, error) {
 			f.Chains = t
 		case *ApiTokensService:
 			f.Tokens = t
+		case *DomainsService:
+			f.Domains = t
 		default:
 			return nil, fmt.Errorf("%w: unknown service type %T", entities.ErrConfiguration, t)
 		}

@@ -834,6 +834,11 @@ paths:
 
 components:
   schemas:
+    domainSource:
+      type: string
+      enum: [global, personal]
+      description: >-
+        Enum defining type of the custom domain.
     aliasData:
       type: object
       properties:
@@ -996,8 +1001,7 @@ components:
           type: string
           description: Domain name (e.g. example.com)
         source:
-          type: string
-          enum: [global, personal]
+          $ref: "#/components/schemas/domainSource"
           description: Whether domain is system-wide or owned by the current user
         active:
           type: boolean
@@ -1242,8 +1246,7 @@ components:
                 type: string
                 description: Domain name (e.g. example.com)
               source:
-                type: string
-                enum: [global, personal]
+                $ref: "#/components/schemas/domainSource"
                 description: >-
                   Domain scope. Admin users may pass `global` to create a system-wide domain.
                   Defaults to `personal` if omitted. Non-admin users receive 403 if `global`

@@ -289,3 +289,31 @@ func canSetActiveUser(user entities.User, cuser entities.User) bool {
 
 	return false
 }
+
+func canGetDomains(cuser entities.User) bool {
+	return true
+}
+
+func canCreateDomain(cuser entities.User) bool {
+	return true
+}
+
+func canCreateGlobalDomain(cuser entities.User) bool {
+	return cuser.Type == entities.AdminUser
+}
+
+func canUpdateDomain(cuser entities.User, d entities.CustomDomain) bool {
+	if cuser.Type == entities.AdminUser {
+		return true
+	}
+
+	return cuser.ID == d.Owner.ID
+}
+
+func canDeleteDomain(cuser entities.User, d entities.CustomDomain) bool {
+	if cuser.Type == entities.AdminUser {
+		return true
+	}
+
+	return cuser.ID == d.Owner.ID
+}
