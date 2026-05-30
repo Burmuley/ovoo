@@ -107,6 +107,7 @@ func (t ApiToken) TableName() string {
 type CustomDomain struct {
 	Model
 	Name              string    `gorm:"column:name"`
+	Global            bool      `gorm:"column:global;default:false"`
 	OwnerID           string    `gorm:"column:owner_id"`
 	Owner             User      `gorm:"foreignKey:OwnerID"`
 	Active            bool      `gorm:"column:active;default:true"`

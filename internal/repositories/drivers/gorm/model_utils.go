@@ -274,6 +274,7 @@ func customDomainFromEntity(e entities.CustomDomain) CustomDomain {
 			UpdatedAt: e.UpdatedAt,
 		},
 		Name:              e.Name,
+		Global:            e.Global,
 		OwnerID:           e.Owner.ID.String(),
 		Owner:             userFromEntity(e.Owner),
 		Active:            e.Active,
@@ -298,6 +299,7 @@ func customDomainToEntity(d CustomDomain) entities.CustomDomain {
 	return entities.CustomDomain{
 		ID:                entities.Id(d.ID),
 		Name:              d.Name,
+		Global:            d.Global,
 		Owner:             userToEntity(d.Owner),
 		CreatedAt:         d.CreatedAt,
 		UpdatedAt:         d.UpdatedAt,

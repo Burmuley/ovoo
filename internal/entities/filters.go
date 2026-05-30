@@ -223,9 +223,10 @@ type ChainFilter struct {
 
 type CustomDomainFilter struct {
 	Filter
-	Active   *bool
-	Verified *bool
-	Owners   []Id
+	Active        *bool
+	Verified      *bool
+	Owners        []Id
+	IncludeGlobal bool
 }
 
 func NewCustomDomainFilter(input map[string][]string) (CustomDomainFilter, error) {
