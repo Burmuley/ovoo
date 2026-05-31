@@ -627,9 +627,9 @@ paths:
       summary: Create domain
       description: >-
         Creates a new domain. Regular users always create a personal domain (owner set
-        to current user). Admin users may set `source: global` in the request body to
-        create a system-wide domain with no owner; omitting `source` creates a personal
-        domain even for admins. Non-admin users receive 403 if `source: global` is sent.
+        to current user). Admin users may set `type: global` in the request body to
+        create a system-wide domain with no owner; omitting `type` creates a personal
+        domain even for admins. Non-admin users receive 403 if `type: global` is sent.
       operationId: createDomain
       tags:
         - CustomDomains
@@ -834,7 +834,7 @@ paths:
 
 components:
   schemas:
-    domainSource:
+    domainType:
       type: string
       enum: [global, personal]
       description: >-
@@ -1000,8 +1000,8 @@ components:
         name:
           type: string
           description: Domain name (e.g. example.com)
-        source:
-          $ref: "#/components/schemas/domainSource"
+        type:
+          $ref: "#/components/schemas/domainType"
           description: Whether domain is system-wide or owned by the current user
         active:
           type: boolean
@@ -1018,7 +1018,7 @@ components:
       required:
         - id
         - name
-        - source
+        - type
         - active
     error:
       type: object
@@ -1103,14 +1103,15 @@ components:
             properties:
               protected_address_id:
                 type: string
-              domain:
+              domain_id:
                 type: string
-                description: "Target domain for alias generation; defaults to first configured domain"
+                description: "Target domain ID for alias generation"
               metadata:
                 $ref: "#/components/schemas/addressMetadata"
             required:
               - protected_address_id
               - metadata
+              - domain_id
     updateAliasRequest:
       content:
         application/json:
@@ -1245,8 +1246,8 @@ components:
               name:
                 type: string
                 description: Domain name (e.g. example.com)
-              source:
-                $ref: "#/components/schemas/domainSource"
+              type:
+                $ref: "#/components/schemas/domainType"
                 description: >-
                   Domain scope. Admin users may pass `global` to create a system-wide domain.
                   Defaults to `personal` if omitted. Non-admin users receive 403 if `global`

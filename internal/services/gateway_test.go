@@ -12,7 +12,7 @@ import (
 func TestNew_AllServicesProvided(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
-	aliasesService := &AliasesService{repof: repof, domains: []string{"test.com"}, wordsDictionary: []string{"word"}}
+	aliasesService := &AliasesService{repof: repof, wordsDictionary: []string{"word"}}
 	usersService := &UsersService{repof: repof}
 	prAddrsService := &ProtectedAddrService{repof: repof}
 	chainsService := &ChainsService{repof: repof}
@@ -34,7 +34,7 @@ func TestNew_AllServicesProvided(t *testing.T) {
 func TestNew_MissingService(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
-	aliasesService := &AliasesService{repof: repof, domains: []string{"test.com"}, wordsDictionary: []string{"word"}}
+	aliasesService := &AliasesService{repof: repof, wordsDictionary: []string{"word"}}
 	usersService := &UsersService{repof: repof}
 	// Missing prAddrsService, chainsService, tokensService
 
@@ -66,8 +66,8 @@ func TestNew_EmptyServices(t *testing.T) {
 func TestNew_DuplicateServices(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
-	aliasesService1 := &AliasesService{repof: repof, domains: []string{"test1.com"}, wordsDictionary: []string{"word"}}
-	aliasesService2 := &AliasesService{repof: repof, domains: []string{"test2.com"}, wordsDictionary: []string{"word"}}
+	aliasesService1 := &AliasesService{repof: repof, wordsDictionary: []string{"word"}}
+	aliasesService2 := &AliasesService{repof: repof, wordsDictionary: []string{"word"}}
 	usersService := &UsersService{repof: repof}
 	prAddrsService := &ProtectedAddrService{repof: repof}
 	chainsService := &ChainsService{repof: repof}
@@ -87,7 +87,7 @@ func TestCheckNilServices_AllFieldsSet(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
 	gw := &ServiceGateway{
-		Aliases: &AliasesService{repof: repof, domains: []string{"test.com"}, wordsDictionary: []string{"word"}},
+		Aliases: &AliasesService{repof: repof, wordsDictionary: []string{"word"}},
 		Users:   &UsersService{repof: repof},
 		PrAddrs: &ProtectedAddrService{repof: repof},
 		Chains:  &ChainsService{repof: repof},
@@ -121,7 +121,7 @@ func TestCheckNilServices_UsersNil(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
 	gw := &ServiceGateway{
-		Aliases: &AliasesService{repof: repof, domains: []string{"test.com"}, wordsDictionary: []string{"word"}},
+		Aliases: &AliasesService{repof: repof, wordsDictionary: []string{"word"}},
 		Users:   nil,
 		PrAddrs: &ProtectedAddrService{repof: repof},
 		Chains:  &ChainsService{repof: repof},
@@ -138,7 +138,7 @@ func TestCheckNilServices_PrAddrsNil(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
 	gw := &ServiceGateway{
-		Aliases: &AliasesService{repof: repof, domains: []string{"test.com"}, wordsDictionary: []string{"word"}},
+		Aliases: &AliasesService{repof: repof, wordsDictionary: []string{"word"}},
 		Users:   &UsersService{repof: repof},
 		PrAddrs: nil,
 		Chains:  &ChainsService{repof: repof},
@@ -155,7 +155,7 @@ func TestCheckNilServices_ChainsNil(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
 	gw := &ServiceGateway{
-		Aliases: &AliasesService{repof: repof, domains: []string{"test.com"}, wordsDictionary: []string{"word"}},
+		Aliases: &AliasesService{repof: repof, wordsDictionary: []string{"word"}},
 		Users:   &UsersService{repof: repof},
 		PrAddrs: &ProtectedAddrService{repof: repof},
 		Chains:  nil,
@@ -172,7 +172,7 @@ func TestCheckNilServices_TokensNil(t *testing.T) {
 	repof := &factory.RepoFactory{}
 
 	gw := &ServiceGateway{
-		Aliases: &AliasesService{repof: repof, domains: []string{"test.com"}, wordsDictionary: []string{"word"}},
+		Aliases: &AliasesService{repof: repof, wordsDictionary: []string{"word"}},
 		Users:   &UsersService{repof: repof},
 		PrAddrs: &ProtectedAddrService{repof: repof},
 		Chains:  &ChainsService{repof: repof},

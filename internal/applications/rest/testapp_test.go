@@ -19,6 +19,7 @@ type testApp struct {
 	chainRepo  *mockChainRepo
 	usersRepo  *mockUsersRepo
 	tokensRepo *mockTokensRepo
+	domainRepo *mockDomainRepo
 }
 
 func newTestApp(t *testing.T) *testApp {
@@ -28,14 +29,16 @@ func newTestApp(t *testing.T) *testApp {
 		chainRepo:  new(mockChainRepo),
 		usersRepo:  new(mockUsersRepo),
 		tokensRepo: new(mockTokensRepo),
+		domainRepo: newMockDomainRepo(),
 	}
 	repof := &factory.RepoFactory{
 		Address:   ta.addrRepo,
 		Chain:     ta.chainRepo,
 		Users:     ta.usersRepo,
 		ApiTokens: ta.tokensRepo,
+		Domain:    ta.domainRepo,
 	}
-	aliasesSvc, err := services.NewAliasesService([]string{"test.com"}, []string{"alpha", "bravo", "charlie"}, repof)
+	aliasesSvc, err := services.NewAliasesService([]string{"alpha", "bravo", "charlie"}, repof)
 	require.NoError(t, err)
 	prAddrsSvc, err := services.NewProtectedAddrService(repof)
 	require.NoError(t, err)

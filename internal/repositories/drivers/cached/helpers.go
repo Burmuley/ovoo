@@ -139,6 +139,10 @@ func customDomainIdKey(id entities.Id) string {
 	return "domain:id:" + id.String()
 }
 
+func customDomainNameKey(name string) string {
+	return "domain:name:" + name
+}
+
 func customDomainListPrefix() string { return "domain:list" }
 
 func customDomainKeyList(filter entities.CustomDomainFilter) string {

@@ -11,8 +11,8 @@ import (
 	"github.com/Burmuley/ovoo/internal/services"
 )
 
-func makeServices(repoFactory *factory.RepoFactory, domains []string, dict []string) (*services.ServiceGateway, error) {
-	aliases, err := services.NewAliasesService(domains, dict, repoFactory)
+func makeServices(repoFactory *factory.RepoFactory, dict []string) (*services.ServiceGateway, error) {
+	aliases, err := services.NewAliasesService(dict, repoFactory)
 	if err != nil {
 		return nil, fmt.Errorf("initializing aliases service: %w", err)
 	}
@@ -37,7 +37,12 @@ func makeServices(repoFactory *factory.RepoFactory, domains []string, dict []str
 		return nil, fmt.Errorf("initializing api tokens service: %w", err)
 	}
 
-	svcGw, err := services.New(aliases, prAddrs, chains, users, tokens)
+	domainsSvc, err := services.NewDomainsService(repoFactory)
+	if err != nil {
+		return nil, fmt.Errorf("initializing domains service: %w", err)
+	}
+
+	svcGw, err := services.New(aliases, prAddrs, chains, users, tokens, domainsSvc)
 	if err != nil {
 		return nil, fmt.Errorf("initializing services gateway: %w", err)
 	}
@@ -69,7 +74,7 @@ func startApi(cfg *config.APIConfig) error {
 	}
 
 	// initialize services
-	svcGw, err := makeServices(repos, cfg.Domains, dict)
+	svcGw, err := makeServices(repos, dict)
 	if err != nil {
 		return fmt.Errorf("error initializing services gateway: %w", err)
 	}

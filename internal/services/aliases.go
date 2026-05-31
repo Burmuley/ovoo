@@ -13,7 +13,7 @@ import (
 
 type AliasCreateCmd struct {
 	ProtectedAddressId string
-	Domain             *string
+	DomainId           entities.Id
 	Metadata           struct {
 		Comment     *string
 		ServiceName *string
@@ -32,22 +32,11 @@ type AliasUpdateCmd struct {
 // AliasesService handles operations related to alias addresses.
 type AliasesService struct {
 	repof           *factory.RepoFactory
-	domains         []string
 	wordsDictionary []string
 }
 
 // NewAliasesService creates a new AliasesUsecase instance.
-func NewAliasesService(domains []string, wordsDict []string, repoFabric *factory.RepoFactory) (*AliasesService, error) {
-	if len(domains) < 1 {
-		return nil, fmt.Errorf("%w: at least one domain must be defined", entities.ErrConfiguration)
-	}
-
-	for _, d := range domains {
-		if len(d) < 2 {
-			return nil, fmt.Errorf("%w: invalid domain %q defined", entities.ErrConfiguration, d)
-		}
-	}
-
+func NewAliasesService(wordsDict []string, repoFabric *factory.RepoFactory) (*AliasesService, error) {
 	if len(wordsDict) == 0 {
 		return nil, fmt.Errorf("%w: words dictionary can not be empty", entities.ErrConfiguration)
 	}
@@ -56,12 +45,7 @@ func NewAliasesService(domains []string, wordsDict []string, repoFabric *factory
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
-	return &AliasesService{repof: repoFabric, domains: domains, wordsDictionary: wordsDict}, nil
-}
-
-// Domains returns the list of configured alias domains.
-func (als *AliasesService) Domains() []string {
-	return als.domains
+	return &AliasesService{repof: repoFabric, wordsDictionary: wordsDict}, nil
 }
 
 // Create generates a new alias address and stores it.
@@ -93,15 +77,16 @@ func (als *AliasesService) Create(
 		return entities.Address{}, fmt.Errorf("%w: can not create alias for inactive protected address", entities.ErrValidation)
 	}
 
-	domain := als.domains[0]
-	if cmd.Domain != nil {
-		if !slices.Contains(als.domains, *cmd.Domain) {
-			return entities.Address{}, fmt.Errorf("%w: unknown domain %q", entities.ErrValidation, *cmd.Domain)
-		}
-		domain = *cmd.Domain
+	if err := cmd.DomainId.Validate(); err != nil {
+		return entities.Address{}, fmt.Errorf("%w: invalid domain id defined %q", entities.ErrValidation, cmd.DomainId)
 	}
 
-	aliasEmail, err := entities.GenAliasEmail(domain, als.wordsDictionary)
+	domain, err := als.repof.Domain.GetById(ctx, cmd.DomainId)
+	if err != nil || !domain.Active || !domain.Verified {
+		return entities.Address{}, fmt.Errorf("%w: unknown or inactive domain %q", entities.ErrValidation, cmd.DomainId)
+	}
+
+	aliasEmail, err := entities.GenAliasEmail(domain.Name, als.wordsDictionary)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
 	}

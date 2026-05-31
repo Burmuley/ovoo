@@ -126,6 +126,14 @@
             </CButton>
         </CModalFooter>
     </CModal>
+
+    <CModal :visible="apiError !== null" @close="apiError = null">
+        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalBody>{{ apiError }}</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" @click="apiError = null">Close</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
@@ -146,6 +154,12 @@ const saving = ref(false)
 const deletingId = ref(null)
 const confirmingDeactivateId = ref(null)
 const confirmingActivateId = ref(null)
+const apiError = ref(null)
+
+const handleApiError = async (res) => {
+    const data = await res.json()
+    apiError.value = data.errors?.[0]?.detail ?? 'An unexpected error occurred'
+}
 
 let searchDebounce = null
 
@@ -188,34 +202,37 @@ const cancelEdit = () => {
 
 const saveEdit = async (id) => {
     saving.value = true
-    await apiFetch(`/api/v1/praddrs/${id}`, {
+    const res = await apiFetch(`/api/v1/praddrs/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({
             metadata: { comment: editComment.value },
         }),
     })
     saving.value = false
+    if (!res.ok) { await handleApiError(res); return }
     editingId.value = null
     await load()
 }
 
 const setActive = async (id, active) => {
     saving.value = true
-    await apiFetch(`/api/v1/praddrs/${id}`, {
+    const res = await apiFetch(`/api/v1/praddrs/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ active }),
     })
     saving.value = false
     confirmingDeactivateId.value = null
     confirmingActivateId.value = null
+    if (!res.ok) { await handleApiError(res); return }
     await load()
 }
 
 const performDelete = async (id) => {
     saving.value = true
-    await apiFetch(`/api/v1/praddrs/${id}`, { method: 'DELETE' })
+    const res = await apiFetch(`/api/v1/praddrs/${id}`, { method: 'DELETE' })
     saving.value = false
     deletingId.value = null
+    if (!res.ok) { await handleApiError(res); return }
     await load()
 }
 

@@ -7,9 +7,12 @@
                     <CFormLabel>Protected Address</CFormLabel>
                     <Dropdown text="Select address" :items="praddrs" @filter-selected="praddrSelected = $event" />
                 </div>
-                <div class="mb-3" v-if="domains.length > 1">
+                <div class="mb-3">
                     <CFormLabel>Domain</CFormLabel>
-                    <Dropdown text="Select domain" :items="domainItems" @filter-selected="domainSelected = $event" />
+                    <CFormSelect v-model="domainSelected" :disabled="domainItems.length === 0">
+                        <option v-if="domainItems.length === 0" value="" disabled>No domains available</option>
+                        <option v-for="d in domainItems" :key="d.id" :value="d.id">{{ d.text }}</option>
+                    </CFormSelect>
                 </div>
                 <div class="mb-3">
                     <CFormLabel for="svcname">Service Name</CFormLabel>
@@ -42,8 +45,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import Dropdown from './Dropdown.vue'
 import { apiFetch } from '../utils/api'
+import Dropdown from './Dropdown.vue'
 
 const emit = defineEmits(['done'])
 
@@ -67,9 +70,11 @@ const loadDomains = async () => {
     const res = await apiFetch('/api/v1/domains')
     const data = await res.json()
     domains.value = data.domains
-    domainItems.value = data.domains.map(d => ({ id: d, text: d }))
+    domainItems.value = data.domains
+        .filter(d => d.active)
+        .map(d => ({ id: d.id, text: d.name }))
     if (domains.value.length > 0) {
-        domainSelected.value = domains.value[0]
+        domainSelected.value = domains.value[0].id
     }
 }
 
@@ -89,7 +94,7 @@ const createAlias = async () => {
         },
     }
     if (domainSelected.value) {
-        body.domain = domainSelected.value
+        body.domain_id = domainSelected.value
     }
     const res = await apiFetch('/api/v1/aliases', {
         method: 'POST',

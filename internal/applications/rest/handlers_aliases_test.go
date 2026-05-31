@@ -101,7 +101,7 @@ func TestGetAliases_ResponseBody(t *testing.T) {
 	require.Len(t, body.Aliases, 1)
 	assert.Equal(t, alias.ID.String(), body.Aliases[0].Id)
 	assert.Equal(t, string(alias.Email), string(body.Aliases[0].Email))
-	assert.Equal(t, float32(1), body.PaginationMetadata.TotalRecords)
+	assert.Equal(t, 1, body.PaginationMetadata.TotalRecords)
 }
 
 // --- GetAliaseById ---
@@ -204,11 +204,12 @@ func TestCreateAlias_Success(t *testing.T) {
 	ta := newTestApp(t)
 	user := testUser()
 	prAddr := testProtectedAddr(user.ID)
+	domainId := entities.NewId()
 
 	ta.addrRepo.On("GetById", mock.Anything, prAddr.ID).Return(prAddr, nil)
 	ta.addrRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
 
-	body := bytes.NewBufferString(`{"protected_address_id": "` + prAddr.ID.String() + `", "metadata": {}}`)
+	body := bytes.NewBufferString(`{"protected_address_id": "` + prAddr.ID.String() + `", "domain_id": "` + domainId.String() + `", "metadata": {}}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/aliases", body)
 	req = withUser(req, user)
 	w := httptest.NewRecorder()
@@ -222,11 +223,12 @@ func TestCreateAlias_Success_WithMetadata(t *testing.T) {
 	ta := newTestApp(t)
 	user := testUser()
 	prAddr := testProtectedAddr(user.ID)
+	domainId := entities.NewId()
 
 	ta.addrRepo.On("GetById", mock.Anything, prAddr.ID).Return(prAddr, nil)
 	ta.addrRepo.On("Create", mock.Anything, mock.Anything).Return(nil)
 
-	body := bytes.NewBufferString(`{"protected_address_id": "` + prAddr.ID.String() + `", "metadata": {"comment": "test", "service_name": "svc"}}`)
+	body := bytes.NewBufferString(`{"protected_address_id": "` + prAddr.ID.String() + `", "domain_id": "` + domainId.String() + `", "metadata": {"comment": "test", "service_name": "svc"}}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/aliases", body)
 	req = withUser(req, user)
 	w := httptest.NewRecorder()

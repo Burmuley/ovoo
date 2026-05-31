@@ -12,51 +12,39 @@ import (
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 )
 
-func setupAliasesService(t *testing.T) (*AliasesService, *MockAddressRepo, *MockChainRepo) {
-	addressRepo := new(MockAddressRepo)
-	chainRepo := new(MockChainRepo)
+func setupAliasesService(t *testing.T) (*AliasesService, *factory.RepoFactory) {
+	domainRepo := new(MockDomainRepo)
+	defaultDomain := entities.CustomDomain{
+		ID:       entities.NewId(),
+		Name:     "example.com",
+		Active:   true,
+		Verified: true,
+	}
+	domainRepo.On("GetById", mock.Anything, mock.Anything).Return(defaultDomain, nil).Maybe()
 
 	repof := &factory.RepoFactory{
-		Address: addressRepo,
-		Chain:   chainRepo,
+		Address: new(MockAddressRepo),
+		Chain:   new(MockChainRepo),
+		Domain:  domainRepo,
 	}
 
-	service, err := NewAliasesService([]string{"test.com"}, []string{"word1", "word2", "word3"}, repof)
+	service, err := NewAliasesService([]string{"word1", "word2", "word3"}, repof)
 	require.NoError(t, err)
 
-	return service, addressRepo, chainRepo
+	return service, repof
 }
 
 func TestNewAliasesService(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService([]string{"test.com"}, []string{"word1", "word2"}, repof)
+	service, err := NewAliasesService([]string{"word1", "word2"}, repof)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, service)
 }
 
-func TestNewAliasesService_InvalidDomain(t *testing.T) {
-	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService([]string{"x"}, []string{"word1", "word2"}, repof)
-
-	assert.Error(t, err)
-	assert.Nil(t, service)
-	assert.ErrorIs(t, err, entities.ErrConfiguration)
-	assert.Contains(t, err.Error(), "invalid domain")
-}
-
-func TestNewAliasesService_EmptyDomain(t *testing.T) {
-	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService([]string{}, []string{"word1", "word2"}, repof)
-
-	assert.Error(t, err)
-	assert.Nil(t, service)
-	assert.ErrorIs(t, err, entities.ErrConfiguration)
-}
-
 func TestNewAliasesService_EmptyWordsDictionary(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewAliasesService([]string{"test.com"}, []string{}, repof)
+	service, err := NewAliasesService([]string{}, repof)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)
@@ -65,7 +53,7 @@ func TestNewAliasesService_EmptyWordsDictionary(t *testing.T) {
 }
 
 func TestNewAliasesService_NilRepoFactory(t *testing.T) {
-	service, err := NewAliasesService([]string{"test.com"}, []string{"word1", "word2"}, nil)
+	service, err := NewAliasesService([]string{"word1", "word2"}, nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)
@@ -73,7 +61,8 @@ func TestNewAliasesService_NilRepoFactory(t *testing.T) {
 }
 
 func TestAliasesService_Create_Success(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	userId := entities.NewId()
@@ -96,6 +85,7 @@ func TestAliasesService_Create_Success(t *testing.T) {
 	comment := "Test comment"
 	cmd := AliasCreateCmd{
 		ProtectedAddressId: string(prAddrId),
+		DomainId:           entities.NewId(),
 		Metadata: struct {
 			Comment     *string
 			ServiceName *string
@@ -120,7 +110,7 @@ func TestAliasesService_Create_Success(t *testing.T) {
 }
 
 func TestAliasesService_Create_NotAuthorized_MilterUser(t *testing.T) {
-	service, _, _ := setupAliasesService(t)
+	service, _ := setupAliasesService(t)
 	ctx := context.Background()
 
 	milterUser := entities.User{
@@ -141,7 +131,8 @@ func TestAliasesService_Create_NotAuthorized_MilterUser(t *testing.T) {
 }
 
 func TestAliasesService_Create_ProtectedAddressNotFound(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	user := entities.User{
@@ -165,7 +156,8 @@ func TestAliasesService_Create_ProtectedAddressNotFound(t *testing.T) {
 }
 
 func TestAliasesService_Update_Success(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	userId := entities.NewId()
@@ -220,7 +212,8 @@ func TestAliasesService_Update_Success(t *testing.T) {
 }
 
 func TestAliasesService_Update_NotAuthorized(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	owner := entities.User{
@@ -272,7 +265,8 @@ func TestAliasesService_Update_NotAuthorized(t *testing.T) {
 }
 
 func TestAliasesService_Update_AliasNotFound(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	user := entities.User{
@@ -303,7 +297,8 @@ func TestAliasesService_Update_AliasNotFound(t *testing.T) {
 }
 
 func TestAliasesService_GetAll_AdminUser(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	admin := entities.User{
@@ -337,7 +332,8 @@ func TestAliasesService_GetAll_AdminUser(t *testing.T) {
 }
 
 func TestAliasesService_GetAll_RegularUser(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	userId := entities.NewId()
@@ -371,7 +367,7 @@ func TestAliasesService_GetAll_RegularUser(t *testing.T) {
 }
 
 func TestAliasesService_GetAll_MilterUserNotAuthorized(t *testing.T) {
-	service, _, _ := setupAliasesService(t)
+	service, _ := setupAliasesService(t)
 	ctx := context.Background()
 
 	milterUser := entities.User{
@@ -391,7 +387,8 @@ func TestAliasesService_GetAll_MilterUserNotAuthorized(t *testing.T) {
 }
 
 func TestAliasesService_GetById_Success_Owner(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	userId := entities.NewId()
@@ -427,7 +424,8 @@ func TestAliasesService_GetById_Success_Owner(t *testing.T) {
 }
 
 func TestAliasesService_GetById_Success_Admin(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	admin := entities.User{
@@ -468,7 +466,8 @@ func TestAliasesService_GetById_Success_Admin(t *testing.T) {
 }
 
 func TestAliasesService_GetById_NotAuthorized(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	owner := entities.User{
@@ -509,7 +508,7 @@ func TestAliasesService_GetById_NotAuthorized(t *testing.T) {
 }
 
 func TestAliasesService_GetById_InvalidId(t *testing.T) {
-	service, _, _ := setupAliasesService(t)
+	service, _ := setupAliasesService(t)
 	ctx := context.Background()
 
 	user := entities.User{
@@ -528,7 +527,8 @@ func TestAliasesService_GetById_InvalidId(t *testing.T) {
 }
 
 func TestAliasesService_GetById_NotFound(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	user := entities.User{
@@ -549,7 +549,9 @@ func TestAliasesService_GetById_NotFound(t *testing.T) {
 }
 
 func TestAliasesService_DeleteById_Success_Owner(t *testing.T) {
-	service, addressRepo, chainRepo := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
+	chainRepo := repof.Chain.(*MockChainRepo)
 	ctx := context.Background()
 
 	userId := entities.NewId()
@@ -590,7 +592,9 @@ func TestAliasesService_DeleteById_Success_Owner(t *testing.T) {
 }
 
 func TestAliasesService_DeleteById_Success_Admin(t *testing.T) {
-	service, addressRepo, chainRepo := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
+	chainRepo := repof.Chain.(*MockChainRepo)
 	ctx := context.Background()
 
 	admin := entities.User{
@@ -636,7 +640,8 @@ func TestAliasesService_DeleteById_Success_Admin(t *testing.T) {
 }
 
 func TestAliasesService_DeleteById_NotAuthorized(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	owner := entities.User{
@@ -676,7 +681,7 @@ func TestAliasesService_DeleteById_NotAuthorized(t *testing.T) {
 }
 
 func TestAliasesService_DeleteById_InvalidId(t *testing.T) {
-	service, _, _ := setupAliasesService(t)
+	service, _ := setupAliasesService(t)
 	ctx := context.Background()
 
 	user := entities.User{
@@ -694,7 +699,8 @@ func TestAliasesService_DeleteById_InvalidId(t *testing.T) {
 }
 
 func TestAliasesService_DeleteById_NotFound(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	user := entities.User{
@@ -714,7 +720,8 @@ func TestAliasesService_DeleteById_NotFound(t *testing.T) {
 }
 
 func TestAliasesService_Create_InactiveProtectedAddress(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	user := entities.User{
@@ -748,7 +755,8 @@ func TestAliasesService_Create_InactiveProtectedAddress(t *testing.T) {
 }
 
 func TestAliasesService_Update_SetActive_Owner(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	userId := entities.NewId()
@@ -794,7 +802,8 @@ func TestAliasesService_Update_SetActive_Owner(t *testing.T) {
 }
 
 func TestAliasesService_Update_SetActive_Admin(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	admin := entities.User{
@@ -845,7 +854,8 @@ func TestAliasesService_Update_SetActive_Admin(t *testing.T) {
 }
 
 func TestAliasesService_Update_SetActive_NotAuthorized(t *testing.T) {
-	service, addressRepo, _ := setupAliasesService(t)
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
 	ctx := context.Background()
 
 	owner := entities.User{

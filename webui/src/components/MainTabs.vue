@@ -32,6 +32,12 @@
                         Users
                     </CNavLink>
                 </CNavItem>
+                <CNavItem>
+                    <CNavLink :active="currentTab === 'domains'" @click="currentTab = 'domains'">
+                        <CIcon icon="cilGlobeAlt" class="nav-icon" />
+                        Domains
+                    </CNavLink>
+                </CNavItem>
             </CSidebarNav>
         </CSidebar>
 
@@ -66,6 +72,10 @@
                     <UsersTab v-else-if="currentTab === 'users'" :user-info="userInfo"
                         @add-clicked="currentTab = 'addUser'" />
                     <AddUserForm v-else-if="currentTab === 'addUser'" @done="currentTab = 'users'" />
+                    <DomainsTab v-else-if="currentTab === 'domains'" :user-info="userInfo"
+                        @add-clicked="currentTab = 'addDomain'" />
+                    <AddDomainForm v-else-if="currentTab === 'addDomain'" :user-info="userInfo"
+                        @done="currentTab = 'domains'" />
                 </CContainer>
             </div>
             <AppFooter />
@@ -86,8 +96,10 @@ import ApiKeysTab from './ApiKeysTab.vue'
 import AddApiKeyForm from './AddApiKeyForm.vue'
 import UserInfo from './UserInfo.vue'
 import AppFooter from './AppFooter.vue'
+import DomainsTab from './DomainsTab.vue'
+import AddDomainForm from './AddDomainForm.vue'
 
-const MAIN_TABS = new Set(['aliases', 'praddrs', 'apikeys', 'users'])
+const MAIN_TABS = new Set(['aliases', 'praddrs', 'apikeys', 'users', 'domains'])
 
 function tabFromHash() {
     const tab = location.hash.slice(1)

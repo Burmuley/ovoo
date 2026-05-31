@@ -114,6 +114,8 @@ func (m *mockUsersRepo) Delete(ctx context.Context, cuser entities.User, id enti
 
 type mockTokensRepo struct{ mock.Mock }
 
+type mockDomainRepo struct{ mock.Mock }
+
 func (m *mockTokensRepo) GetById(ctx context.Context, tokenId entities.Id) (entities.ApiToken, error) {
 	args := m.Called(ctx, tokenId)
 	return args.Get(0).(entities.ApiToken), args.Error(1)
@@ -145,6 +147,40 @@ func (m *mockTokensRepo) BatchDeleteForUser(ctx context.Context, cuser entities.
 	return m.Called(ctx, cuser, id).Error(0)
 }
 
+func (m *mockDomainRepo) GetById(ctx context.Context, id entities.Id) (entities.CustomDomain, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(entities.CustomDomain), args.Error(1)
+}
+func (m *mockDomainRepo) GetByName(ctx context.Context, name string) (entities.CustomDomain, error) {
+	args := m.Called(ctx, name)
+	return args.Get(0).(entities.CustomDomain), args.Error(1)
+}
+func (m *mockDomainRepo) GetAll(ctx context.Context, filter entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error) {
+	args := m.Called(ctx, filter)
+	return args.Get(0).([]entities.CustomDomain), args.Get(1).(entities.PaginationMetadata), args.Error(2)
+}
+func (m *mockDomainRepo) Create(ctx context.Context, domain entities.CustomDomain) error {
+	return m.Called(ctx, domain).Error(0)
+}
+func (m *mockDomainRepo) Update(ctx context.Context, domain entities.CustomDomain) (entities.CustomDomain, error) {
+	args := m.Called(ctx, domain)
+	return args.Get(0).(entities.CustomDomain), args.Error(1)
+}
+func (m *mockDomainRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
+	return m.Called(ctx, cuser, id).Error(0)
+}
+
+func newMockDomainRepo() *mockDomainRepo {
+	dr := new(mockDomainRepo)
+	dr.On("GetById", mock.Anything, mock.Anything).Return(entities.CustomDomain{
+		ID:       entities.NewId(),
+		Name:     "example.com",
+		Active:   true,
+		Verified: true,
+	}, nil).Maybe()
+	return dr
+}
+
 // --- test helpers ---
 
 func buildTestApplication(t *testing.T, addrRepo *mockAddressRepo) *Application {
@@ -154,9 +190,10 @@ func buildTestApplication(t *testing.T, addrRepo *mockAddressRepo) *Application 
 		Chain:     new(mockChainRepo),
 		Users:     new(mockUsersRepo),
 		ApiTokens: new(mockTokensRepo),
+		Domain:    newMockDomainRepo(),
 	}
 
-	aliasesSvc, err := services.NewAliasesService([]string{"test.com"}, []string{"alpha", "bravo", "charlie"}, repof)
+	aliasesSvc, err := services.NewAliasesService([]string{"alpha", "bravo", "charlie"}, repof)
 	require.NoError(t, err)
 	prAddrsSvc, err := services.NewProtectedAddrService(repof)
 	require.NoError(t, err)
@@ -213,10 +250,10 @@ func testAlias(ownerID entities.Id) entities.Address {
 
 func testProtectedAddr(ownerID entities.Id) entities.Address {
 	return entities.Address{
-		ID:    entities.NewId(),
-		Type:  entities.ProtectedAddress,
-		Email: "protected@example.com",
-		Owner: entities.User{ID: ownerID, Type: entities.AdminUser},
+		ID:     entities.NewId(),
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  entities.User{ID: ownerID, Type: entities.AdminUser},
 		Active: true,
 	}
 }

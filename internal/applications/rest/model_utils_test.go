@@ -73,17 +73,17 @@ func TestPgmTMetadata(t *testing.T) {
 		TotalRecords: 42,
 	}
 	result := pgmTMetadata(pgm)
-	assert.Equal(t, float32(2), result.CurrentPage)
-	assert.Equal(t, float32(1), result.FirstPage)
-	assert.Equal(t, float32(5), result.LastPage)
-	assert.Equal(t, float32(10), result.PageSize)
-	assert.Equal(t, float32(42), result.TotalRecords)
+	assert.Equal(t, 2, result.CurrentPage)
+	assert.Equal(t, 1, result.FirstPage)
+	assert.Equal(t, 5, result.LastPage)
+	assert.Equal(t, 10, result.PageSize)
+	assert.Equal(t, 42, result.TotalRecords)
 }
 
 func TestPgmTMetadata_Zero(t *testing.T) {
 	result := pgmTMetadata(entities.PaginationMetadata{})
-	assert.Equal(t, float32(0), result.CurrentPage)
-	assert.Equal(t, float32(0), result.TotalRecords)
+	assert.Equal(t, 0, result.CurrentPage)
+	assert.Equal(t, 0, result.TotalRecords)
 }
 
 func TestUserTResponse(t *testing.T) {

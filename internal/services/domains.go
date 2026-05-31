@@ -1,6 +1,7 @@
 package services
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"strings"
@@ -32,17 +33,24 @@ func NewDomainsService(repoFabric *factory.RepoFactory) (*DomainsService, error)
 	return &DomainsService{repof: repoFabric}, nil
 }
 
-func (d *DomainsService) GetAll(ctx context.Context, cuser entities.User) ([]entities.CustomDomain, error) {
-	var filter entities.CustomDomainFilter
-
-	if cuser.Type != entities.AdminUser {
-		filter = entities.CustomDomainFilter{
-			Owners:        []entities.Id{cuser.ID},
-			IncludeGlobal: true,
-		}
+func (d *DomainsService) GetAll(ctx context.Context, cuser entities.User, filters entities.CustomDomainFilter) ([]entities.CustomDomain, error) {
+	// admin and milter users can read all domains in the system
+	if cmp.Or(
+		cuser.Type != entities.AdminUser,
+		cuser.Type != entities.MilterUser,
+	) {
+		filters.Owners = []entities.Id{cuser.ID}
+		filters.IncludeGlobal = true
 	}
 
-	domains, _, err := d.repof.Domain.GetAll(ctx, filter)
+	// milter can only receive active&verified domains + global
+	if cuser.Type == entities.MilterUser {
+		filters.Active = new(true)
+		filters.Verified = new(true)
+		filters.IncludeGlobal = true
+	}
+
+	domains, _, err := d.repof.Domain.GetAll(ctx, filters)
 	if err != nil {
 		return nil, err
 	}
@@ -76,17 +84,22 @@ func (d *DomainsService) Create(ctx context.Context, cuser entities.User, cmd Do
 		return entities.CustomDomain{}, fmt.Errorf("%w: name field cannot be empty", entities.ErrValidation)
 	}
 
+	if domain, err := d.repof.Domain.GetByName(ctx, cmd.Name); err == nil && domain.ID.Validate() == nil {
+		return entities.CustomDomain{}, fmt.Errorf("%w: domain already exists", entities.ErrDuplicateEntry)
+	}
+
 	now := time.Now()
 	domain := entities.CustomDomain{
-		ID:        entities.NewId(),
-		Name:      strings.TrimSpace(cmd.Name),
-		Global:    cmd.Global,
-		Owner:     cuser,
-		Active:    true,
-		Verified:  false,
-		CreatedAt: now,
-		UpdatedAt: now,
-		UpdatedBy: cuser,
+		ID:         entities.NewId(),
+		Name:       strings.TrimSpace(cmd.Name),
+		Global:     cmd.Global,
+		Owner:      cuser,
+		Active:     true,
+		Verified:   true, // TODO: implement domain verification
+		VerifiedAt: now,  // TODO: implement domain verification
+		CreatedAt:  now,
+		UpdatedAt:  now,
+		UpdatedBy:  cuser,
 	}
 
 	if err := domain.Validate(); err != nil {

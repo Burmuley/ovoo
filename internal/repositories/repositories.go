@@ -95,6 +95,7 @@ type TokensReadWriter interface {
 
 type CustomDomainsReader interface {
 	GetById(ctx context.Context, id entities.Id) (entities.CustomDomain, error)
+	GetByName(ctx context.Context, name string) (entities.CustomDomain, error)
 	GetAll(ctx context.Context, filter entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error)
 }
 

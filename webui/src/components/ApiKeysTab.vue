@@ -101,6 +101,14 @@
             <CButton color="warning" :disabled="saving" @click="deactivate(confirmingId)">Yes, deactivate</CButton>
         </CModalFooter>
     </CModal>
+
+    <CModal :visible="apiError !== null" @close="apiError = null">
+        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalBody>{{ apiError }}</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" @click="apiError = null">Close</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
@@ -115,6 +123,12 @@ const editForm = ref({ name: '', description: '' })
 const confirmingId = ref(null)
 const deletingId = ref(null)
 const saving = ref(false)
+const apiError = ref(null)
+
+const handleApiError = async (res) => {
+    const data = await res.json()
+    apiError.value = data.errors?.[0]?.detail ?? 'An unexpected error occurred'
+}
 
 const load = async () => {
     const res = await apiFetch('/api/v1/users/apitokens')
@@ -132,31 +146,34 @@ const cancelEdit = () => {
 
 const saveEdit = async (id) => {
     saving.value = true
-    await apiFetch(`/api/v1/users/apitokens/${id}`, {
+    const res = await apiFetch(`/api/v1/users/apitokens/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ name: editForm.value.name, description: editForm.value.description }),
     })
     saving.value = false
+    if (!res.ok) { await handleApiError(res); return }
     editingId.value = null
     await load()
 }
 
 const deactivate = async (id) => {
     saving.value = true
-    await apiFetch(`/api/v1/users/apitokens/${id}`, {
+    const res = await apiFetch(`/api/v1/users/apitokens/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ active: false }),
     })
     saving.value = false
     confirmingId.value = null
+    if (!res.ok) { await handleApiError(res); return }
     await load()
 }
 
 const performDelete = async (id) => {
     saving.value = true
-    await apiFetch(`/api/v1/users/apitokens/${id}`, { method: 'DELETE' })
+    const res = await apiFetch(`/api/v1/users/apitokens/${id}`, { method: 'DELETE' })
     saving.value = false
     deletingId.value = null
+    if (!res.ok) { await handleApiError(res); return }
     await load()
 }
 

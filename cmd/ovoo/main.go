@@ -28,8 +28,11 @@ func main() {
 	milterCmd := flag.NewFlagSet("milter", flag.ExitOnError)
 	milterCfgName := milterCmd.String("config", defaultConfigName, "path to the configuration file")
 
+	sockMapCmd := flag.NewFlagSet("socketmap", flag.ExitOnError)
+	sockMapCfgName := sockMapCmd.String("config", defaultConfigName, "path to the configuration file")
+
 	if len(os.Args) < 2 {
-		printUsage(apiCmd, milterCmd)
+		printUsage(apiCmd, milterCmd, sockMapCmd)
 	}
 
 	switch os.Args[1] {
@@ -61,6 +64,15 @@ func main() {
 			log.Fatal(err)
 		}
 		if err := startMilter(cfg); err != nil {
+			slog.Error(err.Error())
+		}
+	case "socketmap":
+		sockMapCmd.Parse(os.Args[2:])
+		cfg, err := config.LoadConfig[config.SocketMapConfig](config.SocketMapSection, *sockMapCfgName)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := startSocketmap(cfg); err != nil {
 			slog.Error(err.Error())
 		}
 	default:

@@ -186,3 +186,38 @@ func (m *MockChainRepo) BatchDelete(ctx context.Context, cuser entities.User, ha
 	args := m.Called(ctx, cuser, hashes)
 	return args.Error(0)
 }
+
+// MockDomainRepo is a mock implementation of repositories.CustomDomainsReadWriter
+type MockDomainRepo struct {
+	mock.Mock
+}
+
+func (m *MockDomainRepo) GetById(ctx context.Context, id entities.Id) (entities.CustomDomain, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(entities.CustomDomain), args.Error(1)
+}
+
+func (m *MockDomainRepo) GetByName(ctx context.Context, name string) (entities.CustomDomain, error) {
+	args := m.Called(ctx, name)
+	return args.Get(0).(entities.CustomDomain), args.Error(1)
+}
+
+func (m *MockDomainRepo) GetAll(ctx context.Context, filter entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error) {
+	args := m.Called(ctx, filter)
+	return args.Get(0).([]entities.CustomDomain), args.Get(1).(entities.PaginationMetadata), args.Error(2)
+}
+
+func (m *MockDomainRepo) Create(ctx context.Context, domain entities.CustomDomain) error {
+	args := m.Called(ctx, domain)
+	return args.Error(0)
+}
+
+func (m *MockDomainRepo) Update(ctx context.Context, domain entities.CustomDomain) (entities.CustomDomain, error) {
+	args := m.Called(ctx, domain)
+	return args.Get(0).(entities.CustomDomain), args.Error(1)
+}
+
+func (m *MockDomainRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
+	args := m.Called(ctx, cuser, id)
+	return args.Error(0)
+}

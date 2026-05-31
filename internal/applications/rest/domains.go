@@ -15,7 +15,13 @@ func (a *Application) GetDomains(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domains, err := a.svcGw.Domains.GetAll(r.Context(), cuser)
+	filters, err := entities.NewCustomDomainFilter(r.URL.Query())
+	if err != nil {
+		a.errorLogNResponse(w, "getting domains", err)
+		return
+	}
+
+	domains, err := a.svcGw.Domains.GetAll(r.Context(), cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting domains", err)
 		return
@@ -43,7 +49,7 @@ func (a *Application) CreateDomain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmd := services.DomainCreateCmd{Name: req.Name}
-	if req.Source != nil && *req.Source == Global {
+	if req.Type != nil && *req.Type == Global {
 		cmd.Global = true
 	}
 

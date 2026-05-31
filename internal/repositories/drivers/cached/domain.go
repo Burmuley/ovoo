@@ -54,6 +54,19 @@ func (cd CustomDomainRepo) GetById(ctx context.Context, id entities.Id) (entitie
 	return domain, nil
 }
 
+func (cd CustomDomainRepo) GetByName(ctx context.Context, name string) (entities.CustomDomain, error) {
+	key := customDomainNameKey(name)
+	if domain, ok := getFromCache[entities.CustomDomain](ctx, cd.cache, key); ok {
+		return domain, nil
+	}
+	domain, err := cd.repo.GetByName(ctx, name)
+	if err != nil {
+		return entities.CustomDomain{}, err
+	}
+	setInCache(ctx, cd.cache, key, domain, durationSeconds(cd.config.SingleItemTTL))
+	return domain, nil
+}
+
 func (cd CustomDomainRepo) GetAll(ctx context.Context, filter entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error) {
 	key := customDomainKeyList(filter)
 	if result, ok := getFromCache[domainListResult](ctx, cd.cache, key); ok {

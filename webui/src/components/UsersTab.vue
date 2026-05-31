@@ -199,6 +199,14 @@
             </CButton>
         </CModalFooter>
     </CModal>
+
+    <CModal :visible="apiError !== null" @close="apiError = null">
+        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalBody>{{ apiError }}</CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" @click="apiError = null">Close</CButton>
+        </CModalFooter>
+    </CModal>
 </template>
 
 <script setup>
@@ -219,6 +227,12 @@ const saving = ref(false)
 const deletingId = ref(null)
 const confirmingDeactivateId = ref(null)
 const confirmingActivateId = ref(null)
+const apiError = ref(null)
+
+const handleApiError = async (res) => {
+    const data = await res.json()
+    apiError.value = data.errors?.[0]?.detail ?? 'An unexpected error occurred'
+}
 
 watch(selectedUser, () => {
     editingField.value = null
@@ -239,13 +253,14 @@ function startEdit(field, value) {
 async function saveEdit() {
     if (!editingField.value || saving.value) return
     saving.value = true
-    await apiFetch(`/api/v1/users/${selectedUser.value.id}`, {
+    const res = await apiFetch(`/api/v1/users/${selectedUser.value.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ [editingField.value]: editValue.value }),
     })
+    saving.value = false
+    if (!res.ok) { await handleApiError(res); return }
     selectedUser.value = { ...selectedUser.value, [editingField.value]: editValue.value }
     editingField.value = null
-    saving.value = false
     await load()
 }
 
@@ -270,21 +285,23 @@ const load = async () => {
 
 const setActive = async (id, active) => {
     saving.value = true
-    await apiFetch(`/api/v1/users/${id}`, {
+    const res = await apiFetch(`/api/v1/users/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ active }),
     })
     saving.value = false
     confirmingDeactivateId.value = null
     confirmingActivateId.value = null
+    if (!res.ok) { await handleApiError(res); return }
     await load()
 }
 
 const performDelete = async (id) => {
     saving.value = true
-    await apiFetch(`/api/v1/users/${id}`, { method: 'DELETE' })
+    const res = await apiFetch(`/api/v1/users/${id}`, { method: 'DELETE' })
     saving.value = false
     deletingId.value = null
+    if (!res.ok) { await handleApiError(res); return }
     await load()
 }
 

@@ -15,14 +15,14 @@ const (
 	OAuth2Scopes              oAuth2ContextKey              = "OAuth2.Scopes"
 )
 
-// Defines values for DomainSource.
+// Defines values for DomainType.
 const (
-	Global   DomainSource = "global"
-	Personal DomainSource = "personal"
+	Global   DomainType = "global"
+	Personal DomainType = "personal"
 )
 
-// Valid indicates whether the value is a known member of the DomainSource enum.
-func (e DomainSource) Valid() bool {
+// Valid indicates whether the value is a known member of the DomainType enum.
+func (e DomainType) Valid() bool {
 	switch e {
 	case Global:
 		return true
@@ -129,8 +129,8 @@ type DomainData struct {
 	Name  string    `json:"name"`
 	Owner *UserData `json:"owner,omitempty"`
 
-	// Source Enum defining type of the custom domain.
-	Source DomainSource `json:"source"`
+	// Type Enum defining type of the custom domain.
+	Type DomainType `json:"type"`
 
 	// Verified Present only for personal domains
 	Verified *bool `json:"verified,omitempty"`
@@ -139,8 +139,8 @@ type DomainData struct {
 	VerifiedAt *time.Time `json:"verified_at,omitempty"`
 }
 
-// DomainSource Enum defining type of the custom domain.
-type DomainSource string
+// DomainType Enum defining type of the custom domain.
+type DomainType string
 
 // Error defines model for error.
 type Error struct {
@@ -317,8 +317,8 @@ type UpdateUserResponse = UserData
 
 // CreateAliasRequest defines model for createAliasRequest.
 type CreateAliasRequest struct {
-	// Domain Target domain for alias generation; defaults to first configured domain
-	Domain             *string         `json:"domain,omitempty"`
+	// DomainId Target domain ID for alias generation
+	DomainId           string          `json:"domain_id"`
 	Metadata           AddressMetadata `json:"metadata"`
 	ProtectedAddressId string          `json:"protected_address_id"`
 }
@@ -335,8 +335,8 @@ type CreateDomainRequest struct {
 	// Name Domain name (e.g. example.com)
 	Name string `json:"name"`
 
-	// Source Enum defining type of the custom domain.
-	Source *DomainSource `json:"source,omitempty"`
+	// Type Enum defining type of the custom domain.
+	Type *DomainType `json:"type,omitempty"`
 }
 
 // CreateEmailChain defines model for createEmailChain.
@@ -421,8 +421,8 @@ type GetAliasesParams struct {
 
 // CreateAliasJSONBody defines parameters for CreateAlias.
 type CreateAliasJSONBody struct {
-	// Domain Target domain for alias generation; defaults to first configured domain
-	Domain             *string         `json:"domain,omitempty"`
+	// DomainId Target domain ID for alias generation
+	DomainId           string          `json:"domain_id"`
 	Metadata           AddressMetadata `json:"metadata"`
 	ProtectedAddressId string          `json:"protected_address_id"`
 }
@@ -438,8 +438,8 @@ type CreateDomainJSONBody struct {
 	// Name Domain name (e.g. example.com)
 	Name string `json:"name"`
 
-	// Source Enum defining type of the custom domain.
-	Source *DomainSource `json:"source,omitempty"`
+	// Type Enum defining type of the custom domain.
+	Type *DomainType `json:"type,omitempty"`
 }
 
 // UpdateDomainJSONBody defines parameters for UpdateDomain.

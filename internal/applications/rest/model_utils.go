@@ -161,7 +161,7 @@ func customDomainTDomainData(d entities.CustomDomain) DomainData {
 		Active: d.Active,
 		Id:     d.ID.String(),
 		Name:   d.Name,
-		Source: source,
+		Type:   source,
 	}
 
 	if !d.Global {

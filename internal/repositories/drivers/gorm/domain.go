@@ -69,6 +69,15 @@ func (cd CustomDomainGORMRepo) GetById(ctx context.Context, id entities.Id) (ent
 	return customDomainToEntity(domain), nil
 }
 
+func (cd CustomDomainGORMRepo) GetByName(ctx context.Context, name string) (entities.CustomDomain, error) {
+	domain := CustomDomain{}
+	if err := cd.db.WithContext(ctx).Preload(clause.Associations).Model(&CustomDomain{}).Where("name = ?", name).First(&domain).Error; err != nil {
+		return entities.CustomDomain{}, wrapGormError(err)
+	}
+
+	return customDomainToEntity(domain), nil
+}
+
 func (cd CustomDomainGORMRepo) GetAll(ctx context.Context, filter entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error) {
 	gorm_domains := make([]CustomDomain, 0)
 	stmt := cd.db.WithContext(ctx).Model(&CustomDomain{})

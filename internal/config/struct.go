@@ -6,7 +6,6 @@ type APIConfig struct {
 	Cache        *ConfigCache          `koanf:"cache"`
 	Database     ConfigDB              `koanf:"database"`
 	DefaultAdmin *ConfigDefaultAdmin   `koanf:"default_admin"`
-	Domains      []string              `koanf:"domains"`
 	ListenAddr   string                `koanf:"listen_addr"`
 	Log          ConfigLogging         `koanf:"logging"`
 	OIDC         map[string]ConfigOIDC `koanf:"oidc"`
@@ -83,7 +82,6 @@ type ConfigDBDriverGORM struct {
 
 type MilterConfig struct {
 	Api             ConfigMilterAPIConn `koanf:"api"`
-	Domains         []string            `koanf:"domains"`
 	ListenAddr      string              `koanf:"listen_addr"`
 	Log             ConfigLogging       `koanf:"log"`
 	MailDisplayName string              `koanf:"mail_display_name"`
@@ -94,4 +92,10 @@ type ConfigMilterAPIConn struct {
 	AuthToken     string `koanf:"auth_token"`
 	TLSSkipVerify bool   `koanf:"tls_skip_verify"`
 	Timeout       int    `koanf:"client_timeout"`
+}
+
+// Ovoo Socketmap server configuration
+
+type SocketMapConfig struct {
+	Log ConfigLogging `koanf:"log"`
 }

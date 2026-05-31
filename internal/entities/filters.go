@@ -114,7 +114,7 @@ func NewAddressFilter(input map[string][]string) (AddressFilter, error) {
 			}
 			af.ServiceNames = snames
 		case "active":
-			active, err := strconv.ParseBool(vals[len(vals)-1])
+			active, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
 			if err != nil {
 				return AddressFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
 			}
@@ -166,7 +166,7 @@ func NewUserFilter(input map[string][]string) (UserFilter, error) {
 			}
 			uf.Logins = logins
 		case "active":
-			active, err := strconv.ParseBool(vals[len(vals)-1])
+			active, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
 			if err != nil {
 				return UserFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
 			}
@@ -203,7 +203,7 @@ func NewApiTokensFilter(input map[string][]string) (ApiTokenFilter, error) {
 			}
 			af.UserIds = ids
 		case "active":
-			active, err := strconv.ParseBool(vals[len(vals)-1])
+			active, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
 			if err != nil {
 				return ApiTokenFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
 			}
@@ -247,11 +247,27 @@ func NewCustomDomainFilter(input map[string][]string) (CustomDomainFilter, error
 			cdf.Owners = ids
 		case "active":
 			if len(vals) > 0 {
-				active, err := strconv.ParseBool(vals[len(vals)-1])
+				active, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
 				if err != nil {
 					return CustomDomainFilter{}, fmt.Errorf("%w: value for 'active' field must be boolean", ErrValidation)
 				}
 				cdf.Active = &active
+			}
+		case "global":
+			if len(vals) > 0 {
+				global, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
+				if err != nil {
+					return CustomDomainFilter{}, fmt.Errorf("%w: value for 'global' field must be boolean", ErrValidation)
+				}
+				cdf.IncludeGlobal = global
+			}
+		case "verified":
+			if len(vals) > 0 {
+				verified, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
+				if err != nil {
+					return CustomDomainFilter{}, fmt.Errorf("%w: value for 'verified' field must be boolean", ErrValidation)
+				}
+				cdf.Verified = &verified
 			}
 		}
 	}
