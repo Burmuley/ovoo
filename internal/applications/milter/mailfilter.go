@@ -17,10 +17,15 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 			return mailfilter.Reject, err
 		}
 
+		domains, err := ovooCli.GetDomains(ctx)
+		if err != nil {
+			return mailfilter.Reject, err
+		}
+
 		// check recipients matching any of our configured domains
 		var matchingRcpts []*addr.RcptTo
 		for _, rcpt := range trx.RcptTos() {
-			for _, domain := range ovooCli.domains {
+			for _, domain := range domains {
 				if strings.Contains(rcpt.Addr, domain) {
 					matchingRcpts = append(matchingRcpts, rcpt)
 					break
@@ -28,6 +33,7 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 			}
 		}
 
+		// let MTA decide if no recipients matching domain present
 		if len(matchingRcpts) == 0 {
 			return mailfilter.Accept, nil
 		}

@@ -37,7 +37,6 @@ func startMilter(cfg *config.MilterConfig) error {
 		apiAddr,
 		apiToken,
 		cfg.Api.TLSSkipVerify,
-		cfg.Domains,
 		time.Duration(cfg.Api.Timeout)*time.Second,
 		displayName,
 	)

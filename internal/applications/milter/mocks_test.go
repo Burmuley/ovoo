@@ -49,18 +49,18 @@ func (m *mockHeader) hasSet(key, value string) bool {
 }
 
 // Stub implementations for unused header.Header methods.
-func (m *mockHeader) Add(key, value string)                              {}
-func (m *mockHeader) Value(key string) string                            { return "" }
-func (m *mockHeader) UnfoldedValue(key string) string                    { return "" }
-func (m *mockHeader) AddressList(key string) ([]*gomail.Address, error)  { return nil, nil }
-func (m *mockHeader) SetText(key, value string)                          {}
-func (m *mockHeader) SetAddressList(key string, _ []*gomail.Address)     {}
-func (m *mockHeader) Subject() (string, error)                           { return "", nil }
-func (m *mockHeader) SetSubject(value string)                            {}
-func (m *mockHeader) Date() (time.Time, error)                           { return time.Time{}, nil }
-func (m *mockHeader) SetDate(value time.Time)                            {}
-func (m *mockHeader) Reader() io.Reader                                  { return nil }
-func (m *mockHeader) Fields() milterheader.Fields                        { return nil }
+func (m *mockHeader) Add(key, value string)                             {}
+func (m *mockHeader) Value(key string) string                           { return "" }
+func (m *mockHeader) UnfoldedValue(key string) string                   { return "" }
+func (m *mockHeader) AddressList(key string) ([]*gomail.Address, error) { return nil, nil }
+func (m *mockHeader) SetText(key, value string)                         {}
+func (m *mockHeader) SetAddressList(key string, _ []*gomail.Address)    {}
+func (m *mockHeader) Subject() (string, error)                          { return "", nil }
+func (m *mockHeader) SetSubject(value string)                           {}
+func (m *mockHeader) Date() (time.Time, error)                          { return time.Time{}, nil }
+func (m *mockHeader) SetDate(value time.Time)                           {}
+func (m *mockHeader) Reader() io.Reader                                 { return nil }
+func (m *mockHeader) Fields() milterheader.Fields                       { return nil }
 
 // changeMailFromCall records a single call to mockTrx.ChangeMailFrom.
 type changeMailFromCall struct{ from, args string }
@@ -92,8 +92,8 @@ func newMockTrx(fromHeader, envelopeFrom string, rcpts ...*addr.RcptTo) *mockTrx
 	}
 }
 
-func (m *mockTrx) MailFrom() *addr.MailFrom   { return m.mailFrom }
-func (m *mockTrx) RcptTos() []*addr.RcptTo    { return m.rcptTos }
+func (m *mockTrx) MailFrom() *addr.MailFrom     { return m.mailFrom }
+func (m *mockTrx) RcptTos() []*addr.RcptTo      { return m.rcptTos }
 func (m *mockTrx) Headers() milterheader.Header { return m.headers }
 
 func (m *mockTrx) ChangeMailFrom(from, args string) {
@@ -110,11 +110,11 @@ func (m *mockTrx) AddRcptTo(a, args string) {
 
 // Stub implementations for unused mailfilter.Trx methods.
 func (m *mockTrx) MTA() *mailfilter.MTA         { return nil }
-func (m *mockTrx) Connect() *mailfilter.Connect  { return nil }
-func (m *mockTrx) Helo() *mailfilter.Helo        { return nil }
-func (m *mockTrx) HasRcptTo(rcptTo string) bool  { return false }
-func (m *mockTrx) HeadersEnforceOrder()          {}
-func (m *mockTrx) Body() io.ReadSeeker           { return nil }
-func (m *mockTrx) ReplaceBody(r io.Reader)       {}
-func (m *mockTrx) QueueId() string               { return "" }
-func (m *mockTrx) Data() io.Reader               { return nil }
+func (m *mockTrx) Connect() *mailfilter.Connect { return nil }
+func (m *mockTrx) Helo() *mailfilter.Helo       { return nil }
+func (m *mockTrx) HasRcptTo(rcptTo string) bool { return false }
+func (m *mockTrx) HeadersEnforceOrder()         {}
+func (m *mockTrx) Body() io.ReadSeeker          { return nil }
+func (m *mockTrx) ReplaceBody(r io.Reader)      {}
+func (m *mockTrx) QueueId() string              { return "" }
+func (m *mockTrx) Data() io.Reader              { return nil }

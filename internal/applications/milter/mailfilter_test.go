@@ -16,37 +16,69 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// chainServer creates an httptest.Server that always responds 201 with the given chain data.
+// chainServer creates an httptest.Server that responds to GetDomains (GET /api/v1/domains)
+// with ovoo.com and to CreateChain with 201 + the given chain data.
 func chainServer(t *testing.T, chain OvooChainData) OvooClient {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/domains" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(OvooGetDomainsResponse{
+				Domains: []OvooDomainData{{Id: "1", Name: "ovoo.com"}},
+			})
+			return
+		}
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(chain)
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second, "Mail Display Name")
+	cli, err := NewClient(srv.URL, "test-token", false, 5*time.Second, "Mail Display Name")
 	require.NoError(t, err)
 	return cli
 }
 
-// errorServer creates an httptest.Server that always responds 500.
+// errorServer creates an httptest.Server that responds 200 to GetDomains and 500 to everything else.
 func errorServer(t *testing.T) OvooClient {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/domains" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(OvooGetDomainsResponse{
+				Domains: []OvooDomainData{{Id: "1", Name: "ovoo.com"}},
+			})
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"Error":[{"status":"error","detail":"internal error"}]}`))
+		_, _ = w.Write([]byte(`{"errors":[{"status":"error","detail":"internal error"}]}`))
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, []string{"ovoo.com"}, 5*time.Second, "Mail Display Name")
+	cli, err := NewClient(srv.URL, "test-token", false, 5*time.Second, "Mail Display Name")
+	require.NoError(t, err)
+	return cli
+}
+
+// domainsServer creates an httptest.Server that returns a fixed domain list (ovoo.com) for GetDomains.
+func domainsServer(t *testing.T) OvooClient {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(OvooGetDomainsResponse{
+			Domains: []OvooDomainData{{Id: "1", Name: "ovoo.com"}},
+		})
+	}))
+	t.Cleanup(srv.Close)
+	cli, err := NewClient(srv.URL, "test-token", false, 5*time.Second, "Mail Display Name")
 	require.NoError(t, err)
 	return cli
 }
 
 // stubClient returns an OvooClient with no HTTP transport, suitable for tests that never
-// reach the CreateChain call.
+// reach any HTTP method (e.g. fail at getHeaderAddr before GetDomains).
 func stubClient() OvooClient {
-	return OvooClient{domains: []string{"ovoo.com"}}
+	return OvooClient{}
 }
 
 // --- getHeaderAddr ---
@@ -100,7 +132,7 @@ func TestAddressRewriter_InvalidFromHeader_NoOvooRcpt(t *testing.T) {
 }
 
 func TestAddressRewriter_EmptyRcptList(t *testing.T) {
-	cli := stubClient()
+	cli := domainsServer(t)
 	trx := newMockTrx("Sender <sender@ext.com>", "sender@ext.com") // no recipients
 
 	decision, err := AddressRewriter(cli)(context.Background(), trx)
@@ -111,7 +143,7 @@ func TestAddressRewriter_EmptyRcptList(t *testing.T) {
 }
 
 func TestAddressRewriter_NoMatchingRecipients(t *testing.T) {
-	cli := stubClient()
+	cli := domainsServer(t)
 	rcpt := addr.NewRcptTo("user@external.com", "", "")
 	trx := newMockTrx("Sender <sender@ext.com>", "sender@ext.com", rcpt)
 
@@ -126,7 +158,7 @@ func TestAddressRewriter_NoMatchingRecipients(t *testing.T) {
 // --- AddressRewriter: too many recipients ---
 
 func TestAddressRewriter_MultipleMatchingRecipients(t *testing.T) {
-	cli := stubClient()
+	cli := domainsServer(t)
 	rcpt1 := addr.NewRcptTo("alias1@ovoo.com", "", "")
 	rcpt2 := addr.NewRcptTo("alias2@ovoo.com", "", "")
 	trx := newMockTrx("Sender <sender@ext.com>", "sender@ext.com", rcpt1, rcpt2)
@@ -359,7 +391,7 @@ func TestAddressRewriter_MixedRecipients_OneDomainMatch(t *testing.T) {
 
 // Two Ovoo aliases alongside an external recipient still triggers the multi-recipient rejection.
 func TestAddressRewriter_MixedRecipients_TwoDomainMatches(t *testing.T) {
-	cli := stubClient()
+	cli := domainsServer(t)
 	rcpt1 := addr.NewRcptTo("alias1@ovoo.com", "", "")
 	rcpt2 := addr.NewRcptTo("alias2@ovoo.com", "", "")
 	ext := addr.NewRcptTo("user@external.com", "", "")

@@ -97,5 +97,15 @@ type ConfigMilterAPIConn struct {
 // Ovoo Socketmap server configuration
 
 type SocketMapConfig struct {
-	Log ConfigLogging `koanf:"log"`
+	Api        ConfigSocketMapAPIConn `koanf:"api"`
+	Log        ConfigLogging          `koanf:"log"`
+	ListenAddr string                 `koanf:"listen_addr"`
+	Network    string                 `koanf:"network"`
+}
+
+type ConfigSocketMapAPIConn struct {
+	Addr          string `koanf:"addr"`
+	AuthToken     string `koanf:"auth_token"`
+	TLSSkipVerify bool   `koanf:"tls_skip_verify"`
+	Timeout       int    `koanf:"client_timeout"`
 }

@@ -29,27 +29,19 @@ func (c *closeSpy) Close() error { c.closed = true; return nil }
 // ovooCLIWith returns an OvooClient that uses the provided RoundTripper.
 func ovooCLIWith(rt http.RoundTripper) OvooClient {
 	return OvooClient{
-		client:  &http.Client{Transport: rt},
-		server:  "http://example.com",
-		token:   "test-token",
-		domains: []string{"ovoo.com"},
+		client: &http.Client{Transport: rt},
+		server: "http://example.com",
+		token:  "test-token",
 	}
 }
 
 // --- NewClient ---
 
-func TestNewClient_EmptyDomain(t *testing.T) {
-	_, err := NewClient("http://localhost", "tok", false, []string{}, 5*time.Second, "")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "domain")
-}
-
 func TestNewClient_ValidParams(t *testing.T) {
-	cli, err := NewClient("http://localhost", "mytoken", false, []string{"ovoo.com"}, 3*time.Second, "Ovoo Mail")
+	cli, err := NewClient("http://localhost", "mytoken", false, 3*time.Second, "Ovoo Mail")
 	require.NoError(t, err)
 	assert.Equal(t, "http://localhost", cli.server)
 	assert.Equal(t, "mytoken", cli.token)
-	assert.Equal(t, []string{"ovoo.com"}, cli.domains)
 	assert.Equal(t, 3*time.Second, cli.client.Timeout)
 }
 
