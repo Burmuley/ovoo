@@ -1,4 +1,4 @@
-package milter
+package ovooclient
 
 import (
 	"context"
@@ -27,8 +27,8 @@ type closeSpy struct {
 func (c *closeSpy) Close() error { c.closed = true; return nil }
 
 // ovooCLIWith returns an OvooClient that uses the provided RoundTripper.
-func ovooCLIWith(rt http.RoundTripper) OvooClient {
-	return OvooClient{
+func ovooCLIWith(rt http.RoundTripper) Client {
+	return Client{
 		client: &http.Client{Transport: rt},
 		server: "http://example.com",
 		token:  "test-token",
@@ -38,7 +38,7 @@ func ovooCLIWith(rt http.RoundTripper) OvooClient {
 // --- NewClient ---
 
 func TestNewClient_ValidParams(t *testing.T) {
-	cli, err := NewClient("http://localhost", "mytoken", false, 3*time.Second, "Ovoo Mail")
+	cli, err := NewClient("http://localhost", "mytoken", false, 3*time.Second)
 	require.NoError(t, err)
 	assert.Equal(t, "http://localhost", cli.server)
 	assert.Equal(t, "mytoken", cli.token)

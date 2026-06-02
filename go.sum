@@ -47,8 +47,6 @@ github.com/coreos/go-systemd/v22 v22.3.2/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSV
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/d--j/go-milter v0.10.2 h1:or99EQ8YoElWd5R1hO4CAVcV9HGVox5EgQA7y9+oLTA=
 github.com/d--j/go-milter v0.10.2/go.mod h1:bzLqHnZbOZukRhILyPAWsxgW1dMgc5dDJYib3mljs1M=
-github.com/d--j/go-socketmap v0.0.0-20230403213743-46d60746ecee h1:Ly74kdG9MQuKP3OZeSGkb2ChIXXhn89wyxoN3CVG1WM=
-github.com/d--j/go-socketmap v0.0.0-20230403213743-46d60746ecee/go.mod h1:HKyIdyRNMFvAERlXa8hPbZ2H7SeTzWaxEgELRGv9CZQ=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=

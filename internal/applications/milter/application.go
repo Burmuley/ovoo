@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Burmuley/ovoo/internal/applications/ovooclient"
 	"github.com/d--j/go-milter/mailfilter"
 )
 
@@ -15,11 +16,11 @@ const DefaultListenAddr string = "127.0.0.1:6785"
 
 type Application struct {
 	listenAddr string
-	ovooCli    OvooClient
+	ovooCli    ovooclient.Client
 	logger     *slog.Logger
 }
 
-func New(listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Application, error) {
+func New(listenAddr string, logger *slog.Logger, ovooCli ovooclient.Client) (*Application, error) {
 	ctrl := &Application{
 		listenAddr: listenAddr,
 		ovooCli:    ovooCli,

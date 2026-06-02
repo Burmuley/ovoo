@@ -1,4 +1,4 @@
-package milter
+package ovooclient
 
 import (
 	"bytes"
@@ -9,72 +9,65 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	defaultEmailDisplayName = "Ovoo Hidden Mail"
-	domainCacheTTL          = 5 * time.Minute
+	domainCacheTTL = 5 * time.Minute
 )
 
 // in-memory cache for domains value
 var domainCache sync.Map
 
-type cachedDomainsInfo struct {
+type cachedActiveDomainsInfo struct {
 	domains   []string
 	expiresAt time.Time
 }
 
-type OvooGetDomainsResponse struct {
-	Domains []OvooDomainData `json:"domains"`
+type GetDomainsResponse struct {
+	Domains []DomainData `json:"domains"`
 }
 
-type OvooDomainData struct {
+type DomainData struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
-type OvooChainAddressData struct {
+type ChainAddressData struct {
 	Email string `json:"email"`
 	Type  string `json:"type"`
 }
 
-type OvooChainData struct {
-	Hash            string               `json:"hash"`
-	FromEmail       string               `json:"from_email"`
-	ToEmail         string               `json:"to_email"`
-	OrigFromAddress OvooChainAddressData `json:"orig_from_address"`
-	OrigToAddress   OvooChainAddressData `json:"orig_to_address"`
+type ChainData struct {
+	Hash            string           `json:"hash"`
+	FromEmail       string           `json:"from_email"`
+	ToEmail         string           `json:"to_email"`
+	OrigFromAddress ChainAddressData `json:"orig_from_address"`
+	OrigToAddress   ChainAddressData `json:"orig_to_address"`
 }
 
-type OvooChainCreateRequestBody struct {
+type ChainCreateRequestBody struct {
 	FromEmail string `json:"from_email"`
 	ToEmail   string `json:"to_email"`
 }
 
-type OvooErrorBody struct {
+type ErrorBody struct {
 	Status string `json:"status"`
 	Detail string `json:"detail"`
 }
 
-type OvooError struct {
-	Errors []OvooErrorBody `json:"errors"`
+type Error struct {
+	Errors []ErrorBody `json:"errors"`
 }
 
-type OvooClient struct {
-	client      *http.Client
-	server      string
-	token       string
-	displayName string
+type Client struct {
+	client *http.Client
+	server string
+	token  string
 }
 
-func NewClient(server string, authToken string, tlsSkipVerify bool, timeout time.Duration, displayName string) (OvooClient, error) {
-	displayName = strings.TrimSpace(displayName)
-	if len(displayName) == 0 {
-		displayName = defaultEmailDisplayName
-	}
+func NewClient(server string, authToken string, tlsSkipVerify bool, timeout time.Duration) (Client, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: tlsSkipVerify},
@@ -82,15 +75,14 @@ func NewClient(server string, authToken string, tlsSkipVerify bool, timeout time
 		Timeout: timeout,
 	}
 
-	return OvooClient{
-		client:      client,
-		server:      server,
-		token:       authToken,
-		displayName: displayName,
+	return Client{
+		client: client,
+		server: server,
+		token:  authToken,
 	}, nil
 }
 
-func (o OvooClient) createRequest(ctx context.Context, server, path, method string, body io.Reader, headers map[string]string, queryParams map[string]string) (*http.Request, error) {
+func (o Client) createRequest(ctx context.Context, server, path, method string, body io.Reader, headers map[string]string, queryParams map[string]string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -122,8 +114,8 @@ func (o OvooClient) createRequest(ctx context.Context, server, path, method stri
 	return req, nil
 }
 
-func (o OvooClient) parseChainData(resp *http.Response) (*OvooChainData, error) {
-	data := OvooChainData{}
+func (o Client) parseChainData(resp *http.Response) (*ChainData, error) {
+	data := ChainData{}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -136,8 +128,8 @@ func (o OvooClient) parseChainData(resp *http.Response) (*OvooChainData, error) 
 	return &data, nil
 }
 
-func (o OvooClient) parseDomainData(resp *http.Response) ([]string, error) {
-	data := OvooGetDomainsResponse{}
+func (o Client) parseDomainData(resp *http.Response) ([]string, error) {
+	data := GetDomainsResponse{}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -155,8 +147,8 @@ func (o OvooClient) parseDomainData(resp *http.Response) ([]string, error) {
 	return domains, nil
 }
 
-func (o OvooClient) parseError(resp *http.Response) error {
-	ovooError := OvooError{}
+func (o Client) parseError(resp *http.Response) error {
+	ovooError := Error{}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -165,16 +157,16 @@ func (o OvooClient) parseError(resp *http.Response) error {
 		return err
 	}
 
-	cliErrs := make([]OvooErrorBody, 0, len(ovooError.Errors))
+	cliErrs := make([]ErrorBody, 0, len(ovooError.Errors))
 	for _, cliErr := range ovooError.Errors {
-		cliErrs = append(cliErrs, OvooErrorBody{cliErr.Status, cliErr.Detail})
+		cliErrs = append(cliErrs, ErrorBody{cliErr.Status, cliErr.Detail})
 	}
 
 	return fmt.Errorf("ovoo api errors: %v", cliErrs)
 }
 
-func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) (*OvooChainData, error) {
-	body := OvooChainCreateRequestBody{
+func (o Client) CreateChain(ctx context.Context, fromEmail, toEmail string) (*ChainData, error) {
+	body := ChainCreateRequestBody{
 		FromEmail: fromEmail,
 		ToEmail:   toEmail,
 	}
@@ -214,9 +206,9 @@ func (o OvooClient) CreateChain(ctx context.Context, fromEmail, toEmail string) 
 	return o.parseChainData(resp)
 }
 
-func (o OvooClient) GetDomains(ctx context.Context) ([]string, error) {
+func (o Client) GetDomains(ctx context.Context) ([]string, error) {
 	if val, ok := domainCache.Load("domains"); ok {
-		if entry := val.(cachedDomainsInfo); time.Now().Before(entry.expiresAt) {
+		if entry := val.(cachedActiveDomainsInfo); time.Now().Before(entry.expiresAt) {
 			return entry.domains, nil
 		}
 	}
@@ -226,7 +218,7 @@ func (o OvooClient) GetDomains(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	domainCache.Store("domains", cachedDomainsInfo{
+	domainCache.Store("domains", cachedActiveDomainsInfo{
 		domains:   domains,
 		expiresAt: time.Now().Add(domainCacheTTL),
 	})
@@ -234,7 +226,7 @@ func (o OvooClient) GetDomains(ctx context.Context) ([]string, error) {
 	return domains, nil
 }
 
-func (o OvooClient) getDomainsNetwork(ctx context.Context) ([]string, error) {
+func (o Client) getDomainsNetwork(ctx context.Context) ([]string, error) {
 	headers := map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": fmt.Sprintf("Bearer %s", o.token),

@@ -34,7 +34,6 @@ func startSocketmap(cfg *config.SocketMapConfig) error {
 		return err
 	}
 
-	// return socketmap.ListenAndServe("unix", "/tmp/tstsocket.sock", handler)
 	app, err := socketmap.New(cfg.Network, cfg.ListenAddr, logger, cli)
 	if err != nil {
 		return err
@@ -42,10 +41,3 @@ func startSocketmap(cfg *config.SocketMapConfig) error {
 
 	return app.Start()
 }
-
-// func handler(ctx context.Context, lookup, key string) (result string, found bool, err error) {
-// 	_ = ctx
-// 	slog.Info(fmt.Sprintf("sockmap handler: lookup=%s key=%s", lookup, key))
-// 	return "YES", true, nil
-
-// }

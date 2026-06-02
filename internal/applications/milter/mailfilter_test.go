@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Burmuley/ovoo/internal/applications/ovooclient"
 	"github.com/d--j/go-milter/mailfilter"
 	"github.com/d--j/go-milter/mailfilter/addr"
 	"github.com/stretchr/testify/assert"
@@ -18,14 +19,14 @@ import (
 
 // chainServer creates an httptest.Server that responds to GetDomains (GET /api/v1/domains)
 // with ovoo.com and to CreateChain with 201 + the given chain data.
-func chainServer(t *testing.T, chain OvooChainData) OvooClient {
+func chainServer(t *testing.T, chain ovooclient.ChainData) ovooclient.Client {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/domains" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(OvooGetDomainsResponse{
-				Domains: []OvooDomainData{{Id: "1", Name: "ovoo.com"}},
+			_ = json.NewEncoder(w).Encode(ovooclient.GetDomainsResponse{
+				Domains: []ovooclient.DomainData{{Id: "1", Name: "ovoo.com"}},
 			})
 			return
 		}
@@ -33,20 +34,20 @@ func chainServer(t *testing.T, chain OvooChainData) OvooClient {
 		_ = json.NewEncoder(w).Encode(chain)
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, 5*time.Second, "Mail Display Name")
+	cli, err := ovooclient.NewClient(srv.URL, "test-token", false, 5*time.Second)
 	require.NoError(t, err)
 	return cli
 }
 
 // errorServer creates an httptest.Server that responds 200 to GetDomains and 500 to everything else.
-func errorServer(t *testing.T) OvooClient {
+func errorServer(t *testing.T) ovooclient.Client {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/domains" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(OvooGetDomainsResponse{
-				Domains: []OvooDomainData{{Id: "1", Name: "ovoo.com"}},
+			_ = json.NewEncoder(w).Encode(ovooclient.GetDomainsResponse{
+				Domains: []ovooclient.DomainData{{Id: "1", Name: "ovoo.com"}},
 			})
 			return
 		}
@@ -54,31 +55,31 @@ func errorServer(t *testing.T) OvooClient {
 		_, _ = w.Write([]byte(`{"errors":[{"status":"error","detail":"internal error"}]}`))
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, 5*time.Second, "Mail Display Name")
+	cli, err := ovooclient.NewClient(srv.URL, "test-token", false, 5*time.Second)
 	require.NoError(t, err)
 	return cli
 }
 
 // domainsServer creates an httptest.Server that returns a fixed domain list (ovoo.com) for GetDomains.
-func domainsServer(t *testing.T) OvooClient {
+func domainsServer(t *testing.T) ovooclient.Client {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(OvooGetDomainsResponse{
-			Domains: []OvooDomainData{{Id: "1", Name: "ovoo.com"}},
+		_ = json.NewEncoder(w).Encode(ovooclient.GetDomainsResponse{
+			Domains: []ovooclient.DomainData{{Id: "1", Name: "ovoo.com"}},
 		})
 	}))
 	t.Cleanup(srv.Close)
-	cli, err := NewClient(srv.URL, "test-token", false, 5*time.Second, "Mail Display Name")
+	cli, err := ovooclient.NewClient(srv.URL, "test-token", false, 5*time.Second)
 	require.NoError(t, err)
 	return cli
 }
 
-// stubClient returns an OvooClient with no HTTP transport, suitable for tests that never
+// stubClient returns an ovooclient.Client with no HTTP transport, suitable for tests that never
 // reach any HTTP method (e.g. fail at getHeaderAddr before GetDomains).
-func stubClient() OvooClient {
-	return OvooClient{}
+func stubClient() ovooclient.Client {
+	return ovooclient.Client{}
 }
 
 // --- getHeaderAddr ---
@@ -109,7 +110,7 @@ func TestGetHeaderAddr_ParseError(t *testing.T) {
 
 // The From header is parsed before the recipient loop, so a bad From header rejects
 // even messages with no Ovoo alias recipients.
-func TestAddressRewriter_InvalidFromHeader_WithOvooRcpt(t *testing.T) {
+func TestAddressRewriter_InvalidFromHeader_WithOvooClientRcpt(t *testing.T) {
 	cli := stubClient()
 	trx := newMockTrx("", "sender@ext.com", addr.NewRcptTo("alias@ovoo.com", "", ""))
 
@@ -119,7 +120,7 @@ func TestAddressRewriter_InvalidFromHeader_WithOvooRcpt(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestAddressRewriter_InvalidFromHeader_NoOvooRcpt(t *testing.T) {
+func TestAddressRewriter_InvalidFromHeader_NoovooclientRcpt(t *testing.T) {
 	// Malformed From is detected before the no-match early-Accept, so the message is
 	// still rejected even when no Ovoo alias is involved.
 	cli := stubClient()
@@ -188,10 +189,10 @@ func TestAddressRewriter_CreateChainError(t *testing.T) {
 // --- AddressRewriter: forward chain (OrigToAddress.Type != "reply_alias") ---
 
 func TestAddressRewriter_ForwardChain(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "reply@ovoo.com",
 		ToEmail:       "user@gmail.com",
-		OrigToAddress: OvooChainAddressData{Email: "alias@ovoo.com", Type: "alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Email: "alias@ovoo.com", Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -223,10 +224,10 @@ func TestAddressRewriter_ForwardChain(t *testing.T) {
 
 // When the From header has no display name, the rewritten From header is a bare address.
 func TestAddressRewriter_ForwardChain_SenderNoName(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "reply@ovoo.com",
 		ToEmail:       "user@gmail.com",
-		OrigToAddress: OvooChainAddressData{Type: "alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -244,10 +245,10 @@ func TestAddressRewriter_ForwardChain_SenderNoName(t *testing.T) {
 
 // MailFrom ESMTP args must be passed through to ChangeMailFrom unchanged.
 func TestAddressRewriter_MailFromArgsPassthrough(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "reply@ovoo.com",
 		ToEmail:       "user@gmail.com",
-		OrigToAddress: OvooChainAddressData{Type: "alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -266,10 +267,10 @@ func TestAddressRewriter_MailFromArgsPassthrough(t *testing.T) {
 // --- AddressRewriter: reply chain (OrigToAddress.Type == "reply_alias") ---
 
 func TestAddressRewriter_ReplyChain(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "alias@ovoo.com",
 		ToEmail:       "ext1@external.com",
-		OrigToAddress: OvooChainAddressData{Email: "reply-alias@ovoo.com", Type: "reply_alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Email: "reply-alias@ovoo.com", Type: "reply_alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -294,10 +295,10 @@ func TestAddressRewriter_ReplyChain(t *testing.T) {
 
 // When reply-to is present and non-empty it must be overwritten with the new From value.
 func TestAddressRewriter_ReplyToPresent(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "reply@ovoo.com",
 		ToEmail:       "user@gmail.com",
-		OrigToAddress: OvooChainAddressData{Type: "alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -316,10 +317,10 @@ func TestAddressRewriter_ReplyToPresent(t *testing.T) {
 
 // When reply-to is absent (Text returns "", nil) it must not be touched.
 func TestAddressRewriter_ReplyToAbsent(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "reply@ovoo.com",
 		ToEmail:       "user@gmail.com",
-		OrigToAddress: OvooChainAddressData{Type: "alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -341,10 +342,10 @@ func TestAddressRewriter_ReplyToAbsent(t *testing.T) {
 // This validates the bug fix: the old condition (err != nil || len != 0) would have
 // triggered Set on a parse error, incorrectly overwriting the header.
 func TestAddressRewriter_ReplyToParseError(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "reply@ovoo.com",
 		ToEmail:       "user@gmail.com",
-		OrigToAddress: OvooChainAddressData{Type: "alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 
@@ -367,10 +368,10 @@ func TestAddressRewriter_ReplyToParseError(t *testing.T) {
 // One Ovoo alias and one external recipient: only the alias is processed; the external
 // recipient is neither deleted nor re-added.
 func TestAddressRewriter_MixedRecipients_OneDomainMatch(t *testing.T) {
-	chain := OvooChainData{
+	chain := ovooclient.ChainData{
 		FromEmail:     "reply@ovoo.com",
 		ToEmail:       "user@gmail.com",
-		OrigToAddress: OvooChainAddressData{Type: "alias"},
+		OrigToAddress: ovooclient.ChainAddressData{Type: "alias"},
 	}
 	cli := chainServer(t, chain)
 

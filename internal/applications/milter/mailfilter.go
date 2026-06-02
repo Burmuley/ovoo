@@ -6,18 +6,19 @@ import (
 	"net/mail"
 	"strings"
 
+	"github.com/Burmuley/ovoo/internal/applications/ovooclient"
 	"github.com/d--j/go-milter/mailfilter"
 	"github.com/d--j/go-milter/mailfilter/addr"
 )
 
-func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilter.Trx) (mailfilter.Decision, error) {
+func AddressRewriter(cli ovooclient.Client) func(ctx context.Context, trx mailfilter.Trx) (mailfilter.Decision, error) {
 	return func(ctx context.Context, trx mailfilter.Trx) (mailfilter.Decision, error) {
 		curFrom, err := getHeaderAddr("from", trx)
 		if err != nil {
 			return mailfilter.Reject, err
 		}
 
-		domains, err := ovooCli.GetDomains(ctx)
+		domains, err := cli.GetDomains(ctx)
 		if err != nil {
 			return mailfilter.Reject, err
 		}
@@ -44,7 +45,7 @@ func AddressRewriter(ovooCli OvooClient) func(ctx context.Context, trx mailfilte
 		}
 
 		rcpt := matchingRcpts[0]
-		chain, err := ovooCli.CreateChain(ctx, trx.MailFrom().Addr, rcpt.Addr)
+		chain, err := cli.CreateChain(ctx, trx.MailFrom().Addr, rcpt.Addr)
 		if err != nil {
 			return mailfilter.Reject, fmt.Errorf("error creating chain: %w", err)
 		}

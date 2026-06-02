@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/Burmuley/ovoo/internal/applications/ovooclient"
 )
 
 const (
@@ -17,12 +19,12 @@ const (
 type Application struct {
 	network string
 	addr    string
-	cli     OvooClient
+	cli     ovooclient.Client
 	logger  *slog.Logger
 	handler Handler
 }
 
-func New(network, listenAddr string, logger *slog.Logger, ovooCli OvooClient) (*Application, error) {
+func New(network, listenAddr string, logger *slog.Logger, ovooCli ovooclient.Client) (*Application, error) {
 	ctrl := &Application{
 		network: network,
 		addr:    listenAddr,
@@ -67,5 +69,4 @@ func handler(ctx context.Context, lookup, key string) (result string, found bool
 	_ = ctx
 	slog.Info("sockmap handler", "lookup", lookup, "key", key)
 	return "YES", true, nil
-
 }
