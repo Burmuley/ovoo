@@ -227,6 +227,7 @@ type CustomDomainFilter struct {
 	Verified      *bool
 	Owners        []Id
 	IncludeGlobal bool
+	DomainNames   []string
 }
 
 func NewCustomDomainFilter(input map[string][]string) (CustomDomainFilter, error) {
@@ -253,11 +254,11 @@ func NewCustomDomainFilter(input map[string][]string) (CustomDomainFilter, error
 				}
 				cdf.Active = &active
 			}
-		case "global":
+		case "include_global":
 			if len(vals) > 0 {
 				global, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
 				if err != nil {
-					return CustomDomainFilter{}, fmt.Errorf("%w: value for 'global' field must be boolean", ErrValidation)
+					return CustomDomainFilter{}, fmt.Errorf("%w: value for 'include_global' field must be boolean", ErrValidation)
 				}
 				cdf.IncludeGlobal = global
 			}
@@ -268,6 +269,10 @@ func NewCustomDomainFilter(input map[string][]string) (CustomDomainFilter, error
 					return CustomDomainFilter{}, fmt.Errorf("%w: value for 'verified' field must be boolean", ErrValidation)
 				}
 				cdf.Verified = &verified
+			}
+		case "domain_name":
+			if len(vals) > 0 {
+				cdf.DomainNames = vals
 			}
 		}
 	}

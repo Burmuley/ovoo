@@ -94,7 +94,9 @@
     </CModal>
 
     <CModal :visible="apiError !== null" @close="apiError = null">
-        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalHeader>
+            <CModalTitle>Error</CModalTitle>
+        </CModalHeader>
         <CModalBody>{{ apiError }}</CModalBody>
         <CModalFooter>
             <CButton color="secondary" @click="apiError = null">Close</CButton>
@@ -125,7 +127,7 @@ const handleApiError = async (res) => {
 }
 
 const load = async () => {
-    const params = new URLSearchParams({ page: currentPage.value })
+    const params = new URLSearchParams({ page: currentPage.value, include_global: 'true' })
     const res = await apiFetch('/api/v1/domains?' + params)
     const data = await res.json()
     domains.value = data.domains

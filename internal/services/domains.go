@@ -1,7 +1,6 @@
 package services
 
 import (
-	"cmp"
 	"context"
 	"fmt"
 	"strings"
@@ -35,12 +34,9 @@ func NewDomainsService(repoFabric *factory.RepoFactory) (*DomainsService, error)
 
 func (d *DomainsService) GetAll(ctx context.Context, cuser entities.User, filters entities.CustomDomainFilter) ([]entities.CustomDomain, error) {
 	// admin and milter users can read all domains in the system
-	if cmp.Or(
-		cuser.Type != entities.AdminUser,
-		cuser.Type != entities.MilterUser,
-	) {
+	// regular users are limited to only read domains they own
+	if cuser.Type != entities.AdminUser && cuser.Type != entities.MilterUser {
 		filters.Owners = []entities.Id{cuser.ID}
-		filters.IncludeGlobal = true
 	}
 
 	// milter can only receive active&verified domains + global

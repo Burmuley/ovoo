@@ -613,7 +613,27 @@ paths:
       operationId: getDomains
       tags:
         - CustomDomains
-      parameters: []
+      parameters:
+        - in: query
+          name: domain_name
+          description: "FQDN to lookup within the scope available to the user"
+          schema:
+            type: string
+        - in: query
+          name: active
+          description: "include domains with defined 'active' value (true or false)"
+          schema:
+            type: string
+        - in: query
+          name: verified
+          description: "include domains with defined 'verified' value (true or false)"
+          schema:
+            type: string
+        - in: query
+          name: include_global
+          description: "also include global domains in the list"
+          schema:
+            type: string
       responses:
         "200":
           $ref: "#/components/responses/getDomainsResponse"

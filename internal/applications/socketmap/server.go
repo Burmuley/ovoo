@@ -38,7 +38,7 @@ func (s *server) Wait(handler Handler) {
 		if err != nil {
 			// check if listener was closed intentionally
 			if errors.Is(err, net.ErrClosed) {
-				slog.Error("listener closed", "err", err.Error())
+				slog.Info("listener closed")
 				return
 			}
 			slog.Error("accept error", "err", err.Error())
@@ -47,7 +47,7 @@ func (s *server) Wait(handler Handler) {
 
 		// track active connection
 		s.wg.Add(1)
-		go handle(conn, handler)
+		go handle(s.ctx, &s.wg, conn, handler)
 	}
 }
 
@@ -55,14 +55,14 @@ func (s *server) Shutdown(ctx context.Context) error {
 	err := s.listener.Close()
 	s.cancel()
 
-	// 3. Create a channel to wait for all connections to finish processing
+	// create a channel to wait for all connections to finish processing
 	waitCh := make(chan struct{})
 	go func() {
 		s.wg.Wait()
 		close(waitCh)
 	}()
 
-	// 4. Enforce shutdown timeout limit
+	// enforce shutdown timeout limit
 	select {
 	case <-waitCh:
 		log.Println("all connections closed cleanly")

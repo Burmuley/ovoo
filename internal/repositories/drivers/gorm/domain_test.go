@@ -417,8 +417,30 @@ func TestCustomDomainGORMRepo_GetAll_IncludeGlobal_NoOwner(t *testing.T) {
 		IncludeGlobal: true,
 	})
 	assert.NoError(t, err)
-	assert.Len(t, retrieved, 1)
+	assert.Len(t, retrieved, 2)
 	assert.True(t, retrieved[0].Global)
+	assert.Equal(t, 2, meta.TotalRecords)
+}
+
+func TestCustomDomainGORMRepo_GetAll_NotIncludeGlobal_NoOwner(t *testing.T) {
+	repo, user := setupCustomDomainTestDB(t)
+	ctx := context.Background()
+
+	require.NoError(t, repo.Create(ctx, entities.CustomDomain{
+		ID: entities.NewId(), Name: "global.example.com", Global: true, Owner: user, UpdatedBy: user,
+	}))
+	require.NoError(t, repo.Create(ctx, entities.CustomDomain{
+		ID: entities.NewId(), Name: "personal.example.com", Global: false, Owner: user, UpdatedBy: user,
+	}))
+
+	// IncludeGlobal=true with no Owners returns only global domains
+	retrieved, meta, err := repo.GetAll(ctx, entities.CustomDomainFilter{
+		Filter:        entities.Filter{Page: 1, PageSize: 10},
+		IncludeGlobal: false,
+	})
+	assert.NoError(t, err)
+	assert.Len(t, retrieved, 1)
+	assert.False(t, retrieved[0].Global)
 	assert.Equal(t, 1, meta.TotalRecords)
 }
 

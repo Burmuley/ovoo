@@ -88,36 +88,40 @@ func (cd CustomDomainGORMRepo) GetAll(ctx context.Context, filter entities.Custo
 
 	domains := customDomainToEntityList(gorm_domains)
 
-	return domains, entities.GetPaginationMetadata(filter.Page, filter.PageSize, *count), nil
+	return domains, entities.GetPaginationMetadata(filter.Page, filter.PageSize, count), nil
 }
 
-func applyCustomDomainFilter(stmt *gorm.DB, filter entities.CustomDomainFilter, doCount bool) *int64 {
+func applyCustomDomainFilter(stmt *gorm.DB, filter entities.CustomDomainFilter, doCount bool) int64 {
 	if filter.Active != nil {
-		stmt.Where("active = ?", *filter.Active)
+		stmt = stmt.Where("active = ?", *filter.Active)
 	}
 
 	if filter.Verified != nil {
-		stmt.Where("verified = ?", *filter.Verified)
+		stmt = stmt.Where("verified = ?", *filter.Verified)
 	}
 
 	if len(filter.Owners) > 0 {
 		if filter.IncludeGlobal {
-			stmt.Where("owner_id IN ? OR global = ?", filter.Owners, true)
+			stmt = stmt.Where("owner_id IN ? OR global = ?", filter.Owners, true)
 		} else {
-			stmt.Where("owner_id IN ?", filter.Owners)
+			stmt = stmt.Where("owner_id IN ?", filter.Owners)
 		}
-	} else if filter.IncludeGlobal {
-		stmt.Where("global = ?", true)
+	} else if !filter.IncludeGlobal {
+		stmt = stmt.Where("global = ?", false)
+	}
+
+	if len(filter.DomainNames) > 0 {
+		stmt = stmt.Where("name IN ?", filter.DomainNames)
 	}
 
 	var count int64 = 0
 	if doCount {
-		stmt.Count(&count)
+		stmt = stmt.Count(&count)
 	}
 
 	if filter.Page != 0 && filter.PageSize != 0 {
-		stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
+		stmt = stmt.Limit(filter.PageSize).Offset((filter.Page - 1) * filter.PageSize)
 	}
 
-	return &count
+	return count
 }

@@ -67,7 +67,8 @@ const load = async () => {
 }
 
 const loadDomains = async () => {
-    const res = await apiFetch('/api/v1/domains')
+    const query_params = new URLSearchParams({ include_global: 'true' })
+    const res = await apiFetch('/api/v1/domains?' + query_params)
     const data = await res.json()
     domains.value = data.domains
     domainItems.value = data.domains

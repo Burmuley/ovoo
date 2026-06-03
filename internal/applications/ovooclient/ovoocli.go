@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -23,6 +24,11 @@ var domainCache sync.Map
 type cachedActiveDomainsInfo struct {
 	domains   []string
 	expiresAt time.Time
+}
+
+type cachedDomainNameInfo struct {
+	domain_name string
+	expiresAt   time.Time
 }
 
 type GetDomainsResponse struct {
@@ -213,7 +219,7 @@ func (o Client) GetDomains(ctx context.Context) ([]string, error) {
 		}
 	}
 
-	domains, err := o.getDomainsNetwork(ctx)
+	domains, err := o.getDomainsNetwork(ctx, "")
 	if err != nil {
 		return nil, err
 	}
@@ -226,11 +232,50 @@ func (o Client) GetDomains(ctx context.Context) ([]string, error) {
 	return domains, nil
 }
 
-func (o Client) getDomainsNetwork(ctx context.Context) ([]string, error) {
+func (o Client) GetDomainByName(ctx context.Context, domain_name string) bool {
+	domain_name = strings.TrimSpace(domain_name)
+	if len(domain_name) == 0 {
+		return false
+	}
+
+	if val, ok := domainCache.Load("domain_name:" + domain_name); ok {
+		if entry := val.(cachedDomainNameInfo); time.Now().Before(entry.expiresAt) {
+			return true
+		}
+	}
+
+	domain, err := o.getDomainsNetwork(ctx, domain_name)
+	if err != nil {
+		fmt.Printf("getDomainsNetwork err: %s\n", err.Error())
+		return false
+	}
+
+	if len(domain) == 0 {
+		return false
+	}
+
+	domainCache.Store("domain_name:"+domain_name, cachedDomainNameInfo{
+		domain_name: domain_name,
+		expiresAt:   time.Now().Add(domainCacheTTL),
+	})
+
+	return true
+}
+
+func (o Client) getDomainsNetwork(ctx context.Context, domain_name string) ([]string, error) {
 	headers := map[string]string{
 		"Content-Type":  "application/json",
 		"Authorization": fmt.Sprintf("Bearer %s", o.token),
 	}
+	query_params := map[string]string{
+		"active":   "true",
+		"verified": "true",
+	}
+
+	if len(domain_name) > 0 {
+		query_params["domain_name"] = domain_name
+	}
+
 	req, err := o.createRequest(
 		ctx,
 		o.server,
@@ -238,15 +283,12 @@ func (o Client) getDomainsNetwork(ctx context.Context) ([]string, error) {
 		http.MethodGet,
 		nil,
 		headers,
-		map[string]string{
-			"active":   "true",
-			"verified": "true",
-			"global":   "true",
-		},
+		query_params,
 	)
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err := o.client.Do(req)
 	if err != nil {
 		return nil, err

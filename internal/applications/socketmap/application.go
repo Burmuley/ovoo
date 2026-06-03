@@ -3,7 +3,6 @@ package socketmap
 import (
 	"context"
 	"log/slog"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -21,7 +20,6 @@ type Application struct {
 	addr    string
 	cli     ovooclient.Client
 	logger  *slog.Logger
-	handler Handler
 }
 
 func New(network, listenAddr string, logger *slog.Logger, ovooCli ovooclient.Client) (*Application, error) {
@@ -30,7 +28,6 @@ func New(network, listenAddr string, logger *slog.Logger, ovooCli ovooclient.Cli
 		addr:    listenAddr,
 		cli:     ovooCli,
 		logger:  logger,
-		handler: handler,
 	}
 
 	return ctrl, nil
@@ -38,8 +35,8 @@ func New(network, listenAddr string, logger *slog.Logger, ovooCli ovooclient.Cli
 
 func (m *Application) Start() error {
 	// global context
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	// defer stop()
 
 	srv, err := newServer(m.network, m.addr, m.logger)
 	if err != nil {
@@ -48,7 +45,7 @@ func (m *Application) Start() error {
 
 	go func() {
 		m.logger.Info("starting Ovoo Socketmap server", m.network, m.addr)
-		srv.Wait(m.handler)
+		srv.Wait(ovooHandler(m.cli))
 		stop()
 	}()
 
@@ -58,15 +55,26 @@ func (m *Application) Start() error {
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		m.logger.Error("Ovoo Socketmap server shutdown failed", "err", err.Error())
+		m.logger.Error("server shutdown failed", "err", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func handler(ctx context.Context, lookup, key string) (result string, found bool, err error) {
-	_ = ctx
-	slog.Info("sockmap handler", "lookup", lookup, "key", key)
-	return "YES", true, nil
+func ovooHandler(cli ovooclient.Client) func(ctx context.Context, lookup, key string) (result string, found bool, err error) {
+	return func(ctx context.Context, lookup, key string) (result string, found bool, err error) {
+		slog.Info("handler call: lookup=" + lookup + " key=" + key)
+		switch lookup {
+		case "relay_domain":
+			hasDomain := cli.GetDomainByName(ctx, key)
+			if hasDomain {
+				return key, true, nil
+			}
+
+			return "", false, nil
+		}
+
+		return "", false, PermanentError{Reason: "unknown lookup " + lookup}
+	}
 }

@@ -433,6 +433,21 @@ type UpdateAliasJSONBody struct {
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
+// GetDomainsParams defines parameters for GetDomains.
+type GetDomainsParams struct {
+	// DomainName FQDN to lookup within the scope available to the user
+	DomainName *string `form:"domain_name,omitempty" json:"domain_name,omitempty"`
+
+	// Active include domains with defined 'active' value (true or false)
+	Active *string `form:"active,omitempty" json:"active,omitempty"`
+
+	// Verified include domains with defined 'verified' value (true or false)
+	Verified *string `form:"verified,omitempty" json:"verified,omitempty"`
+
+	// IncludeGlobal also include global domains in the list
+	IncludeGlobal *string `form:"include_global,omitempty" json:"include_global,omitempty"`
+}
+
 // CreateDomainJSONBody defines parameters for CreateDomain.
 type CreateDomainJSONBody struct {
 	// Name Domain name (e.g. example.com)

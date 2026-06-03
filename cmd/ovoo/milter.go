@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Burmuley/ovoo/internal/applications/milter"
+	"github.com/Burmuley/ovoo/internal/applications/ovooclient"
 	"github.com/Burmuley/ovoo/internal/config"
 )
 
@@ -32,13 +33,12 @@ func startMilter(cfg *config.MilterConfig) error {
 	if apiToken == "" {
 		return errors.New("missing 'auth_token' configuration parameter")
 	}
-	displayName := cfg.MailDisplayName
-	client, err := milter.NewClient(
+	// displayName := cfg.MailDisplayName
+	client, err := ovooclient.NewClient(
 		apiAddr,
 		apiToken,
 		cfg.Api.TLSSkipVerify,
 		time.Duration(cfg.Api.Timeout)*time.Second,
-		displayName,
 	)
 	if err != nil {
 		return fmt.Errorf("error creating Ovoo API client: %w", err)

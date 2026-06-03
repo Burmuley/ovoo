@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Burmuley/ovoo/internal/applications/ovooclient"
 	"github.com/Burmuley/ovoo/internal/applications/socketmap"
 	"github.com/Burmuley/ovoo/internal/config"
 )
@@ -29,7 +30,7 @@ func startSocketmap(cfg *config.SocketMapConfig) error {
 		addr = socketmap.DefaultSocketmapAddr
 	}
 
-	cli, err := socketmap.NewClient(cfg.Api.Addr, cfg.Api.AuthToken, cfg.Api.TLSSkipVerify, time.Duration(cfg.Api.Timeout))
+	cli, err := ovooclient.NewClient(cfg.Api.Addr, cfg.Api.AuthToken, cfg.Api.TLSSkipVerify, time.Duration(cfg.Api.Timeout))
 	if err != nil {
 		return err
 	}

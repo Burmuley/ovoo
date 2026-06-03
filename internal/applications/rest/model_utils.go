@@ -139,6 +139,28 @@ func tokenTApiTokenDataOnCreate(token entities.ApiToken) ApiTokenDataOnCreate {
 	}
 }
 
+// customDomainTDomainData converts an entities.CustomDomain to a DomainData response.
+// It sets the domain source based on whether the domain is global or personal,
+// and maps verification fields and ownership details.
+func customDomainTDomainData(d entities.CustomDomain) DomainData {
+	source := Global
+	if !d.Global {
+		source = Personal
+	}
+
+	dd := DomainData{
+		Active:     d.Active,
+		Id:         d.ID.String(),
+		Name:       d.Name,
+		Type:       source,
+		Owner:      new(userTResponse(d.Owner)),
+		Verified:   &d.Verified,
+		VerifiedAt: &d.VerifiedAt,
+	}
+
+	return dd
+}
+
 /*
 pgmTMetadata converts an entities.PaginationMetadata object to a PaginationMetadata response object.
 
@@ -151,31 +173,6 @@ Returns:
     The API-ready pagination metadata, with all numeric fields
     converted to float32.
 */
-func customDomainTDomainData(d entities.CustomDomain) DomainData {
-	source := Global
-	if !d.Global {
-		source = Personal
-	}
-
-	dd := DomainData{
-		Active: d.Active,
-		Id:     d.ID.String(),
-		Name:   d.Name,
-		Type:   source,
-	}
-
-	if !d.Global {
-		owner := userTResponse(d.Owner)
-		dd.Owner = &owner
-		dd.Verified = &d.Verified
-		if !d.VerifiedAt.IsZero() {
-			dd.VerifiedAt = &d.VerifiedAt
-		}
-	}
-
-	return dd
-}
-
 func pgmTMetadata(pgm entities.PaginationMetadata) PaginationMetadata {
 	return PaginationMetadata{
 		CurrentPage:  pgm.CurrentPage,

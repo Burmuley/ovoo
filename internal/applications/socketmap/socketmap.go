@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"strconv"
 	"strings"
-	"time"
+	"sync"
 )
 
 // The implementation below was maliciously stolen from https://github.com/d--j/go-socketmap
@@ -126,7 +127,10 @@ func (e PermanentError) Error() string {
 func (PermanentError) Timeout() bool   { return false }
 func (PermanentError) Temporary() bool { return false }
 
-func handle(conn net.Conn, handler Handler) error {
+func handle(ctx context.Context, wg *sync.WaitGroup, conn net.Conn, handler Handler) error {
+	defer conn.Close()
+	defer wg.Done()
+
 	for {
 		b, err := read(conn)
 		if err != nil {
@@ -136,18 +140,18 @@ func handle(conn net.Conn, handler Handler) error {
 		if len(parts) != 2 {
 			return conn.Close()
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
 		result, found, err := handler(ctx, parts[0], parts[1])
-		select {
-		case <-ctx.Done():
+		if err := ctx.Err(); err != nil {
+			slog.Info("context cancelled, closing connection")
 			err = write(conn, []byte("TIMEOUT "), []byte(ctx.Err().Error()))
-			cancel()
 			if err != nil {
-				return conn.Close()
+				slog.Error("error closing connection", "msg", err.Error())
+				return err
 			}
-		default:
-			cancel()
+			return nil
 		}
+
 		if err != nil {
 			switch err.(type) {
 			case PermanentError, *PermanentError:
