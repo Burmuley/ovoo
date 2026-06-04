@@ -39,6 +39,12 @@
                     </CNavLink>
                 </CNavItem>
             </CSidebarNav>
+            <CSidebarFooter class="border-top">
+                <CNavLink href="/api/docs" target="_blank">
+                    <CIcon icon="cilBook" class="nav-icon" />
+                    API Docs
+                </CNavLink>
+            </CSidebarFooter>
         </CSidebar>
 
         <div class="wrapper d-flex flex-column min-vh-100">
@@ -50,17 +56,13 @@
                     <span class="fw-semibold ms-2">Ovoo Privacy Mail Gateway</span>
                     <CHeaderNav class="ms-auto">
                         <CNavItem>
-                            <CNavLink href="/api/docs" target="_blank">
-                                <CIcon icon="cilBook" /> API Docs
-                            </CNavLink>
-                        </CNavItem>
-                        <CNavItem>
                             <UserInfo :user-info="userInfo" />
                         </CNavItem>
                     </CHeaderNav>
                 </CContainer>
             </CHeader>
 
+            <ToastContainer />
             <div class="body flex-grow-1">
                 <CContainer class="px-4" lg>
                     <AliasesTab v-if="currentTab === 'aliases'" @add-clicked="currentTab = 'addAlias'" />
@@ -98,6 +100,7 @@ import UserInfo from './UserInfo.vue'
 import AppFooter from './AppFooter.vue'
 import DomainsTab from './DomainsTab.vue'
 import AddDomainForm from './AddDomainForm.vue'
+import ToastContainer from './ToastContainer.vue'
 
 const MAIN_TABS = new Set(['aliases', 'praddrs', 'apikeys', 'users', 'domains'])
 

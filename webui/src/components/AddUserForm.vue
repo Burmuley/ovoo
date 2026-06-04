@@ -24,7 +24,9 @@
                     <CFormInput id="password" v-model="password" type="password" />
                 </div>
                 <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton type="submit" color="primary" :disabled="submitting">
+                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+                    </CButton>
                     <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
                 </div>
             </CForm>
@@ -56,8 +58,10 @@ const first_name = ref('')
 const last_name = ref('')
 const password = ref('')
 const result = ref({})
+const submitting = ref(false)
 
 const createUser = async () => {
+    submitting.value = true
     const res = await apiFetch('/api/v1/users', {
         method: 'POST',
         body: JSON.stringify({
@@ -69,5 +73,6 @@ const createUser = async () => {
         }),
     })
     result.value = { status: res.status, json: await res.json() }
+    submitting.value = false
 }
 </script>

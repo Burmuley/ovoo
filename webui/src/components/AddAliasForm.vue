@@ -23,7 +23,9 @@
                     <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
                 </div>
                 <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton type="submit" color="primary" :disabled="submitting">
+                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+                    </CButton>
                     <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
                 </div>
             </CForm>
@@ -59,6 +61,7 @@ const svcname = ref('')
 const comment = ref('')
 const result = ref({})
 const copied = ref(false)
+const submitting = ref(false)
 
 const load = async () => {
     const res = await apiFetch('/api/v1/praddrs')
@@ -87,6 +90,7 @@ const copyAlias = async () => {
 
 const createAlias = async () => {
     copied.value = false
+    submitting.value = true
     const body = {
         protected_address_id: praddrSelected.value.toString(),
         metadata: {
@@ -102,6 +106,7 @@ const createAlias = async () => {
         body: JSON.stringify(body),
     })
     result.value = { status: res.status, json: await res.json() }
+    submitting.value = false
 }
 
 onMounted(() => {

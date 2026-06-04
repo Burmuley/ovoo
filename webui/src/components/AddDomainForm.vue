@@ -15,7 +15,9 @@
                     </CFormSelect>
                 </div>
                 <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton type="submit" color="primary" :disabled="submitting">
+                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+                    </CButton>
                     <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
                 </div>
             </CForm>
@@ -39,13 +41,16 @@ const emit = defineEmits(['done'])
 const name = ref('')
 const domainType = ref('personal')
 const result = ref({})
+const submitting = ref(false)
 
 const createDomain = async () => {
+    submitting.value = true
     const body = { name: name.value, type: domainType.value }
     const res = await apiFetch('/api/v1/domains', {
         method: 'POST',
         body: JSON.stringify(body),
     })
     result.value = { status: res.status, json: await res.json() }
+    submitting.value = false
 }
 </script>

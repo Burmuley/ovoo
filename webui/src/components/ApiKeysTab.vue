@@ -1,7 +1,10 @@
 <template>
     <CCard>
         <CCardHeader class="d-flex align-items-center justify-content-between">
-            <span class="fw-semibold">API Keys</span>
+            <div class="d-flex align-items-center">
+                <span class="fw-semibold">API Keys</span>
+                <InfoPopover description="API keys let you authenticate with the Ovoo REST API from scripts or external applications using Bearer token authentication. Each key has an expiration date and can be deactivated or deleted at any time." />
+            </div>
             <CButton color="primary" size="sm" @click="emit('add-clicked')">
                 <CIcon icon="cilPlus" /> Add
             </CButton>
@@ -11,46 +14,32 @@
                 <CTableHead>
                     <CTableRow>
                         <CTableHeaderCell>Name</CTableHeaderCell>
-                        <CTableHeaderCell>Description</CTableHeaderCell>
-                        <CTableHeaderCell>Expires</CTableHeaderCell>
-                        <CTableHeaderCell>Status</CTableHeaderCell>
-                        <CTableHeaderCell></CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    <CTableRow v-for="key in apiKeys" :key="key.id">
-
-                        <template v-if="editingId === key.id">
-                            <CTableDataCell>
-                                <CFormInput v-model="editForm.name" size="sm" placeholder="Name"
-                                    @keyup.enter="saveEdit(key.id)" />
+                    <template v-if="loading">
+                        <CTableRow v-for="n in 3" :key="n">
+                            <CTableDataCell v-for="c in 3" :key="c">
+                                <div class="placeholder-glow"><span class="placeholder col-8"></span></div>
                             </CTableDataCell>
+                        </CTableRow>
+                    </template>
+                    <EmptyState v-else-if="apiKeys.length === 0"
+                        icon="cilCode"
+                        message="No API keys yet. Create one to access the API programmatically."
+                        action-label="Add API Key"
+                        :colspan="3"
+                        @action-clicked="emit('add-clicked')" />
+                    <template v-else>
+                        <CTableRow v-for="key in apiKeys" :key="key.id">
                             <CTableDataCell>
-                                <CFormInput v-model="editForm.description" size="sm" placeholder="Description"
-                                    @keyup.enter="saveEdit(key.id)" />
+                                <div>{{ key.name }}</div>
+                                <div v-if="key.description" class="text-body-secondary" style="font-size: 0.75rem;">{{ key.description }}</div>
+                                <div class="text-body-secondary" style="font-size: 0.75rem;">Expires: {{ moment(key.expiration).format('LLL') }}</div>
                             </CTableDataCell>
-                            <CTableDataCell>{{ moment(key.expiration).format('LLL') }}</CTableDataCell>
-                            <CTableDataCell>
-                                <CBadge :color="key.active ? 'success' : 'danger'">
-                                    {{ key.active ? 'Active' : 'Inactive' }}
-                                </CBadge>
-                            </CTableDataCell>
-                            <CTableDataCell class="text-end text-nowrap">
-                                <CButton color="success" size="sm" variant="outline" class="me-1" :disabled="saving"
-                                    @click="saveEdit(key.id)">
-                                    <CIcon icon="cilCheck" />
-                                </CButton>
-                                <CButton color="secondary" size="sm" variant="outline" @click="cancelEdit">
-                                    <CIcon icon="cilX" />
-                                </CButton>
-                            </CTableDataCell>
-                        </template>
-
-                        <template v-else>
-                            <CTableDataCell>{{ key.name }}</CTableDataCell>
-                            <CTableDataCell>{{ key.description }}</CTableDataCell>
-                            <CTableDataCell>{{ moment(key.expiration).format('LLL') }}</CTableDataCell>
-                            <CTableDataCell>
+                            <CTableDataCell class="text-center text-nowrap">
                                 <CBadge :color="key.active ? 'success' : 'danger'">
                                     {{ key.active ? 'Active' : 'Inactive' }}
                                 </CBadge>
@@ -70,19 +59,36 @@
                                     <CIcon icon="cilTrash" />
                                 </CButton>
                             </CTableDataCell>
-                        </template>
-
-                    </CTableRow>
+                        </CTableRow>
+                    </template>
                 </CTableBody>
             </CTable>
         </CCardBody>
     </CCard>
 
+    <CModal :visible="editingKey !== null" @close="editingKey = null">
+        <CModalHeader>
+            <CModalTitle>Edit API Key</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+            <CFormLabel>Name</CFormLabel>
+            <CFormInput v-model="editForm.name" placeholder="Name" class="mb-3" />
+            <CFormLabel>Description</CFormLabel>
+            <CFormInput v-model="editForm.description" placeholder="Description (optional)" />
+        </CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="editingKey = null">Cancel</CButton>
+            <CButton color="primary" :disabled="saving" @click="saveEdit">Save</CButton>
+        </CModalFooter>
+    </CModal>
+
     <CModal :visible="deletingId !== null" @close="deletingId = null">
         <CModalHeader>
             <CModalTitle>Delete API Key</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to delete this API key? This action cannot be undone.</CModalBody>
+        <CModalBody>
+            Delete API key <strong>{{ deletingKey?.name }}</strong>? This action cannot be undone.
+        </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="deletingId = null">Cancel</CButton>
             <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
@@ -94,7 +100,7 @@
             <CModalTitle>Deactivate API Key</CModalTitle>
         </CModalHeader>
         <CModalBody>
-            Are you sure you want to deactivate this API key? It will no longer be usable for authentication.
+            Deactivate <strong>{{ confirmingKey?.name }}</strong>? It will no longer be usable for authentication.
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingId = null">Cancel</CButton>
@@ -112,18 +118,27 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import moment from 'moment'
 import { apiFetch } from '../utils/api'
+import { useToast } from '../composables/useToast'
+import EmptyState from './EmptyState.vue'
+import InfoPopover from './InfoPopover.vue'
 
 const emit = defineEmits(['add-clicked'])
+const { showToast } = useToast()
+
 const apiKeys = ref([])
-const editingId = ref(null)
+const loading = ref(true)
+const editingKey = ref(null)
 const editForm = ref({ name: '', description: '' })
 const confirmingId = ref(null)
 const deletingId = ref(null)
 const saving = ref(false)
 const apiError = ref(null)
+
+const deletingKey = computed(() => apiKeys.value.find(k => k.id === deletingId.value))
+const confirmingKey = computed(() => apiKeys.value.find(k => k.id === confirmingId.value))
 
 const handleApiError = async (res) => {
     const data = await res.json()
@@ -131,28 +146,27 @@ const handleApiError = async (res) => {
 }
 
 const load = async () => {
+    loading.value = true
     const res = await apiFetch('/api/v1/users/apitokens')
     apiKeys.value = await res.json()
+    loading.value = false
 }
 
 const startEdit = (key) => {
-    editingId.value = key.id
+    editingKey.value = key
     editForm.value = { name: key.name, description: key.description ?? '' }
 }
 
-const cancelEdit = () => {
-    editingId.value = null
-}
-
-const saveEdit = async (id) => {
+const saveEdit = async () => {
     saving.value = true
-    const res = await apiFetch(`/api/v1/users/apitokens/${id}`, {
+    const res = await apiFetch(`/api/v1/users/apitokens/${editingKey.value.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ name: editForm.value.name, description: editForm.value.description }),
     })
     saving.value = false
     if (!res.ok) { await handleApiError(res); return }
-    editingId.value = null
+    editingKey.value = null
+    showToast('API key updated.')
     await load()
 }
 
@@ -165,6 +179,7 @@ const deactivate = async (id) => {
     saving.value = false
     confirmingId.value = null
     if (!res.ok) { await handleApiError(res); return }
+    showToast('API key deactivated.')
     await load()
 }
 
@@ -174,6 +189,7 @@ const performDelete = async (id) => {
     saving.value = false
     deletingId.value = null
     if (!res.ok) { await handleApiError(res); return }
+    showToast('API key deleted.')
     await load()
 }
 

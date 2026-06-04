@@ -1,18 +1,18 @@
 <template>
     <CCard>
         <CCardHeader class="d-flex align-items-center justify-content-between">
-            <span class="fw-semibold">Protected Addresses</span>
+            <div class="d-flex align-items-center">
+                <span class="fw-semibold">Protected Addresses</span>
+                <InfoPopover description="A protected address is your real email inbox that you want to keep private. Aliases forward mail here so senders only ever see the alias, never your actual address. Deactivating a protected address stops delivery for all aliases that point to it." />
+            </div>
             <div class="d-flex align-items-center gap-2">
-                <CButton v-if="!showSearch" v-c-tooltip="'Search'" color="secondary" size="sm" variant="ghost"
-                    @click="openSearch">
-                    <CIcon icon="cilSearch" />
-                </CButton>
-                <CFormInput v-if="showSearch" ref="searchInputRef" v-model="searchQuery" size="sm" placeholder="Search…"
-                    style="width: 180px" />
-                <CButton v-if="showSearch" v-c-tooltip="'Clear search'" color="secondary" size="sm" variant="ghost"
-                    @click="closeSearch">
-                    <CIcon icon="cilX" />
-                </CButton>
+                <div class="input-group input-group-sm" style="width: 220px;">
+                    <span class="input-group-text"><CIcon icon="cilSearch" /></span>
+                    <CFormInput v-model="searchQuery" placeholder="Search…" />
+                    <CButton v-if="searchQuery" color="secondary" variant="outline" @click="searchQuery = ''">
+                        <CIcon icon="cilX" />
+                    </CButton>
+                </div>
                 <CButton color="primary" size="sm" @click="emit('add-clicked')">
                     <CIcon icon="cilPlus" /> Add
                 </CButton>
@@ -23,40 +23,31 @@
                 <CTableHead>
                     <CTableRow>
                         <CTableHeaderCell>Email</CTableHeaderCell>
-                        <CTableHeaderCell>Comment</CTableHeaderCell>
-                        <CTableHeaderCell>Status</CTableHeaderCell>
-                        <CTableHeaderCell></CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    <CTableRow v-for="addr in praddrs" :key="addr.id">
-                        <CTableDataCell>{{ addr.email }}</CTableDataCell>
-
-                        <template v-if="editingId === addr.id">
-                            <CTableDataCell>
-                                <CFormInput v-model="editComment" size="sm" placeholder="Comment"
-                                    @keyup.enter="saveEdit(addr.id)" />
+                    <template v-if="loading">
+                        <CTableRow v-for="n in 3" :key="n">
+                            <CTableDataCell v-for="c in 3" :key="c">
+                                <div class="placeholder-glow"><span class="placeholder col-8"></span></div>
                             </CTableDataCell>
+                        </CTableRow>
+                    </template>
+                    <EmptyState v-else-if="praddrs.length === 0"
+                        icon="cilShieldAlt"
+                        message="No protected addresses yet. Add one to start creating aliases."
+                        action-label="Add Address"
+                        :colspan="3"
+                        @action-clicked="emit('add-clicked')" />
+                    <template v-else>
+                        <CTableRow v-for="addr in praddrs" :key="addr.id">
                             <CTableDataCell>
-                                <CBadge :color="addr.active ? 'success' : 'danger'">
-                                    {{ addr.active ? 'Active' : 'Inactive' }}
-                                </CBadge>
+                                <span v-c-tooltip="addr.email" class="d-inline-block text-truncate" style="max-width:260px;">{{ addr.email }}</span>
+                                <div v-if="addr.metadata?.comment" class="text-body-secondary" style="font-size: 0.75rem;">{{ addr.metadata?.comment }}</div>
                             </CTableDataCell>
-                            <CTableDataCell class="text-end text-nowrap">
-                                <CButton v-c-tooltip="'Save'" color="success" size="sm" variant="outline" class="me-1"
-                                    :disabled="saving" @click="saveEdit(addr.id)">
-                                    <CIcon icon="cilCheck" />
-                                </CButton>
-                                <CButton v-c-tooltip="'Cancel'" color="secondary" size="sm" variant="outline"
-                                    @click="cancelEdit">
-                                    <CIcon icon="cilX" />
-                                </CButton>
-                            </CTableDataCell>
-                        </template>
-
-                        <template v-else>
-                            <CTableDataCell>{{ addr.metadata?.comment }}</CTableDataCell>
-                            <CTableDataCell>
+                            <CTableDataCell class="text-center text-nowrap">
                                 <CBadge :color="addr.active ? 'success' : 'danger'">
                                     {{ addr.active ? 'Active' : 'Inactive' }}
                                 </CBadge>
@@ -79,22 +70,39 @@
                                     <CIcon icon="cilTrash" />
                                 </CButton>
                             </CTableDataCell>
-                        </template>
-                    </CTableRow>
+                        </CTableRow>
+                    </template>
                 </CTableBody>
             </CTable>
         </CCardBody>
         <CCardFooter v-if="paginationMetadata.last_page > 1" class="d-flex justify-content-center">
             <Paginator :current-page="currentPage" :total-pages="paginationMetadata.last_page"
+                :total-items="paginationMetadata.total_records"
                 @page-changed="onPageChanged" />
         </CCardFooter>
     </CCard>
+
+    <CModal :visible="editingAddr !== null" @close="editingAddr = null">
+        <CModalHeader>
+            <CModalTitle>Edit Protected Address</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+            <CFormLabel>Comment</CFormLabel>
+            <CFormInput v-model="editComment" placeholder="Comment (optional)" />
+        </CModalBody>
+        <CModalFooter>
+            <CButton color="secondary" variant="outline" @click="editingAddr = null">Cancel</CButton>
+            <CButton color="primary" :disabled="saving" @click="saveEdit">Save</CButton>
+        </CModalFooter>
+    </CModal>
 
     <CModal :visible="deletingId !== null" @close="deletingId = null">
         <CModalHeader>
             <CModalTitle>Delete Protected Address</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to delete this protected address? This action cannot be undone.</CModalBody>
+        <CModalBody>
+            Delete <strong>{{ deletingAddr?.email }}</strong>? This action cannot be undone.
+        </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="deletingId = null">Cancel</CButton>
             <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
@@ -105,13 +113,12 @@
         <CModalHeader>
             <CModalTitle>Deactivate Protected Address</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to deactivate this protected address? Aliases forwarding to it will stop
-            delivering email.</CModalBody>
+        <CModalBody>
+            Deactivate <strong>{{ confirmingDeactivateAddr?.email }}</strong>? Aliases forwarding to it will stop delivering email.
+        </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
-            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes,
-                deactivate
-            </CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
         </CModalFooter>
     </CModal>
 
@@ -119,11 +126,12 @@
         <CModalHeader>
             <CModalTitle>Activate Protected Address</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to activate this protected address?</CModalBody>
+        <CModalBody>
+            Activate <strong>{{ confirmingActivateAddr?.email }}</strong>?
+        </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
-            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate
-            </CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
         </CModalFooter>
     </CModal>
 
@@ -137,24 +145,32 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { apiFetch } from '../utils/api'
+import { useToast } from '../composables/useToast'
 import Paginator from './Paginator.vue'
+import EmptyState from './EmptyState.vue'
+import InfoPopover from './InfoPopover.vue'
 
 const emit = defineEmits(['add-clicked'])
+const { showToast } = useToast()
+
 const praddrs = ref([])
 const paginationMetadata = ref({})
 const currentPage = ref(1)
 const searchQuery = ref('')
-const showSearch = ref(false)
-const searchInputRef = ref(null)
-const editingId = ref(null)
+const loading = ref(true)
+const editingAddr = ref(null)
 const editComment = ref('')
 const saving = ref(false)
 const deletingId = ref(null)
 const confirmingDeactivateId = ref(null)
 const confirmingActivateId = ref(null)
 const apiError = ref(null)
+
+const deletingAddr = computed(() => praddrs.value.find(a => a.id === deletingId.value))
+const confirmingDeactivateAddr = computed(() => praddrs.value.find(a => a.id === confirmingDeactivateId.value))
+const confirmingActivateAddr = computed(() => praddrs.value.find(a => a.id === confirmingActivateId.value))
 
 const handleApiError = async (res) => {
     const data = await res.json()
@@ -164,12 +180,14 @@ const handleApiError = async (res) => {
 let searchDebounce = null
 
 const load = async () => {
+    loading.value = true
     const params = new URLSearchParams({ page: currentPage.value })
     if (searchQuery.value) params.set('q', searchQuery.value)
     const res = await apiFetch('/api/v1/praddrs?' + params)
     const data = await res.json()
     praddrs.value = data.protected_addresses
     paginationMetadata.value = data.pagination_metadata
+    loading.value = false
 }
 
 watch(searchQuery, () => {
@@ -180,37 +198,21 @@ watch(searchQuery, () => {
     }, 300)
 })
 
-const openSearch = async () => {
-    showSearch.value = true
-    await nextTick()
-    searchInputRef.value?.$el?.focus()
-}
-
-const closeSearch = () => {
-    showSearch.value = false
-    searchQuery.value = ''
-}
-
 const startEdit = (addr) => {
-    editingId.value = addr.id
+    editingAddr.value = addr
     editComment.value = addr.metadata?.comment ?? ''
 }
 
-const cancelEdit = () => {
-    editingId.value = null
-}
-
-const saveEdit = async (id) => {
+const saveEdit = async () => {
     saving.value = true
-    const res = await apiFetch(`/api/v1/praddrs/${id}`, {
+    const res = await apiFetch(`/api/v1/praddrs/${editingAddr.value.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({
-            metadata: { comment: editComment.value },
-        }),
+        body: JSON.stringify({ metadata: { comment: editComment.value } }),
     })
     saving.value = false
     if (!res.ok) { await handleApiError(res); return }
-    editingId.value = null
+    editingAddr.value = null
+    showToast('Address updated.')
     await load()
 }
 
@@ -224,6 +226,7 @@ const setActive = async (id, active) => {
     confirmingDeactivateId.value = null
     confirmingActivateId.value = null
     if (!res.ok) { await handleApiError(res); return }
+    showToast(active ? 'Address activated.' : 'Address deactivated.')
     await load()
 }
 
@@ -233,6 +236,7 @@ const performDelete = async (id) => {
     saving.value = false
     deletingId.value = null
     if (!res.ok) { await handleApiError(res); return }
+    showToast('Address deleted.')
     await load()
 }
 

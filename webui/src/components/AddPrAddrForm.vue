@@ -12,7 +12,9 @@
                     <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
                 </div>
                 <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton type="submit" color="primary" :disabled="submitting">
+                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+                    </CButton>
                     <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
                 </div>
             </CForm>
@@ -35,8 +37,10 @@ const emit = defineEmits(['done'])
 const praddr_email = ref('')
 const comment = ref('')
 const result = ref({})
+const submitting = ref(false)
 
 const createPrAddr = async () => {
+    submitting.value = true
     const res = await apiFetch('/api/v1/praddrs', {
         method: 'POST',
         body: JSON.stringify({
@@ -45,5 +49,6 @@ const createPrAddr = async () => {
         }),
     })
     result.value = { status: res.status, json: await res.json() }
+    submitting.value = false
 }
 </script>

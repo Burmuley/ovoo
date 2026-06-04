@@ -1,7 +1,10 @@
 <template>
     <CCard>
         <CCardHeader class="d-flex align-items-center justify-content-between">
-            <span class="fw-semibold">Users</span>
+            <div class="d-flex align-items-center">
+                <span class="fw-semibold">Users</span>
+                <InfoPopover description="User accounts control who can log in to Ovoo. Admins can create and manage all accounts. Regular users manage only their own aliases and protected addresses. Milter users are service accounts used by the mail filter integration." />
+            </div>
             <CButton v-if="props.userInfo.type === 'admin'" color="primary" size="sm" @click="emit('add-clicked')">
                 <CIcon icon="cilPlus" /> Add
             </CButton>
@@ -11,53 +14,70 @@
                 <CTableHead>
                     <CTableRow>
                         <CTableHeaderCell>Name</CTableHeaderCell>
-                        <CTableHeaderCell>Login</CTableHeaderCell>
-                        <CTableHeaderCell>Type</CTableHeaderCell>
-                        <CTableHeaderCell>Status</CTableHeaderCell>
-                        <CTableHeaderCell></CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Type</CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                    <CTableRow v-for="user in users" :key="user.id" style="cursor: pointer"
-                        @click="selectedUser = user">
-                        <CTableDataCell>{{ user.first_name }} {{ user.last_name }}</CTableDataCell>
-                        <CTableDataCell>{{ user.login }}</CTableDataCell>
-                        <CTableDataCell>
-                            <CBadge :color="typeBadgeColor(user.type)">{{ user.type }}</CBadge>
-                        </CTableDataCell>
-                        <CTableDataCell>
-                            <CBadge :color="user.active ? 'success' : 'danger'">
-                                {{ user.active ? 'Active' : 'Inactive' }}
-                            </CBadge>
-                        </CTableDataCell>
-                        <CTableDataCell class="text-end text-nowrap">
-                            <template v-if="props.userInfo.type === 'admin'">
-                                <CButton v-if="user.active" color="warning" size="sm" variant="outline" class="me-1"
-                                    @click.stop="confirmingDeactivateId = user.id">
-                                    <CIcon icon="cilBan" />
-                                </CButton>
-                                <CButton v-else color="success" size="sm" variant="outline" class="me-1"
-                                    @click.stop="confirmingActivateId = user.id">
-                                    <CIcon icon="cilCheckCircle" />
-                                </CButton>
-                                <CButton color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
-                                    <CIcon icon="cilTrash" />
-                                </CButton>
-                            </template>
-                        </CTableDataCell>
-                    </CTableRow>
+                    <template v-if="loading">
+                        <CTableRow v-for="n in 3" :key="n">
+                            <CTableDataCell v-for="c in 4" :key="c">
+                                <div class="placeholder-glow"><span class="placeholder col-8"></span></div>
+                            </CTableDataCell>
+                        </CTableRow>
+                    </template>
+                    <EmptyState v-else-if="users.length === 0"
+                        icon="cilPeople"
+                        message="No users found."
+                        :action-label="props.userInfo.type === 'admin' ? 'Add User' : ''"
+                        :colspan="4"
+                        @action-clicked="emit('add-clicked')" />
+                    <template v-else>
+                        <CTableRow v-for="user in users" :key="user.id" style="cursor: pointer"
+                            @click="selectedUser = user">
+                            <CTableDataCell>
+                                <div>{{ user.first_name }} {{ user.last_name }}</div>
+                                <div class="text-body-secondary" style="font-size: 0.75rem;">{{ user.login }}</div>
+                            </CTableDataCell>
+                            <CTableDataCell class="text-center text-nowrap">
+                                <CBadge :color="typeBadgeColor(user.type)">{{ user.type }}</CBadge>
+                            </CTableDataCell>
+                            <CTableDataCell class="text-center text-nowrap">
+                                <CBadge :color="user.active ? 'success' : 'danger'">
+                                    {{ user.active ? 'Active' : 'Inactive' }}
+                                </CBadge>
+                            </CTableDataCell>
+                            <CTableDataCell class="text-end text-nowrap">
+                                <template v-if="props.userInfo.type === 'admin'">
+                                    <CButton v-if="user.active" color="warning" size="sm" variant="outline" class="me-1"
+                                        @click.stop="confirmingDeactivateId = user.id">
+                                        <CIcon icon="cilBan" />
+                                    </CButton>
+                                    <CButton v-else color="success" size="sm" variant="outline" class="me-1"
+                                        @click.stop="confirmingActivateId = user.id">
+                                        <CIcon icon="cilCheckCircle" />
+                                    </CButton>
+                                    <CButton color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
+                                        <CIcon icon="cilTrash" />
+                                    </CButton>
+                                </template>
+                            </CTableDataCell>
+                        </CTableRow>
+                    </template>
                 </CTableBody>
             </CTable>
         </CCardBody>
         <CCardFooter v-if="paginationMetadata.last_page > 1" class="d-flex justify-content-center">
             <Paginator :current-page="currentPage" :total-pages="paginationMetadata.last_page"
+                :total-items="paginationMetadata.total_records"
                 @page-changed="onPageChanged" />
         </CCardFooter>
     </CCard>
 
     <CModal :visible="selectedUser !== null" @close="handleModalClose">
         <CModalHeader>
-            <CModalTitle>User Details</CModalTitle>
+            <CModalTitle>{{ selectedUser?.first_name }} {{ selectedUser?.last_name }}</CModalTitle>
         </CModalHeader>
         <CModalBody>
             <table class="table table-sm table-borderless mb-0">
@@ -154,7 +174,7 @@
                     </tr>
                     <tr>
                         <th>Locked Until</th>
-                        <td>{{ selectedUser?.lockout_until || '—' }}</td>
+                        <td>{{ selectedUser?.lockout_until ? moment(selectedUser.lockout_until).format('LLL') : '—' }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -168,7 +188,9 @@
         <CModalHeader>
             <CModalTitle>Delete User</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to delete this user? This action cannot be undone.</CModalBody>
+        <CModalBody>
+            Delete user <strong>{{ deletingUser?.login }}</strong>? This action cannot be undone.
+        </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="deletingId = null">Cancel</CButton>
             <CButton color="danger" :disabled="saving" @click="performDelete(deletingId)">Yes, delete</CButton>
@@ -179,12 +201,12 @@
         <CModalHeader>
             <CModalTitle>Deactivate User</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to deactivate this user? They will no longer be able to log in.</CModalBody>
+        <CModalBody>
+            Deactivate <strong>{{ confirmingDeactivateUser?.login }}</strong>? They will no longer be able to log in.
+        </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
-            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes,
-                deactivate
-            </CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
         </CModalFooter>
     </CModal>
 
@@ -192,11 +214,12 @@
         <CModalHeader>
             <CModalTitle>Activate User</CModalTitle>
         </CModalHeader>
-        <CModalBody>Are you sure you want to activate this user?</CModalBody>
+        <CModalBody>
+            Activate <strong>{{ confirmingActivateUser?.login }}</strong>?
+        </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
-            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate
-            </CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
         </CModalFooter>
     </CModal>
 
@@ -210,16 +233,22 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import moment from 'moment'
 import { apiFetch } from '../utils/api'
+import { useToast } from '../composables/useToast'
 import Paginator from './Paginator.vue'
+import EmptyState from './EmptyState.vue'
+import InfoPopover from './InfoPopover.vue'
 
 const props = defineProps({ userInfo: { type: Object, default: () => ({}) } })
 const emit = defineEmits(['add-clicked'])
+const { showToast } = useToast()
 
 const users = ref([])
 const paginationMetadata = ref({})
 const currentPage = ref(1)
+const loading = ref(true)
 const selectedUser = ref(null)
 const editingField = ref(null)
 const editValue = ref('')
@@ -228,6 +257,10 @@ const deletingId = ref(null)
 const confirmingDeactivateId = ref(null)
 const confirmingActivateId = ref(null)
 const apiError = ref(null)
+
+const deletingUser = computed(() => users.value.find(u => u.id === deletingId.value))
+const confirmingDeactivateUser = computed(() => users.value.find(u => u.id === confirmingDeactivateId.value))
+const confirmingActivateUser = computed(() => users.value.find(u => u.id === confirmingActivateId.value))
 
 const handleApiError = async (res) => {
     const data = await res.json()
@@ -261,6 +294,7 @@ async function saveEdit() {
     if (!res.ok) { await handleApiError(res); return }
     selectedUser.value = { ...selectedUser.value, [editingField.value]: editValue.value }
     editingField.value = null
+    showToast('User updated.')
     await load()
 }
 
@@ -277,10 +311,12 @@ function handleModalClose() {
 }
 
 const load = async () => {
+    loading.value = true
     const res = await apiFetch('/api/v1/users?page=' + currentPage.value)
     const data = await res.json()
     users.value = data.users
     paginationMetadata.value = data.pagination_metadata
+    loading.value = false
 }
 
 const setActive = async (id, active) => {
@@ -293,6 +329,7 @@ const setActive = async (id, active) => {
     confirmingDeactivateId.value = null
     confirmingActivateId.value = null
     if (!res.ok) { await handleApiError(res); return }
+    showToast(active ? 'User activated.' : 'User deactivated.')
     await load()
 }
 
@@ -302,6 +339,7 @@ const performDelete = async (id) => {
     saving.value = false
     deletingId.value = null
     if (!res.ok) { await handleApiError(res); return }
+    showToast('User deleted.')
     await load()
 }
 

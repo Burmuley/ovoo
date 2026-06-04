@@ -16,14 +16,19 @@
                     <CFormInput id="expire_in" v-model="expire_in" type="number" min="1" />
                 </div>
                 <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary">Create</CButton>
+                    <CButton type="submit" color="primary" :disabled="submitting">
+                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+                    </CButton>
                     <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
                 </div>
             </CForm>
             <CAlert v-if="result.status === 201" color="success" class="mt-3">
                 API key created. Save it now — it will not be shown again.
                 <div class="mt-2">
-                    <code class="user-select-all">{{ result.json.api_token }}</code>
+                    <code class="user-select-all d-block" style="word-break: break-all;">{{ result.json.api_token }}</code>
+                    <CButton size="sm" color="success" variant="outline" class="mt-2" @click="copyToken">
+                        {{ copied ? 'Copied!' : 'Copy' }}
+                    </CButton>
                 </div>
             </CAlert>
             <CAlert v-else-if="result.status" color="danger" class="mt-3">
@@ -43,8 +48,18 @@ const name = ref('')
 const description = ref('')
 const expire_in = ref(90)
 const result = ref({})
+const copied = ref(false)
+const submitting = ref(false)
+
+const copyToken = async () => {
+    await navigator.clipboard.writeText(result.value.json.api_token)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+}
 
 const createApiKey = async () => {
+    copied.value = false
+    submitting.value = true
     const res = await apiFetch('/api/v1/users/apitokens', {
         method: 'POST',
         body: JSON.stringify({
@@ -54,5 +69,6 @@ const createApiKey = async () => {
         }),
     })
     result.value = { status: res.status, json: await res.json() }
+    submitting.value = false
 }
 </script>
