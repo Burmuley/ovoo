@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"net"
+	"slices"
 	"strings"
 	"time"
 
@@ -11,14 +13,25 @@ import (
 )
 
 type DomainCreateCmd struct {
-	Name   string
-	Global bool
+	Name                   string
+	Global                 bool
+	VerificationRecordType string
+}
+
+type DomainVerifyCmd struct {
+	DomainId entities.Id
 }
 
 type DomainUpdateCmd struct {
 	DomainId entities.Id
 	Active   *bool
 }
+
+const (
+	domainVerifyRecordPrefix     string = "_ovoo_check_"
+	domainVerifyTXTValuePrefix   string = "OVOO_ID="
+	domainVerifyCNAMEValueSuffix        = ".ovoocheck.local."
+)
 
 type DomainsService struct {
 	repof *factory.RepoFactory
@@ -32,7 +45,7 @@ func NewDomainsService(repoFabric *factory.RepoFactory) (*DomainsService, error)
 	return &DomainsService{repof: repoFabric}, nil
 }
 
-func (d *DomainsService) GetAll(ctx context.Context, cuser entities.User, filters entities.CustomDomainFilter) ([]entities.CustomDomain, error) {
+func (d *DomainsService) GetAll(ctx context.Context, cuser entities.User, filters entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error) {
 	// admin and milter users can read all domains in the system
 	// regular users are limited to only read domains they own
 	if cuser.Type != entities.AdminUser && cuser.Type != entities.MilterUser {
@@ -46,12 +59,12 @@ func (d *DomainsService) GetAll(ctx context.Context, cuser entities.User, filter
 		filters.IncludeGlobal = true
 	}
 
-	domains, _, err := d.repof.Domain.GetAll(ctx, filters)
+	domains, pgm, err := d.repof.Domain.GetAll(ctx, filters)
 	if err != nil {
-		return nil, err
+		return nil, entities.PaginationMetadata{}, err
 	}
 
-	return domains, nil
+	return domains, pgm, nil
 }
 
 func (d *DomainsService) GetById(ctx context.Context, cuser entities.User, id entities.Id) (entities.CustomDomain, error) {
@@ -85,17 +98,26 @@ func (d *DomainsService) Create(ctx context.Context, cuser entities.User, cmd Do
 	}
 
 	now := time.Now()
+	vd, err := fillVerificationData(
+		entities.DomainVerificationData{
+			RecordType: entities.DNSRecordType(cmd.VerificationRecordType),
+		},
+	)
+	if err != nil {
+		return entities.CustomDomain{}, err
+	}
+
 	domain := entities.CustomDomain{
-		ID:         entities.NewId(),
-		Name:       strings.TrimSpace(cmd.Name),
-		Global:     cmd.Global,
-		Owner:      cuser,
-		Active:     true,
-		Verified:   true, // TODO: implement domain verification
-		VerifiedAt: now,  // TODO: implement domain verification
-		CreatedAt:  now,
-		UpdatedAt:  now,
-		UpdatedBy:  cuser,
+		ID:               entities.NewId(),
+		Name:             strings.TrimSpace(cmd.Name),
+		Global:           cmd.Global,
+		Owner:            cuser,
+		Active:           true,
+		Verified:         false,
+		CreatedAt:        now,
+		UpdatedAt:        now,
+		UpdatedBy:        cuser,
+		VerificationData: vd,
 	}
 
 	if err := domain.Validate(); err != nil {
@@ -149,4 +171,66 @@ func (d *DomainsService) Delete(ctx context.Context, cuser entities.User, id ent
 	}
 
 	return d.repof.Domain.Delete(ctx, cuser, id)
+}
+
+func (d *DomainsService) Verify(ctx context.Context, cuser entities.User, id entities.Id) (entities.CustomDomain, error) {
+	domain, err := d.repof.Domain.GetById(ctx, id)
+	if err != nil {
+		return entities.CustomDomain{}, err
+	}
+
+	if !canVerifyDomain(cuser, domain) {
+		return entities.CustomDomain{}, entities.ErrNotAuthorized
+	}
+
+	// if verification failed -> store last error
+	if err := verifyDomainDNS(ctx, domain); err != nil {
+		domain.VerificationData.LastVerificationResult = err.Error()
+	} else {
+		// mark as verified in case of success
+		domain.Verified = true
+		domain.VerifiedAt = time.Now().UTC()
+	}
+
+	if _, err := d.repof.Domain.Update(ctx, domain); err != nil {
+		return entities.CustomDomain{}, err
+	}
+
+	return domain, nil
+}
+
+func verifyDomainDNS(ctx context.Context, domain entities.CustomDomain) error {
+	targetName := strings.Join([]string{domain.VerificationData.Name, domain.Name}, ".")
+	targetValue := domain.VerificationData.Value
+
+	switch domain.VerificationData.RecordType {
+	case entities.TXTRecord:
+		values, err := net.DefaultResolver.LookupTXT(ctx, targetName)
+		if err != nil {
+			return fmt.Errorf("%w: %w", entities.ErrValidation, err)
+		}
+
+		if slices.Contains(values, targetValue) {
+			return nil
+		}
+
+		return fmt.Errorf("%w: invalid target value", entities.ErrValidation)
+	case entities.CNAMERecord:
+		value, err := net.DefaultResolver.LookupCNAME(ctx, targetName)
+		if err != nil {
+			return fmt.Errorf("%w: %w", entities.ErrValidation, err)
+		}
+
+		if value == targetValue {
+			return nil
+		}
+
+		return fmt.Errorf("%w: invalid target value", entities.ErrValidation)
+	default:
+		return fmt.Errorf(
+			"%w: unsupported record type %q",
+			entities.ErrValidation,
+			string(domain.VerificationData.RecordType),
+		)
+	}
 }

@@ -243,3 +243,45 @@ func TestTokenTApiTokenDataOnCreate_EmptyToken(t *testing.T) {
 	result := tokenTApiTokenDataOnCreate(token)
 	assert.Equal(t, "", result.ApiToken)
 }
+
+func TestCustomDomainTDomainData(t *testing.T) {
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "owner@example.com"}
+	domain := entities.CustomDomain{
+		ID:    entities.NewId(),
+		Name:  "example.com",
+		Owner: owner,
+		VerificationData: entities.DomainVerificationData{
+			RecordType:             entities.TXTRecord,
+			Name:                   "_ovoo_check_abc",
+			Value:                  "OVOO_ID=xyz",
+			LastVerificationResult: "",
+		},
+	}
+	result := customDomainTDomainData(domain)
+	assert.Equal(t, domain.ID.String(), result.Id)
+	assert.Equal(t, domain.Name, result.Name)
+	assert.NotNil(t, result.VerificationData)
+	assert.Equal(t, DomainVerificationDNSRecordType(entities.TXTRecord), result.VerificationData.RecordType)
+	assert.Equal(t, "_ovoo_check_abc", result.VerificationData.Name)
+	assert.Equal(t, "OVOO_ID=xyz", result.VerificationData.Value)
+	assert.Nil(t, result.VerificationData.LastVerificationResult)
+}
+
+func TestCustomDomainTDomainData_WithLastVerificationResult(t *testing.T) {
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "owner@example.com"}
+	domain := entities.CustomDomain{
+		ID:    entities.NewId(),
+		Name:  "example.com",
+		Owner: owner,
+		VerificationData: entities.DomainVerificationData{
+			RecordType:             entities.CNAMERecord,
+			Name:                   "_ovoo_check_def",
+			Value:                  "abc.ovoocheck.local.",
+			LastVerificationResult: "validation error: record not found",
+		},
+	}
+	result := customDomainTDomainData(domain)
+	assert.NotNil(t, result.VerificationData.LastVerificationResult)
+	assert.Equal(t, "validation error: record not found", *result.VerificationData.LastVerificationResult)
+	assert.Equal(t, DomainVerificationDNSRecordType(entities.CNAMERecord), result.VerificationData.RecordType)
+}

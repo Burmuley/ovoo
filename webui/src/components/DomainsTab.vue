@@ -59,8 +59,17 @@
                                 <CBadge :color="domain.active ? 'success' : 'danger'">
                                     {{ domain.active ? 'Active' : 'Inactive' }}
                                 </CBadge>
+                                <CBadge v-if="domain.type === 'personal'"
+                                    :color="domain.verified ? 'success' : 'warning'" class="ms-1">
+                                    {{ domain.verified ? 'Verified' : 'Unverified' }}
+                                </CBadge>
                             </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
+                                <CButton v-if="domain.type === 'personal' && !domain.verified"
+                                    v-c-tooltip="'Verify'" color="primary" size="sm" variant="outline"
+                                    class="me-1" @click="openVerify(domain)">
+                                    <CIcon icon="cilShieldAlt" />
+                                </CButton>
                                 <CButton v-if="domain.active" v-c-tooltip="'Deactivate'" color="warning" size="sm"
                                     variant="outline" class="me-1" @click="confirmingDeactivateId = domain.id">
                                     <CIcon icon="cilBan" />
@@ -134,6 +143,8 @@
             <CButton color="secondary" @click="apiError = null">Close</CButton>
         </CModalFooter>
     </CModal>
+
+    <VerifyDomainModal :domain="verifyingDomain" @close="verifyingDomain = null" @verify-complete="load" />
 </template>
 
 <script setup>
@@ -143,6 +154,7 @@ import { useToast } from '../composables/useToast'
 import Paginator from './Paginator.vue'
 import EmptyState from './EmptyState.vue'
 import InfoPopover from './InfoPopover.vue'
+import VerifyDomainModal from './VerifyDomainModal.vue'
 
 const props = defineProps({ userInfo: { type: Object, default: () => ({}) } })
 const emit = defineEmits(['add-clicked'])
@@ -158,6 +170,7 @@ const deletingId = ref(null)
 const confirmingDeactivateId = ref(null)
 const confirmingActivateId = ref(null)
 const apiError = ref(null)
+const verifyingDomain = ref(null)
 
 const deletingDomain = computed(() => domains.value.find(d => d.id === deletingId.value))
 const confirmingDeactivateDomain = computed(() => domains.value.find(d => d.id === confirmingDeactivateId.value))
@@ -221,6 +234,8 @@ watch(deletingId, id => {
     else document.removeEventListener('keydown', onDeleteKey)
 })
 onUnmounted(() => document.removeEventListener('keydown', onDeleteKey))
+
+const openVerify = (domain) => { verifyingDomain.value = domain }
 
 const onPageChanged = async (page) => {
     currentPage.value = page

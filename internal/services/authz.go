@@ -317,3 +317,11 @@ func canDeleteDomain(cuser entities.User, d entities.CustomDomain) bool {
 
 	return cuser.ID == d.Owner.ID
 }
+
+func canVerifyDomain(cuser entities.User, d entities.CustomDomain) bool {
+	if cuser.Type == entities.AdminUser {
+		return true
+	}
+
+	return cuser.ID == d.Owner.ID
+}

@@ -859,6 +859,31 @@ components:
       enum: [global, personal]
       description: >-
         Enum defining type of the custom domain.
+    domainVerificationType:
+      type: string
+      enum: [dns_txt, dns_cname]
+      description: >-
+        Enum defining domain ownership validation type: DNS TXT, DNS CNAME
+    domainVerificationDNSRecordType:
+      type: string
+      enum: [txt, cname]
+      description: >-
+        Enum defining DNS record type for domain ownership validation via DNS: TXT, CNAME
+    domainVerificationData:
+      type: object
+      properties:
+        record_type:
+          $ref: "#/components/schemas/domainVerificationDNSRecordType"
+        name:
+          type: string
+        value:
+          type: string
+        last_verification_result:
+          type: string
+      required:
+        - record_type
+        - name
+        - value
     aliasData:
       type: object
       properties:
@@ -1035,6 +1060,8 @@ components:
           type: string
           format: date-time
           description: Present only for personal domains
+        verification_data:
+          $ref: "#/components/schemas/domainVerificationData"
       required:
         - id
         - name
@@ -1272,8 +1299,14 @@ components:
                   Domain scope. Admin users may pass `global` to create a system-wide domain.
                   Defaults to `personal` if omitted. Non-admin users receive 403 if `global`
                   is specified.
+              verification_type:
+                $ref: "#/components/schemas/domainVerificationType"
+                description: >-
+                  Domain verification type: DNS TXT or CNAME records are currently supported.
             required:
               - name
+              - type
+              - verification_type
     updateDomainRequest:
       content:
         application/json:
@@ -1498,7 +1531,10 @@ components:
             type: object
             required:
               - domains
+              - pagination_metadata
             properties:
+              pagination_metadata:
+                $ref: "#/components/schemas/paginationMetadata"
               domains:
                 type: array
                 items:

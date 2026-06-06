@@ -273,16 +273,20 @@ func customDomainFromEntity(e entities.CustomDomain) CustomDomain {
 			CreatedAt: e.CreatedAt,
 			UpdatedAt: e.UpdatedAt,
 		},
-		Name:              e.Name,
-		Global:            e.Global,
-		OwnerID:           e.Owner.ID.String(),
-		Owner:             userFromEntity(e.Owner),
-		Active:            e.Active,
-		UpdatedByID:       e.UpdatedBy.ID.String(),
-		UpdatedBy:         userFromEntity(e.UpdatedBy),
-		Verified:          e.Verified,
-		VerifiedAt:        e.VerifiedAt,
-		VerificationToken: e.VerificationToken,
+		Name:        e.Name,
+		Global:      e.Global,
+		OwnerID:     e.Owner.ID.String(),
+		Owner:       userFromEntity(e.Owner),
+		Active:      e.Active,
+		UpdatedByID: e.UpdatedBy.ID.String(),
+		UpdatedBy:   userFromEntity(e.UpdatedBy),
+		Verified:    e.Verified,
+		VerifiedAt:  e.VerifiedAt,
+		VerificationData: DomainVerificationData{
+			RecordType: string(e.VerificationData.RecordType),
+			Name:       e.VerificationData.Name,
+			Value:      e.VerificationData.Value,
+		},
 	}
 }
 
@@ -297,17 +301,21 @@ func customDomainFromEntityList(edomains []entities.CustomDomain) []CustomDomain
 
 func customDomainToEntity(d CustomDomain) entities.CustomDomain {
 	return entities.CustomDomain{
-		ID:                entities.Id(d.ID),
-		Name:              d.Name,
-		Global:            d.Global,
-		Owner:             userToEntity(d.Owner),
-		CreatedAt:         d.CreatedAt,
-		UpdatedAt:         d.UpdatedAt,
-		UpdatedBy:         userToEntity(d.UpdatedBy),
-		Active:            d.Active,
-		Verified:          d.Verified,
-		VerifiedAt:        d.VerifiedAt,
-		VerificationToken: d.VerificationToken,
+		ID:         entities.Id(d.ID),
+		Name:       d.Name,
+		Global:     d.Global,
+		Owner:      userToEntity(d.Owner),
+		CreatedAt:  d.CreatedAt,
+		UpdatedAt:  d.UpdatedAt,
+		UpdatedBy:  userToEntity(d.UpdatedBy),
+		Active:     d.Active,
+		Verified:   d.Verified,
+		VerifiedAt: d.VerifiedAt,
+		VerificationData: entities.DomainVerificationData{
+			RecordType: entities.DNSRecordType(d.VerificationData.RecordType),
+			Name:       d.VerificationData.Name,
+			Value:      d.VerificationData.Value,
+		},
 	}
 }
 

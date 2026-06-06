@@ -449,15 +449,18 @@ func TestApiTokenToEntity(t *testing.T) {
 
 func createTestCustomDomain(owner entities.User) entities.CustomDomain {
 	return entities.CustomDomain{
-		ID:                entities.NewId(),
-		Name:              "example.com",
-		Owner:             owner,
-		Active:            true,
-		Verified:          false,
-		VerificationToken: "verify-token",
-		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Now(),
-		UpdatedBy:         owner,
+		ID:     entities.NewId(),
+		Name:   "example.com",
+		Owner:  owner,
+		Active: true,
+		VerificationData: entities.DomainVerificationData{
+			RecordType: entities.TXTRecord,
+			Name:       "_ovoo_test",
+			Value:      "check-value",
+		},
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UpdatedBy: owner,
 	}
 }
 
@@ -472,7 +475,9 @@ func TestCustomDomainFromEntity(t *testing.T) {
 	assert.Equal(t, string(owner.ID), gormDomain.Owner.ID)
 	assert.Equal(t, domain.Active, gormDomain.Active)
 	assert.Equal(t, domain.Verified, gormDomain.Verified)
-	assert.Equal(t, domain.VerificationToken, gormDomain.VerificationToken)
+	assert.Equal(t, string(domain.VerificationData.RecordType), gormDomain.VerificationData.RecordType)
+	assert.Equal(t, domain.VerificationData.Name, gormDomain.VerificationData.Name)
+	assert.Equal(t, domain.VerificationData.Value, gormDomain.VerificationData.Value)
 	assert.True(t, domain.CreatedAt.Equal(gormDomain.CreatedAt))
 	assert.True(t, domain.UpdatedAt.Equal(gormDomain.UpdatedAt))
 }
@@ -489,12 +494,15 @@ func TestCustomDomainToEntity(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
-		Name:              "example.com",
-		Owner:             owner,
-		Active:            true,
-		Verified:          false,
-		VerificationToken: "verify-token",
-		UpdatedBy:         owner,
+		Name:   "example.com",
+		Owner:  owner,
+		Active: true,
+		VerificationData: DomainVerificationData{
+			RecordType: "txt",
+			Name:       "_ovoo_test",
+			Value:      "check-value",
+		},
+		UpdatedBy: owner,
 	}
 
 	domain := customDomainToEntity(gormDomain)
@@ -504,7 +512,9 @@ func TestCustomDomainToEntity(t *testing.T) {
 	assert.Equal(t, entities.Id(owner.ID), domain.Owner.ID)
 	assert.Equal(t, gormDomain.Active, domain.Active)
 	assert.Equal(t, gormDomain.Verified, domain.Verified)
-	assert.Equal(t, gormDomain.VerificationToken, domain.VerificationToken)
+	assert.Equal(t, entities.DNSRecordType(gormDomain.VerificationData.RecordType), domain.VerificationData.RecordType)
+	assert.Equal(t, gormDomain.VerificationData.Name, domain.VerificationData.Name)
+	assert.Equal(t, gormDomain.VerificationData.Value, domain.VerificationData.Value)
 	assert.True(t, gormDomain.CreatedAt.Equal(domain.CreatedAt))
 	assert.True(t, gormDomain.UpdatedAt.Equal(domain.UpdatedAt))
 }

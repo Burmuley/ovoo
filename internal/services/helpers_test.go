@@ -635,6 +635,37 @@ func TestDeactivateTokensForUser_WithTokens(t *testing.T) {
 	tokensRepo.AssertExpectations(t)
 }
 
+// Tests for fillVerificationData
+func TestFillVerificationData_TXT(t *testing.T) {
+	vd, err := fillVerificationData(entities.DomainVerificationData{RecordType: "txt"})
+	assert.NoError(t, err)
+	assert.Equal(t, entities.DNSRecordType("txt"), vd.RecordType)
+	assert.True(t, len(vd.Name) > len(domainVerifyRecordPrefix))
+	assert.Contains(t, vd.Name, domainVerifyRecordPrefix)
+	assert.Contains(t, vd.Value, domainVerifyTXTValuePrefix)
+}
+
+func TestFillVerificationData_CNAME(t *testing.T) {
+	vd, err := fillVerificationData(entities.DomainVerificationData{RecordType: "cname"})
+	assert.NoError(t, err)
+	assert.Equal(t, entities.DNSRecordType("cname"), vd.RecordType)
+	assert.Contains(t, vd.Name, domainVerifyRecordPrefix)
+	assert.True(t, len(vd.Value) > len(domainVerifyCNAMEValueSuffix))
+	assert.True(t, vd.Value[len(vd.Value)-len(domainVerifyCNAMEValueSuffix):] == domainVerifyCNAMEValueSuffix)
+}
+
+func TestFillVerificationData_TXT_Uppercase(t *testing.T) {
+	vd, err := fillVerificationData(entities.DomainVerificationData{RecordType: "TXT"})
+	assert.NoError(t, err)
+	assert.Equal(t, entities.DNSRecordType("txt"), vd.RecordType)
+}
+
+func TestFillVerificationData_UnsupportedType(t *testing.T) {
+	_, err := fillVerificationData(entities.DomainVerificationData{RecordType: "mx"})
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrValidation)
+}
+
 func TestDeactivateTokensForUser_ErrorGettingTokens(t *testing.T) {
 	repof, _, tokensRepo := setupDeactivateHelpersTest()
 	ctx := context.Background()

@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
@@ -268,4 +270,35 @@ func deactivateTokensForUser(ctx context.Context, repof *factory.RepoFactory, cu
 	}
 
 	return nil
+}
+
+func fillVerificationData(vd entities.DomainVerificationData) (entities.DomainVerificationData, error) {
+	evd := entities.DomainVerificationData{
+		RecordType: entities.DNSRecordType(strings.ToLower(string(vd.RecordType))),
+	}
+	// create DNS record name (common for CNAME & TXT record types)
+	if val, err := entities.RandString(32); err != nil {
+		return entities.DomainVerificationData{}, err
+	} else {
+		evd.Name = domainVerifyRecordPrefix + strings.ToLower(val)
+	}
+
+	switch strings.ToLower(string(vd.RecordType)) {
+	case "txt":
+		if val, err := entities.RandString(32); err != nil {
+			return entities.DomainVerificationData{}, err
+		} else {
+			evd.Value = domainVerifyTXTValuePrefix + strings.ToLower(val)
+		}
+	case "cname":
+		if val, err := entities.RandString(32); err != nil {
+			return entities.DomainVerificationData{}, err
+		} else {
+			evd.Value = strings.ToLower(val) + domainVerifyCNAMEValueSuffix
+		}
+	default:
+		return entities.DomainVerificationData{}, fmt.Errorf("%w: unsupported record type", entities.ErrValidation)
+	}
+
+	return evd, nil
 }

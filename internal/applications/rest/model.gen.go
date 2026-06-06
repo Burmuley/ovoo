@@ -33,6 +33,42 @@ func (e DomainType) Valid() bool {
 	}
 }
 
+// Defines values for DomainVerificationDNSRecordType.
+const (
+	Cname DomainVerificationDNSRecordType = "cname"
+	Txt   DomainVerificationDNSRecordType = "txt"
+)
+
+// Valid indicates whether the value is a known member of the DomainVerificationDNSRecordType enum.
+func (e DomainVerificationDNSRecordType) Valid() bool {
+	switch e {
+	case Cname:
+		return true
+	case Txt:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DomainVerificationType.
+const (
+	DnsCname DomainVerificationType = "dns_cname"
+	DnsTxt   DomainVerificationType = "dns_txt"
+)
+
+// Valid indicates whether the value is a known member of the DomainVerificationType enum.
+func (e DomainVerificationType) Valid() bool {
+	switch e {
+	case DnsCname:
+		return true
+	case DnsTxt:
+		return true
+	default:
+		return false
+	}
+}
+
 // AddressMetadata defines model for addressMetadata.
 type AddressMetadata struct {
 	Comment     *string `json:"comment,omitempty"`
@@ -130,7 +166,8 @@ type DomainData struct {
 	Owner *UserData `json:"owner,omitempty"`
 
 	// Type Enum defining type of the custom domain.
-	Type DomainType `json:"type"`
+	Type             DomainType              `json:"type"`
+	VerificationData *DomainVerificationData `json:"verification_data,omitempty"`
 
 	// Verified Present only for personal domains
 	Verified *bool `json:"verified,omitempty"`
@@ -141,6 +178,22 @@ type DomainData struct {
 
 // DomainType Enum defining type of the custom domain.
 type DomainType string
+
+// DomainVerificationDNSRecordType Enum defining DNS record type for domain ownership validation via DNS: TXT, CNAME
+type DomainVerificationDNSRecordType string
+
+// DomainVerificationData defines model for domainVerificationData.
+type DomainVerificationData struct {
+	LastVerificationResult *string `json:"last_verification_result,omitempty"`
+	Name                   string  `json:"name"`
+
+	// RecordType Enum defining DNS record type for domain ownership validation via DNS: TXT, CNAME
+	RecordType DomainVerificationDNSRecordType `json:"record_type"`
+	Value      string                          `json:"value"`
+}
+
+// DomainVerificationType Enum defining domain ownership validation type: DNS TXT, DNS CNAME
+type DomainVerificationType string
 
 // Error defines model for error.
 type Error struct {
@@ -273,7 +326,8 @@ type GetApiTokensResponse = []ApiTokenData
 
 // GetDomainsResponse defines model for getDomainsResponse.
 type GetDomainsResponse struct {
-	Domains []DomainData `json:"domains"`
+	Domains            []DomainData       `json:"domains"`
+	PaginationMetadata PaginationMetadata `json:"pagination_metadata"`
 }
 
 // GetEmailChainDetailsResponse defines model for getEmailChainDetailsResponse.
@@ -336,7 +390,10 @@ type CreateDomainRequest struct {
 	Name string `json:"name"`
 
 	// Type Enum defining type of the custom domain.
-	Type *DomainType `json:"type,omitempty"`
+	Type DomainType `json:"type"`
+
+	// VerificationType Enum defining domain ownership validation type: DNS TXT, DNS CNAME
+	VerificationType DomainVerificationType `json:"verification_type"`
 }
 
 // CreateEmailChain defines model for createEmailChain.
@@ -454,7 +511,10 @@ type CreateDomainJSONBody struct {
 	Name string `json:"name"`
 
 	// Type Enum defining type of the custom domain.
-	Type *DomainType `json:"type,omitempty"`
+	Type DomainType `json:"type"`
+
+	// VerificationType Enum defining domain ownership validation type: DNS TXT, DNS CNAME
+	VerificationType DomainVerificationType `json:"verification_type"`
 }
 
 // UpdateDomainJSONBody defines parameters for UpdateDomain.

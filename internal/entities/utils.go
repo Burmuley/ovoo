@@ -56,6 +56,7 @@ func RandString(nByte int) (string, error) {
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return "", err
 	}
-	// return base64.RawURLEncoding.EncodeToString(b), nil
+
+	// return base62 encoded string, nil
 	return Base62Encode(b), nil
 }

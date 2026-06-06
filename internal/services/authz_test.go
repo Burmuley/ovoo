@@ -513,6 +513,43 @@ func TestCanDeleteApiToken_NonOwnerUser(t *testing.T) {
 	assert.False(t, canDeleteApiToken(nonOwner, token))
 }
 
+// Helper to create a test domain with the given owner
+func createTestDomain(owner entities.User) entities.CustomDomain {
+	return entities.CustomDomain{
+		ID:    entities.NewId(),
+		Name:  "example.com",
+		Owner: owner,
+	}
+}
+
+// Tests for canVerifyDomain
+func TestCanVerifyDomain_AdminUser(t *testing.T) {
+	admin := createTestUser(entities.AdminUser)
+	owner := createTestUser(entities.RegularUser)
+	domain := createTestDomain(owner)
+	assert.True(t, canVerifyDomain(admin, domain))
+}
+
+func TestCanVerifyDomain_OwnerRegularUser(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	domain := createTestDomain(owner)
+	assert.True(t, canVerifyDomain(owner, domain))
+}
+
+func TestCanVerifyDomain_NonOwnerRegularUser(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	nonOwner := createTestUser(entities.RegularUser)
+	domain := createTestDomain(owner)
+	assert.False(t, canVerifyDomain(nonOwner, domain))
+}
+
+func TestCanVerifyDomain_MilterUser(t *testing.T) {
+	milter := createTestUser(entities.MilterUser)
+	owner := createTestUser(entities.RegularUser)
+	domain := createTestDomain(owner)
+	assert.False(t, canVerifyDomain(milter, domain))
+}
+
 // Test for canGetUsers panic
 func TestCanGetUsers_Panics(t *testing.T) {
 	assert.Panics(t, func() {

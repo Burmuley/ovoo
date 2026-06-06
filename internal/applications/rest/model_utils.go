@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"strings"
+
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/oapi-codegen/runtime/types"
 )
@@ -156,6 +158,16 @@ func customDomainTDomainData(d entities.CustomDomain) DomainData {
 		Owner:      new(userTResponse(d.Owner)),
 		Verified:   &d.Verified,
 		VerifiedAt: &d.VerifiedAt,
+		VerificationData: &DomainVerificationData{
+			Name:       d.VerificationData.Name,
+			RecordType: DomainVerificationDNSRecordType(d.VerificationData.RecordType),
+			Value:      d.VerificationData.Value,
+		},
+	}
+
+	lvr := strings.TrimSpace(d.VerificationData.LastVerificationResult)
+	if len(lvr) > 0 {
+		dd.VerificationData.LastVerificationResult = new(lvr)
 	}
 
 	return dd

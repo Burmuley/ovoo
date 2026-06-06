@@ -21,13 +21,16 @@ func (a *Application) GetDomains(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domains, err := a.svcGw.Domains.GetAll(r.Context(), cuser, filters)
+	domains, pgm, err := a.svcGw.Domains.GetAll(r.Context(), cuser, filters)
 	if err != nil {
 		a.errorLogNResponse(w, "getting domains", err)
 		return
 	}
 
-	resp := GetDomainsResponse{Domains: make([]DomainData, 0, len(domains))}
+	resp := GetDomainsResponse{
+		Domains:            make([]DomainData, 0, len(domains)),
+		PaginationMetadata: pgmTMetadata(pgm),
+	}
 	for _, d := range domains {
 		resp.Domains = append(resp.Domains, customDomainTDomainData(d))
 	}
@@ -49,8 +52,21 @@ func (a *Application) CreateDomain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmd := services.DomainCreateCmd{Name: req.Name}
-	if req.Type != nil && *req.Type == Global {
+	if req.Type == Global {
 		cmd.Global = true
+	}
+
+	switch req.VerificationType {
+	case DnsCname:
+		cmd.VerificationRecordType = "CNAME"
+	case DnsTxt:
+		cmd.VerificationRecordType = "TXT"
+	default:
+		a.errorLogNResponse(
+			w, "creating domain: parsing request",
+			fmt.Errorf("%w: unsupported verification_type %q", entities.ErrValidation, req.VerificationType),
+		)
+		return
 	}
 
 	domain, err := a.svcGw.Domains.Create(r.Context(), cuser, cmd)
@@ -105,5 +121,18 @@ func (a *Application) DeleteDomain(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Application) VerifyDomain(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "not implemented", http.StatusNotImplemented)
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "verifying domain: identifying user", err)
+		return
+	}
+
+	domain, err := a.svcGw.Domains.Verify(r.Context(), cuser, entities.Id(r.PathValue("id")))
+	if err != nil {
+		a.errorLogNResponse(w, "verifying domain", err)
+		return
+	}
+
+	resp := UpdateDomainResponse(customDomainTDomainData(domain))
+	a.successResponse(w, resp, http.StatusOK)
 }

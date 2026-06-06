@@ -55,6 +55,15 @@ func TestCustomDomain_Validate(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "empty name",
+			domain: CustomDomain{
+				ID:    NewId(),
+				Name:  "",
+				Owner: validOwner,
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
