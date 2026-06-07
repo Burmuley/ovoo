@@ -1,0 +1,26 @@
+---
+config:
+  layout: elk
+  theme: neutral
+  look: neo
+---
+flowchart TB
+    extSender["External Sender"] -- "from: spam@external.com<br>to: alias-q2z@ovoomail.org" --> mtaIn["MTA-In"]
+    mtaIn -- "process mail for<br>alias-q2z@ovoomail.org" --> milter["Ovoo\nMilter"]
+    milter -- "check if chain<br>'sender -&gt; alias'<br>exists" --> api["Ovoo API"]
+    api -- provide new emails<br>for from and to --> milter
+    milter -- rewrite email headers --> mtaIn
+    mtaIn -- pass for DKIM<br>and delivery --> mtaOut["MTA-Out"]
+    mtaOut -- "from: spam_at_external_com_abc123@ovoomail.org<br>to: protected@mymail.com" --> protected["Protected recipient"]
+
+     extSender:::personNode
+     mtaIn:::Pine
+     milter:::Peach
+     api:::Sky
+     mtaOut:::Pine
+     protected:::personNode
+    classDef personNode stroke:#e879f9,fill:#fdf4ff
+    classDef gatewayNode stroke:#2dd4bf,fill:#f0fdfa
+    classDef Sky stroke-width:1px, stroke-dasharray:none, stroke:#374D7C, fill:#E2EBFF, color:#374D7C
+    classDef Pine stroke-width:1px, stroke-dasharray:none, stroke:#254336, fill:#27654A, color:#FFFFFF
+    classDef Peach stroke-width:1px, stroke-dasharray:none, stroke:#FBB35A, fill:#FFEFDB, color:#8F632D

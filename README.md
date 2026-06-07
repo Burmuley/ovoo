@@ -16,7 +16,7 @@ You can find example configurations for the Postfix email server in [examples/po
 
 ## Components
 
-Ovoo has a simple architecture with just two main parts that run from the same program:
+Ovoo has a simple architecture with just two main parts that run from the same program
 
 ### Ovoo API
 
@@ -36,7 +36,9 @@ Want to integrate with other tools? Check out the full OpenAPI documentation in 
 | /api/v1/users/profile   | Retrieves the current authenticated user profile                             |
 | /api/v1/users/apitokens | Provides ability to manage API keys for authentication                       |
 | /api/v1/praddrs         | Allows managing `Protected address` entities for all users                   |
-| /private/api/v1/chains  | Manage email chains identifying each message flow (only user by Ovoo Milter) |
+| /api/v1/domains         | Manage custom alias domains (personal domains for regular users, global domains for admins); includes DNS ownership verification |
+| /api/v1/version         | Retrieve runtime version information (version, git commit, build timestamp)  |
+| /private/api/v1/chains  | Manage email chains identifying each message flow (only used by Ovoo Milter) |
 
 ### Ovoo Milter
 
@@ -47,10 +49,26 @@ with [Postfix](https://postfix.org))
 Ovoo Milter is responsible for receiving emails from MTA and checking if the destination address belongs to the
 Ovoo ecosystem, in other words if it can find an `Alias` in the database, it will rewrite incoming email headers to securely forward it to the matching `Protected Address`.
 
+Here is simple diagram depicting the basic workflow:
+
 <p align="left">
-    <img width="100%" src="./docs/assets/overview/ovoo_overview.svg" alt="Ovoo overview diagram" />
+    <img width="100%" src="./docs/assets/overview/overview.mmd.svg" alt="Ovoo overview diagram" />
 </p>
 
+
+### Ovoo Socketmap
+
+Ovoo Socketmap implements the [Postfix Socketmap protocol](https://www.postfix.org/socketmap_table.5.html), acting as a general-purpose bridge that supplies mail-routing information to Postfix on demand — relay domains, transport maps, access control data, or any other lookup Postfix can delegate via the Socketmap interface.
+
+At various points in SMTP processing Postfix queries the socket with a lookup key; Ovoo Socketmap consults the Ovoo API and returns a standard response (`OK`, `NOTFOUND`, `TEMP`, or `PERM`). Currently the implemented lookup type is **relay-domain validation**: Postfix queries whether a destination domain is active and verified in Ovoo before deciding to accept a message for relay.
+
+Ovoo Socketmap is started with:
+
+```
+ovoo socketmap -config <path>
+```
+
+It listens on a configurable Unix domain socket (default: `/tmp/ovoo_socketmap.sock`).
 
 ## Roadmap
 
