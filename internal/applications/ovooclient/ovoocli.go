@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -31,8 +32,17 @@ type cachedDomainNameInfo struct {
 	expiresAt   time.Time
 }
 
+type PaginationMetadata struct {
+	CurrentPage  int `json:"current_page"`
+	FirstPage    int `json:"first_page"`
+	LastPage     int `json:"last_page"`
+	PageSize     int `json:"page_size"`
+	TotalRecords int `json:"total_records"`
+}
+
 type GetDomainsResponse struct {
-	Domains []DomainData `json:"domains"`
+	Domains            []DomainData       `json:"domains"`
+	PaginationMetadata PaginationMetadata `json:"pagination_metadata"`
 }
 
 type DomainData struct {
@@ -134,15 +144,15 @@ func (o Client) parseChainData(resp *http.Response) (*ChainData, error) {
 	return &data, nil
 }
 
-func (o Client) parseDomainData(resp *http.Response) ([]string, error) {
+func (o Client) parseDomainData(resp *http.Response) ([]string, PaginationMetadata, error) {
 	data := GetDomainsResponse{}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, PaginationMetadata{}, err
 	}
 
 	if err := json.Unmarshal(body, &data); err != nil {
-		return nil, err
+		return nil, PaginationMetadata{}, err
 	}
 
 	domains := make([]string, 0, len(data.Domains))
@@ -150,7 +160,7 @@ func (o Client) parseDomainData(resp *http.Response) ([]string, error) {
 		domains = append(domains, domain.Name)
 	}
 
-	return domains, nil
+	return domains, data.PaginationMetadata, nil
 }
 
 func (o Client) parseError(resp *http.Response) error {
@@ -268,38 +278,62 @@ func (o Client) getDomainsNetwork(ctx context.Context, domain_name string) ([]st
 		"Authorization": fmt.Sprintf("Bearer %s", o.token),
 	}
 	query_params := map[string]string{
-		"active":   "true",
-		"verified": "true",
+		"active":    "true",
+		"verified":  "true",
+		"page_size": "1",
 	}
 
 	if len(domain_name) > 0 {
 		query_params["domain_name"] = domain_name
 	}
 
-	req, err := o.createRequest(
-		ctx,
-		o.server,
-		"/api/v1/domains",
-		http.MethodGet,
-		nil,
-		headers,
-		query_params,
-	)
-	if err != nil {
-		return nil, err
+	// http request helper to reduce code burden
+	getDomains := func(req *http.Request) ([]string, PaginationMetadata, error) {
+		resp, err := o.client.Do(req)
+		if err != nil {
+			return nil, PaginationMetadata{}, err
+		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, PaginationMetadata{}, o.parseError(resp)
+		}
+
+		domains, pgm, err := o.parseDomainData(resp)
+		if err != nil {
+			return nil, PaginationMetadata{}, err
+		}
+
+		return domains, pgm, nil
 	}
 
-	resp, err := o.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	domains := make([]string, 0)
+	page := 1
+	lastPage := 1
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, o.parseError(resp)
+	// reading all pages of the domains response
+	for {
+		query_params["page"] = strconv.Itoa(page)
+		req, err := o.createRequest(ctx, o.server, "/api/v1/domains", http.MethodGet, nil, headers, query_params)
+		if err != nil {
+			return nil, err
+		}
+
+		cd, pgm, err := getDomains(req)
+		if err != nil {
+			return nil, err
+		}
+
+		domains = append(domains, cd...)
+		lastPage = pgm.LastPage
+		if len(cd) == 0 || (lastPage-page <= 0) {
+			break
+		}
+
+		page++
 	}
 
-	return o.parseDomainData(resp)
+	return domains, nil
 }
