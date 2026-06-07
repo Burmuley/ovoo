@@ -18,7 +18,7 @@
                         <option value="global">Global</option>
                     </CFormSelect>
                 </div>
-                <div class="mb-3" v-if="domainType === 'personal'">
+                <div class="mb-3">
                     <CFormLabel>Verification Method</CFormLabel>
                     <div class="d-flex flex-column gap-2">
                         <CFormCheck type="radio" id="verifyTxt" name="verificationType" value="dns_txt"
@@ -118,7 +118,7 @@ const createDomain = async () => {
     submitting.value = true
     errorMessages.value = []
     const body = { name: name.value, type: domainType.value }
-    if (domainType.value === 'personal') body.verification_type = verificationType.value
+    body.verification_type = verificationType.value
     const res = await apiFetch('/api/v1/domains', {
         method: 'POST',
         body: JSON.stringify(body),
@@ -127,11 +127,6 @@ const createDomain = async () => {
     submitting.value = false
     if (!res.ok) {
         errorMessages.value = data.errors?.map(e => e.detail) ?? ['An unexpected error occurred.']
-        return
-    }
-    if (domainType.value === 'global') {
-        showToast('Domain created.')
-        emit('done')
         return
     }
     createdDomain.value = data
