@@ -10,7 +10,13 @@ type APIConfig struct {
 	Log          ConfigLogging         `koanf:"logging"`
 	OIDC         map[string]ConfigOIDC `koanf:"oidc"`
 	TLS          ConfigTLS             `koanf:"tls"`
+	SysInfo      SystemInfo            `koanf:"sysinfo"`
 	Version      SystemVersion
+}
+
+type SystemInfo struct {
+	DKIMDomain   string `koanf:"dkim_domain"`
+	DKIMSelector string `koanf:"dkim_selector"`
 }
 
 type SystemVersion struct {

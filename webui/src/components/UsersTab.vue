@@ -3,7 +3,8 @@
         <CCardHeader class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
                 <span class="fw-semibold">Users</span>
-                <InfoPopover description="User accounts control who can log in to Ovoo. Admins can create and manage all accounts. Regular users manage only their own aliases and protected addresses. Milter users are service accounts used by the mail filter integration." />
+                <InfoPopover
+                    description="User accounts control who can log in to Ovoo. Admins can create and manage all accounts. Regular users manage only their own aliases and protected addresses. Milter users are service accounts used by the mail filter integration." />
             </div>
             <CButton v-if="props.userInfo.type === 'admin'" color="primary" size="sm" @click="emit('add-clicked')">
                 <CIcon icon="cilPlus" /> Add
@@ -14,8 +15,10 @@
                 <CTableHead>
                     <CTableRow>
                         <CTableHeaderCell>Name</CTableHeaderCell>
-                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Type</CTableHeaderCell>
-                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Type
+                        </CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status
+                        </CTableHeaderCell>
                         <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -27,11 +30,8 @@
                             </CTableDataCell>
                         </CTableRow>
                     </template>
-                    <EmptyState v-else-if="users.length === 0"
-                        icon="cilPeople"
-                        message="No users found."
-                        :action-label="props.userInfo.type === 'admin' ? 'Add User' : ''"
-                        :colspan="4"
+                    <EmptyState v-else-if="users.length === 0" icon="cilPeople" message="No users found."
+                        :action-label="props.userInfo.type === 'admin' ? 'Add User' : ''" :colspan="4"
                         @action-clicked="emit('add-clicked')" />
                     <template v-else>
                         <CTableRow v-for="user in users" :key="user.id" style="cursor: pointer"
@@ -58,7 +58,8 @@
                                         @click.stop="confirmingActivateId = user.id">
                                         <CIcon icon="cilCheckCircle" />
                                     </CButton>
-                                    <CButton color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
+                                    <CButton color="danger" size="sm" variant="outline"
+                                        @click.stop="deletingId = user.id">
                                         <CIcon icon="cilTrash" />
                                     </CButton>
                                 </template>
@@ -70,8 +71,7 @@
         </CCardBody>
         <CCardFooter v-if="paginationMetadata.last_page > 1" class="d-flex justify-content-center">
             <Paginator :current-page="currentPage" :total-pages="paginationMetadata.last_page"
-                :total-items="paginationMetadata.total_records"
-                @page-changed="onPageChanged" />
+                :total-items="paginationMetadata.total_records" @page-changed="onPageChanged" />
         </CCardFooter>
     </CCard>
 
@@ -174,7 +174,8 @@
                     </tr>
                     <tr>
                         <th>Locked Until</th>
-                        <td>{{ selectedUser?.lockout_until ? moment(selectedUser.lockout_until).format('LLL') : '—' }}</td>
+                        <td>{{ selectedUser?.lockout_until ? moment(selectedUser.lockout_until).format('LLL') : '—' }}
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -206,7 +207,9 @@
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
-            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes,
+                deactivate
+            </CButton>
         </CModalFooter>
     </CModal>
 
@@ -219,12 +222,15 @@
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
-            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate
+            </CButton>
         </CModalFooter>
     </CModal>
 
     <CModal :visible="apiError !== null" @close="apiError = null">
-        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalHeader>
+            <CModalTitle>Error</CModalTitle>
+        </CModalHeader>
         <CModalBody>{{ apiError }}</CModalBody>
         <CModalFooter>
             <CButton color="secondary" @click="apiError = null">Close</CButton>

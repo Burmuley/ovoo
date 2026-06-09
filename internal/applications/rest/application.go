@@ -46,6 +46,7 @@ type Application struct {
 	tls_key         string
 	providerConfigs map[string]middleware.OIDCProvider
 	version         config.SystemVersion
+	sysInfo         config.SystemInfo
 }
 
 // New creates and returns a new Application instance configured for REST API handling.
@@ -69,6 +70,7 @@ func New(
 	tls_key, tls_cert string,
 	providersConfig map[string]config.ConfigOIDC,
 	version config.SystemVersion,
+	sysInfo config.SystemInfo,
 ) (applications.Application, error) {
 	ctrl := &Application{
 		svcGw:      svcGw,
@@ -77,6 +79,7 @@ func New(
 		tls_key:    tls_key,
 		tls_cert:   tls_cert,
 		version:    version,
+		sysInfo:    sysInfo,
 	}
 
 	if len(listenAddr) < 1 {
@@ -194,6 +197,12 @@ func (a *Application) Start() error {
 			Version:   a.version.Version,
 		}
 
+		a.successResponse(w, resp, http.StatusOK)
+	})
+
+	// sysInfo
+	mux.HandleFunc("GET /api/v1/sysinfo", func(w http.ResponseWriter, r *http.Request) {
+		resp := sysInfoTSysInfoResponse(a.sysInfo)
 		a.successResponse(w, resp, http.StatusOK)
 	})
 

@@ -3,6 +3,7 @@ package rest
 import (
 	"strings"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/oapi-codegen/runtime/types"
 )
@@ -192,5 +193,12 @@ func pgmTMetadata(pgm entities.PaginationMetadata) PaginationMetadata {
 		LastPage:     pgm.LastPage,
 		PageSize:     pgm.PageSize,
 		TotalRecords: pgm.TotalRecords,
+	}
+}
+
+func sysInfoTSysInfoResponse(info config.SystemInfo) GetSystemInfoResponse {
+	return GetSystemInfoResponse{
+		DkimDomain:   info.DKIMDomain,
+		DkimSelector: info.DKIMSelector,
 	}
 }

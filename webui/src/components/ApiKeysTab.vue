@@ -3,7 +3,8 @@
         <CCardHeader class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
                 <span class="fw-semibold">API Keys</span>
-                <InfoPopover description="API keys let you authenticate with the Ovoo REST API from scripts or external applications using Bearer token authentication. Each key has an expiration date and can be deactivated or deleted at any time." />
+                <InfoPopover
+                    description="API keys let you authenticate with the Ovoo REST API from scripts or external applications using Bearer token authentication. Each key has an expiration date and can be deactivated or deleted at any time." />
             </div>
             <CButton color="primary" size="sm" @click="emit('add-clicked')">
                 <CIcon icon="cilPlus" /> Add
@@ -14,7 +15,8 @@
                 <CTableHead>
                     <CTableRow>
                         <CTableHeaderCell>Name</CTableHeaderCell>
-                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status
+                        </CTableHeaderCell>
                         <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -26,18 +28,17 @@
                             </CTableDataCell>
                         </CTableRow>
                     </template>
-                    <EmptyState v-else-if="apiKeys.length === 0"
-                        icon="cilCode"
+                    <EmptyState v-else-if="apiKeys.length === 0" icon="cilCode"
                         message="No API keys yet. Create one to access the API programmatically."
-                        action-label="Add API Key"
-                        :colspan="3"
-                        @action-clicked="emit('add-clicked')" />
+                        action-label="Add API Key" :colspan="3" @action-clicked="emit('add-clicked')" />
                     <template v-else>
                         <CTableRow v-for="key in apiKeys" :key="key.id">
                             <CTableDataCell>
                                 <div>{{ key.name }}</div>
-                                <div v-if="key.description" class="text-body-secondary" style="font-size: 0.75rem;">{{ key.description }}</div>
-                                <div class="text-body-secondary" style="font-size: 0.75rem;">Expires: {{ moment(key.expiration).format('LLL') }}</div>
+                                <div v-if="key.description" class="text-body-secondary" style="font-size: 0.75rem;">{{
+                                    key.description }}</div>
+                                <div class="text-body-secondary" style="font-size: 0.75rem;">Expires: {{
+                                    moment(key.expiration).format('LLL') }}</div>
                             </CTableDataCell>
                             <CTableDataCell class="text-center text-nowrap">
                                 <CBadge :color="key.active ? 'success' : 'danger'">
@@ -109,7 +110,9 @@
     </CModal>
 
     <CModal :visible="apiError !== null" @close="apiError = null">
-        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalHeader>
+            <CModalTitle>Error</CModalTitle>
+        </CModalHeader>
         <CModalBody>{{ apiError }}</CModalBody>
         <CModalFooter>
             <CButton color="secondary" @click="apiError = null">Close</CButton>

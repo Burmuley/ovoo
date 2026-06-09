@@ -1,7 +1,7 @@
 <template>
     <span class="position-relative d-inline-flex align-items-center ms-1">
-        <button type="button" class="btn btn-link p-0 text-body-secondary border-0 lh-1"
-            style="vertical-align: middle;" @click.stop="open = !open">
+        <button type="button" class="btn btn-link p-0 text-body-secondary border-0 lh-1" style="vertical-align: middle;"
+            @click.stop="open = !open">
             <CIcon icon="cilInfo" size="sm" />
         </button>
         <div v-if="open" class="popover show position-absolute shadow-sm"

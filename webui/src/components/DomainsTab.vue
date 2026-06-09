@@ -3,11 +3,14 @@
         <CCardHeader class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
                 <span class="fw-semibold">Domains</span>
-                <InfoPopover description="Domains define the address space for creating aliases (e.g. @example.com). Global domains are available to all users; personal domains are owned by individual users." />
+                <InfoPopover
+                    description="Domains define the address space for creating aliases (e.g. @example.com). Global domains are available to all users; personal domains are owned by individual users." />
             </div>
             <div class="d-flex align-items-center gap-2">
                 <div class="input-group input-group-sm" style="width: 220px;">
-                    <span class="input-group-text"><CIcon icon="cilSearch" /></span>
+                    <span class="input-group-text">
+                        <CIcon icon="cilSearch" />
+                    </span>
                     <CFormInput v-model="searchQuery" placeholder="Search…" />
                     <CButton v-if="searchQuery" color="secondary" variant="outline" @click="searchQuery = ''">
                         <CIcon icon="cilX" />
@@ -23,8 +26,10 @@
                 <CTableHead>
                     <CTableRow>
                         <CTableHeaderCell>Name</CTableHeaderCell>
-                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Type</CTableHeaderCell>
-                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Type
+                        </CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status
+                        </CTableHeaderCell>
                         <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -36,17 +41,15 @@
                             </CTableDataCell>
                         </CTableRow>
                     </template>
-                    <EmptyState v-else-if="domains.length === 0"
-                        icon="cilGlobeAlt"
-                        message="No domains yet. Add one to use custom addresses for aliases."
-                        action-label="Add Domain"
-                        :colspan="4"
-                        @action-clicked="emit('add-clicked')" />
+                    <EmptyState v-else-if="domains.length === 0" icon="cilGlobeAlt"
+                        message="No domains yet. Add one to use custom addresses for aliases." action-label="Add Domain"
+                        :colspan="4" @action-clicked="emit('add-clicked')" />
                     <template v-else>
                         <CTableRow v-for="domain in domains" :key="domain.id">
                             <CTableDataCell>
                                 <div>{{ domain.name }}</div>
-                                <div v-if="props.userInfo.type === 'admin'" class="text-body-secondary" style="font-size: 0.75rem;">
+                                <div v-if="props.userInfo.type === 'admin'" class="text-body-secondary"
+                                    style="font-size: 0.75rem;">
                                     Owner: {{ domain.owner?.login ?? '—' }}
                                 </div>
                             </CTableDataCell>
@@ -65,9 +68,9 @@
                                 </CBadge>
                             </CTableDataCell>
                             <CTableDataCell class="text-end text-nowrap">
-                                <CButton v-if="domain.type === 'personal' && !domain.verified"
-                                    v-c-tooltip="'Verify'" color="primary" size="sm" variant="outline"
-                                    class="me-1" @click="openVerify(domain)">
+                                <CButton v-if="domain.type === 'personal' && !domain.verified" v-c-tooltip="'Verify'"
+                                    color="primary" size="sm" variant="outline" class="me-1"
+                                    @click="openVerify(domain)">
                                     <CIcon icon="cilShieldAlt" />
                                 </CButton>
                                 <CButton v-if="domain.active" v-c-tooltip="'Deactivate'" color="warning" size="sm"
@@ -90,8 +93,7 @@
         </CCardBody>
         <CCardFooter v-if="paginationMetadata.last_page > 1" class="d-flex justify-content-center">
             <Paginator :current-page="currentPage" :total-pages="paginationMetadata.last_page"
-                :total-items="paginationMetadata.total_records"
-                @page-changed="onPageChanged" />
+                :total-items="paginationMetadata.total_records" @page-changed="onPageChanged" />
         </CCardFooter>
     </CCard>
 
@@ -117,7 +119,9 @@
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
-            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes,
+                deactivate
+            </CButton>
         </CModalFooter>
     </CModal>
 
@@ -130,7 +134,8 @@
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
-            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate
+            </CButton>
         </CModalFooter>
     </CModal>
 

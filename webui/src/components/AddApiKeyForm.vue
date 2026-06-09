@@ -25,7 +25,8 @@
             <CAlert v-if="result.status === 201" color="success" class="mt-3">
                 API key created. Save it now — it will not be shown again.
                 <div class="mt-2">
-                    <code class="user-select-all d-block" style="word-break: break-all;">{{ result.json.api_token }}</code>
+                    <code class="user-select-all d-block" style="word-break: break-all;">{{ result.json.api_token
+                        }}</code>
                     <CButton size="sm" color="success" variant="outline" class="mt-2" @click="copyToken">
                         {{ copied ? 'Copied!' : 'Copy' }}
                     </CButton>

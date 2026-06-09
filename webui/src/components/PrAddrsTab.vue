@@ -3,11 +3,14 @@
         <CCardHeader class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
                 <span class="fw-semibold">Protected Addresses</span>
-                <InfoPopover description="A protected address is your real email inbox that you want to keep private. Aliases forward mail here so senders only ever see the alias, never your actual address. Deactivating a protected address stops delivery for all aliases that point to it." />
+                <InfoPopover
+                    description="A protected address is your real email inbox that you want to keep private. Aliases forward mail here so senders only ever see the alias, never your actual address. Deactivating a protected address stops delivery for all aliases that point to it." />
             </div>
             <div class="d-flex align-items-center gap-2">
                 <div class="input-group input-group-sm" style="width: 220px;">
-                    <span class="input-group-text"><CIcon icon="cilSearch" /></span>
+                    <span class="input-group-text">
+                        <CIcon icon="cilSearch" />
+                    </span>
                     <CFormInput v-model="searchQuery" placeholder="Search…" />
                     <CButton v-if="searchQuery" color="secondary" variant="outline" @click="searchQuery = ''">
                         <CIcon icon="cilX" />
@@ -23,7 +26,8 @@
                 <CTableHead>
                     <CTableRow>
                         <CTableHeaderCell>Email</CTableHeaderCell>
-                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status
+                        </CTableHeaderCell>
                         <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -35,17 +39,16 @@
                             </CTableDataCell>
                         </CTableRow>
                     </template>
-                    <EmptyState v-else-if="praddrs.length === 0"
-                        icon="cilShieldAlt"
+                    <EmptyState v-else-if="praddrs.length === 0" icon="cilShieldAlt"
                         message="No protected addresses yet. Add one to start creating aliases."
-                        action-label="Add Address"
-                        :colspan="3"
-                        @action-clicked="emit('add-clicked')" />
+                        action-label="Add Address" :colspan="3" @action-clicked="emit('add-clicked')" />
                     <template v-else>
                         <CTableRow v-for="addr in praddrs" :key="addr.id">
                             <CTableDataCell>
-                                <span v-c-tooltip="addr.email" class="d-inline-block text-truncate" style="max-width:260px;">{{ addr.email }}</span>
-                                <div v-if="addr.metadata?.comment" class="text-body-secondary" style="font-size: 0.75rem;">{{ addr.metadata?.comment }}</div>
+                                <span v-c-tooltip="addr.email" class="d-inline-block text-truncate"
+                                    style="max-width:260px;">{{ addr.email }}</span>
+                                <div v-if="addr.metadata?.comment" class="text-body-secondary"
+                                    style="font-size: 0.75rem;">{{ addr.metadata?.comment }}</div>
                             </CTableDataCell>
                             <CTableDataCell class="text-center text-nowrap">
                                 <CBadge :color="addr.active ? 'success' : 'danger'">
@@ -77,8 +80,7 @@
         </CCardBody>
         <CCardFooter v-if="paginationMetadata.last_page > 1" class="d-flex justify-content-center">
             <Paginator :current-page="currentPage" :total-pages="paginationMetadata.last_page"
-                :total-items="paginationMetadata.total_records"
-                @page-changed="onPageChanged" />
+                :total-items="paginationMetadata.total_records" @page-changed="onPageChanged" />
         </CCardFooter>
     </CCard>
 
@@ -114,11 +116,15 @@
             <CModalTitle>Deactivate Protected Address</CModalTitle>
         </CModalHeader>
         <CModalBody>
-            Deactivate <strong>{{ confirmingDeactivateAddr?.email }}</strong>? Aliases forwarding to it will stop delivering email.
+            Deactivate <strong>{{ confirmingDeactivateAddr?.email }}</strong>? Aliases forwarding to it will stop
+            delivering
+            email.
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
-            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes,
+                deactivate
+            </CButton>
         </CModalFooter>
     </CModal>
 
@@ -131,12 +137,15 @@
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
-            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate
+            </CButton>
         </CModalFooter>
     </CModal>
 
     <CModal :visible="apiError !== null" @close="apiError = null">
-        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalHeader>
+            <CModalTitle>Error</CModalTitle>
+        </CModalHeader>
         <CModalBody>{{ apiError }}</CModalBody>
         <CModalFooter>
             <CButton color="secondary" @click="apiError = null">Close</CButton>

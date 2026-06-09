@@ -777,6 +777,23 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
+  /api/v1/sysinfo:
+    get:
+      summary: Get various system information for WebUI details
+      description: >-
+        Retrieve system information that could be reflected in the WebUI
+      operationId: getSystemInfo
+      tags:
+        - System
+      parameters: []
+      responses:
+        "200":
+          $ref: "#/components/responses/getSystemInfoResponse"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+      security:
+        - OAuth2: []
+        - BasicAuthentication: []
   /private/api/v1/chains:
     post:
       summary: Create new email chain
@@ -1125,6 +1142,18 @@ components:
         - version
         - built_at
         - git_commit
+    systemInfoData:
+      type: object
+      properties:
+        dkim_domain:
+          type: string
+          description: DKIM default domain should be used in custom domain CNAME records
+        dkim_selector:
+          type: string
+          description: DKIM default selector should be used in custom domain CNAME records
+      required:
+        - dkim_domain
+        - dkim_selector
   securitySchemes:
     ApiToken:
       type: http
@@ -1558,6 +1587,13 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/systemVersionData"
+    getSystemInfoResponse:
+      description: Returns Ovoo API system information
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/systemInfoData"
     basicAuthenticationTokenResponse:
       description: ""
       headers: {}

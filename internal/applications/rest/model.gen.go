@@ -223,6 +223,15 @@ type ProtectedAddressData struct {
 	Owner    UserData            `json:"owner"`
 }
 
+// SystemInfoData defines model for systemInfoData.
+type SystemInfoData struct {
+	// DkimDomain DKIM default domain should be used in custom domain CNAME records
+	DkimDomain string `json:"dkim_domain"`
+
+	// DkimSelector DKIM default selector should be used in custom domain CNAME records
+	DkimSelector string `json:"dkim_selector"`
+}
+
 // SystemVersionData defines model for systemVersionData.
 type SystemVersionData struct {
 	// BuiltAt Build timestamp
@@ -341,6 +350,9 @@ type GetPrAddrsResponse struct {
 	PaginationMetadata PaginationMetadata     `json:"pagination_metadata"`
 	ProtectedAddresses []ProtectedAddressData `json:"protected_addresses"`
 }
+
+// GetSystemInfoResponse defines model for getSystemInfoResponse.
+type GetSystemInfoResponse = SystemInfoData
 
 // GetSystemVersionResponse defines model for getSystemVersionResponse.
 type GetSystemVersionResponse = SystemVersionData

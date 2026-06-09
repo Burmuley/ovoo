@@ -3,11 +3,14 @@
         <CCardHeader class="d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center">
                 <span class="fw-semibold">Aliases</span>
-                <InfoPopover description="An alias is a randomly generated email address that forwards incoming messages to your protected (real) address. Share the alias instead of your real email — if it gets spammed, deactivate or delete it without touching your real inbox." />
+                <InfoPopover
+                    description="An alias is a randomly generated email address that forwards incoming messages to your protected (real) address. Share the alias instead of your real email — if it gets spammed, deactivate or delete it without touching your real inbox." />
             </div>
             <div class="d-flex align-items-center gap-2">
                 <div class="input-group input-group-sm" style="width: 220px;">
-                    <span class="input-group-text"><CIcon icon="cilSearch" /></span>
+                    <span class="input-group-text">
+                        <CIcon icon="cilSearch" />
+                    </span>
                     <CFormInput v-model="searchQuery" placeholder="Search…" />
                     <CButton v-if="searchQuery" color="secondary" variant="outline" @click="searchQuery = ''">
                         <CIcon icon="cilX" />
@@ -24,7 +27,8 @@
                     <CTableRow>
                         <CTableHeaderCell>Alias</CTableHeaderCell>
                         <CTableHeaderCell class="text-center">Forwards To</CTableHeaderCell>
-                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status</CTableHeaderCell>
+                        <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status
+                        </CTableHeaderCell>
                         <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                     </CTableRow>
                 </CTableHead>
@@ -36,21 +40,21 @@
                             </CTableDataCell>
                         </CTableRow>
                     </template>
-                    <EmptyState v-else-if="aliases.length === 0"
-                        icon="cilEnvelopeClosed"
-                        message="No aliases yet. Create one to get started."
-                        action-label="Add Alias"
-                        :colspan="4"
+                    <EmptyState v-else-if="aliases.length === 0" icon="cilEnvelopeClosed"
+                        message="No aliases yet. Create one to get started." action-label="Add Alias" :colspan="4"
                         @action-clicked="emit('add-clicked')" />
                     <template v-else>
                         <CTableRow v-for="alias in aliases" :key="alias.id">
                             <CTableDataCell>
                                 <div v-c-tooltip="alias.email" class="text-truncate">{{ alias.email }}</div>
-                                <div v-if="alias.metadata?.service_name" class="text-body-secondary" style="font-size: 0.75rem;">Service: {{ alias.metadata?.service_name }}</div>
-                                <div v-if="alias.metadata?.comment" class="text-body-secondary" style="font-size: 0.75rem;">{{ alias.metadata?.comment }}</div>
+                                <div v-if="alias.metadata?.service_name" class="text-body-secondary"
+                                    style="font-size: 0.75rem;">Service: {{ alias.metadata?.service_name }}</div>
+                                <div v-if="alias.metadata?.comment" class="text-body-secondary"
+                                    style="font-size: 0.75rem;">{{ alias.metadata?.comment }}</div>
                             </CTableDataCell>
                             <CTableDataCell class="text-center">
-                                <span v-c-tooltip="alias.forward_email" class="d-inline-block text-truncate" style="max-width:180px;">{{ alias.forward_email }}</span>
+                                <span v-c-tooltip="alias.forward_email" class="d-inline-block text-truncate"
+                                    style="max-width:180px;">{{ alias.forward_email }}</span>
                             </CTableDataCell>
                             <CTableDataCell class="text-center text-nowrap">
                                 <CBadge :color="alias.active ? 'success' : 'danger'">
@@ -82,8 +86,7 @@
         </CCardBody>
         <CCardFooter v-if="paginationMetadata.last_page > 1" class="d-flex justify-content-center">
             <Paginator :current-page="currentPage" :total-pages="paginationMetadata.last_page"
-                :total-items="paginationMetadata.total_records"
-                @page-changed="onPageChanged" />
+                :total-items="paginationMetadata.total_records" @page-changed="onPageChanged" />
         </CCardFooter>
     </CCard>
 
@@ -121,11 +124,14 @@
             <CModalTitle>Deactivate Alias</CModalTitle>
         </CModalHeader>
         <CModalBody>
-            Deactivate <strong>{{ confirmingDeactivateAlias?.email }}</strong>? Emails sent to it will stop being forwarded.
+            Deactivate <strong>{{ confirmingDeactivateAlias?.email }}</strong>? Emails sent to it will stop being
+            forwarded.
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingDeactivateId = null">Cancel</CButton>
-            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes, deactivate</CButton>
+            <CButton color="warning" :disabled="saving" @click="setActive(confirmingDeactivateId, false)">Yes,
+                deactivate
+            </CButton>
         </CModalFooter>
     </CModal>
 
@@ -138,12 +144,15 @@
         </CModalBody>
         <CModalFooter>
             <CButton color="secondary" variant="outline" @click="confirmingActivateId = null">Cancel</CButton>
-            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate</CButton>
+            <CButton color="success" :disabled="saving" @click="setActive(confirmingActivateId, true)">Yes, activate
+            </CButton>
         </CModalFooter>
     </CModal>
 
     <CModal :visible="apiError !== null" @close="apiError = null">
-        <CModalHeader><CModalTitle>Error</CModalTitle></CModalHeader>
+        <CModalHeader>
+            <CModalTitle>Error</CModalTitle>
+        </CModalHeader>
         <CModalBody>{{ apiError }}</CModalBody>
         <CModalFooter>
             <CButton color="secondary" @click="apiError = null">Close</CButton>
