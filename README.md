@@ -52,7 +52,7 @@ Ovoo ecosystem, in other words if it can find an `Alias` in the database, it wil
 Here is simple diagram depicting the basic workflow:
 
 <p align="left">
-    <img width="100%" src="./docs/assets/overview/overview.mmd.svg" alt="Ovoo overview diagram" />
+    <img width="70%" src="docs/assets/overview/ovoo_overview.png" alt="Ovoo overview diagram" />
 </p>
 
 
