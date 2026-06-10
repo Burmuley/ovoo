@@ -370,13 +370,17 @@ func handleOIDCRefresh(w http.ResponseWriter, r *http.Request, prov OIDCProvider
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(struct {
+	if err := json.NewEncoder(w).Encode(struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int    `json:"expires_in"`
 	}{
 		AccessToken: newToken.AccessToken,
 		ExpiresIn:   expiresIn,
-	})
+	}); err != nil {
+		logger.Error("failed to encode response", "err", err.Error())
+		clearOIDCCookies(w, r)
+		http.Error(w, "session expired", http.StatusUnauthorized)
+	}
 }
 
 // getOIDCTokenIssuer extracts the issuer ("iss") claim from a JWT token payload

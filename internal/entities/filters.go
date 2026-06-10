@@ -109,9 +109,7 @@ func NewAddressFilter(input map[string][]string) (AddressFilter, error) {
 			af.Emails = emails
 		case "service_name":
 			snames := make([]string, 0, len(vals))
-			for _, val := range vals {
-				snames = append(snames, val)
-			}
+			snames = append(snames, vals...)
 			af.ServiceNames = snames
 		case "active":
 			active, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only
@@ -161,9 +159,7 @@ func NewUserFilter(input map[string][]string) (UserFilter, error) {
 			uf.Types = types
 		case "login":
 			logins := make([]string, 0, len(vals))
-			for _, val := range vals {
-				logins = append(logins, val)
-			}
+			logins = append(logins, vals...)
 			uf.Logins = logins
 		case "active":
 			active, err := strconv.ParseBool(vals[len(vals)-1]) // include last value only

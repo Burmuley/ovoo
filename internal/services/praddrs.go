@@ -115,9 +115,9 @@ func (prs *ProtectedAddrService) Update(ctx context.Context, cuser entities.User
 
 	if cmd.Active != nil {
 		if canSetActivePrAddr(praddr, cuser) {
-			if *cmd.Active == true && praddr.Active == false {
+			if *cmd.Active && !praddr.Active {
 				praddr.Active = *cmd.Active
-			} else if *cmd.Active == false && praddr.Active == true {
+			} else if !*cmd.Active && praddr.Active {
 				if err := deactivateAliasesForPrAddr(ctx, prs.repof, cuser, praddr.ID); err != nil {
 					return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
 				}

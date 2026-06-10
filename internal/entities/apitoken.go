@@ -82,11 +82,7 @@ func (t *ApiToken) Validate() error {
 
 // Expired checks if the ApiToken has expired.
 func (t *ApiToken) Expired() bool {
-	if time.Now().Compare(t.Expiration) >= 0 {
-		return true
-	}
-
-	return false
+	return time.Now().Compare(t.Expiration) >= 0
 }
 
 // HashApiToken creates a SHA-256 hash of a token by prepending the salt.

@@ -28,10 +28,8 @@ func SecurityHeaders() Adapter {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// format and define Content Security Policy (CSP)
 			formActionUrls := []string{}
-			if oidcConfigs != nil {
-				for _, prov := range oidcConfigs {
-					formActionUrls = append(formActionUrls, prov.OAuth2Config.Endpoint.AuthURL)
-				}
+			for _, prov := range oidcConfigs {
+				formActionUrls = append(formActionUrls, prov.OAuth2Config.Endpoint.AuthURL)
 			}
 
 			scriptSrcUrls := []string{

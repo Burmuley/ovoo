@@ -136,9 +136,9 @@ func (u *UsersService) Update(ctx context.Context, cuser entities.User, cmd User
 
 	if cmd.Active != nil {
 		if canSetActiveUser(user, cuser) {
-			if *cmd.Active == true && user.Active == false {
+			if *cmd.Active && !user.Active {
 				user.Active = *cmd.Active
-			} else if *cmd.Active == false && user.Active == true {
+			} else if !*cmd.Active && user.Active {
 				if err := deactivatePrAddrsForUser(ctx, u.repof, cuser, user.ID); err != nil {
 					return entities.User{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
 				}

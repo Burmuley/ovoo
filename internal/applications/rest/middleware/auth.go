@@ -30,7 +30,9 @@ const (
 var oidcConfigs map[string]OIDCProvider
 var oidcProviderNames []string
 
-const UserContextKey string = "user"
+type ContextKey string
+
+const UserContextKey ContextKey = "user"
 
 // Authentication creates a middleware adapter for handling user authentication.
 // It supports multiple authentication methods and tries them in the following order:
@@ -78,7 +80,9 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write(resp)
+				if _, err := w.Write(resp); err != nil {
+					logger.Error("authentication response write", "err", err.Error())
+				}
 				return
 			}
 

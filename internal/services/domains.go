@@ -46,6 +46,10 @@ func NewDomainsService(repoFabric *factory.RepoFactory) (*DomainsService, error)
 }
 
 func (d *DomainsService) GetAll(ctx context.Context, cuser entities.User, filters entities.CustomDomainFilter) ([]entities.CustomDomain, entities.PaginationMetadata, error) {
+	if !canGetDomains(cuser) {
+		return nil, entities.PaginationMetadata{}, entities.ErrNotAuthorized
+	}
+
 	// admin and milter users can read all domains in the system
 	// regular users are limited to only read domains they own
 	if cuser.Type != entities.AdminUser && cuser.Type != entities.MilterUser {
@@ -73,7 +77,7 @@ func (d *DomainsService) GetById(ctx context.Context, cuser entities.User, id en
 		return entities.CustomDomain{}, err
 	}
 
-	if !canUpdateDomain(cuser, domain) {
+	if !canGetDomain(cuser, domain) {
 		return entities.CustomDomain{}, entities.ErrNotAuthorized
 	}
 

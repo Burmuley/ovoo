@@ -128,7 +128,11 @@ func (PermanentError) Timeout() bool   { return false }
 func (PermanentError) Temporary() bool { return false }
 
 func handle(ctx context.Context, wg *sync.WaitGroup, conn net.Conn, handler Handler) error {
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			slog.Error("closing handler connection", "err", err.Error())
+		}
+	}()
 	defer wg.Done()
 
 	for {

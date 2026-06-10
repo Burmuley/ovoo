@@ -42,7 +42,9 @@ func main() {
 		fmt.Printf("Build timestamp: %s\n", appInfoBuiltAt)
 		return
 	case "api":
-		apiCmd.Parse(os.Args[2:])
+		if err := apiCmd.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
 		cfg, err := config.LoadConfig[config.APIConfig](config.APISection, *apiCfgName)
 		if err != nil {
 			log.Fatal(err)
@@ -58,7 +60,9 @@ func main() {
 		}
 
 	case "milter":
-		milterCmd.Parse(os.Args[2:])
+		if err := milterCmd.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
 		cfg, err := config.LoadConfig[config.MilterConfig](config.MilterSection, *milterCfgName)
 		if err != nil {
 			log.Fatal(err)
@@ -67,7 +71,9 @@ func main() {
 			slog.Error(err.Error())
 		}
 	case "socketmap":
-		sockMapCmd.Parse(os.Args[2:])
+		if err := sockMapCmd.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
 		cfg, err := config.LoadConfig[config.SocketMapConfig](config.SocketMapSection, *sockMapCfgName)
 		if err != nil {
 			log.Fatal(err)

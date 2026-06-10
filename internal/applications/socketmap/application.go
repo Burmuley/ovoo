@@ -19,15 +19,13 @@ type Application struct {
 	network string
 	addr    string
 	cli     ovooclient.Client
-	logger  *slog.Logger
 }
 
-func New(network, listenAddr string, logger *slog.Logger, ovooCli ovooclient.Client) (*Application, error) {
+func New(network, listenAddr string, ovooCli ovooclient.Client) (*Application, error) {
 	ctrl := &Application{
 		network: network,
 		addr:    listenAddr,
 		cli:     ovooCli,
-		logger:  logger,
 	}
 
 	return ctrl, nil
@@ -38,24 +36,24 @@ func (m *Application) Start() error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	// defer stop()
 
-	srv, err := newServer(m.network, m.addr, m.logger)
+	srv, err := newServer(m.network, m.addr)
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		m.logger.Info("starting Ovoo Socketmap server", m.network, m.addr)
+		slog.Info("starting Ovoo Socketmap server", m.network, m.addr)
 		srv.Wait(ovooHandler(m.cli))
 		stop()
 	}()
 
 	<-ctx.Done()
-	m.logger.Info("shutting down Ovoo Socketmap server")
+	slog.Info("shutting down Ovoo Socketmap server")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		m.logger.Error("server shutdown failed", "err", err.Error())
+		slog.Error("server shutdown failed", "err", err.Error())
 		return err
 	}
 

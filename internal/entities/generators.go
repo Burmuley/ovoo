@@ -24,7 +24,7 @@ func GenAliasEmail(domain string, dict []string) (Email, error) {
 		return "", fmt.Errorf("%w: dictionary can not be empty", ErrValidation)
 	}
 
-	words := make([]string, 2, 2)
+	words := make([]string, 2)
 	for i := range words {
 		r, err := rand.Int(rand.Reader, big.NewInt(int64(len(dict))))
 		if err != nil {

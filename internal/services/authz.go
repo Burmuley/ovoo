@@ -1,6 +1,8 @@
 package services
 
 import (
+	"slices"
+
 	"github.com/Burmuley/ovoo/internal/entities"
 )
 
@@ -167,11 +169,7 @@ func canGetUser(cuser entities.User, user_id entities.Id) bool {
 // canCreateUser determines if the given user can create a new user account.
 // Returns true if the user is an Admin.
 func canCreateUser(cuser entities.User) bool {
-	if cuser.Type == entities.AdminUser {
-		return true
-	}
-
-	return false
+	return cuser.Type == entities.AdminUser
 }
 
 // canUpdateUser determines if cuser can update a user with id user_id.
@@ -294,34 +292,42 @@ func canGetDomains(cuser entities.User) bool {
 	return true
 }
 
+func canGetDomain(cuser entities.User, domain entities.CustomDomain) bool {
+	if cuser.Type == entities.AdminUser {
+		return true
+	}
+
+	return cuser.ID == domain.Owner.ID
+}
+
 func canCreateDomain(cuser entities.User) bool {
-	return true
+	return slices.Contains([]entities.UserType{entities.AdminUser, entities.RegularUser}, cuser.Type)
 }
 
 func canCreateGlobalDomain(cuser entities.User) bool {
 	return cuser.Type == entities.AdminUser
 }
 
-func canUpdateDomain(cuser entities.User, d entities.CustomDomain) bool {
+func canUpdateDomain(cuser entities.User, domain entities.CustomDomain) bool {
 	if cuser.Type == entities.AdminUser {
 		return true
 	}
 
-	return cuser.ID == d.Owner.ID
+	return cuser.ID == domain.Owner.ID
 }
 
-func canDeleteDomain(cuser entities.User, d entities.CustomDomain) bool {
+func canDeleteDomain(cuser entities.User, domain entities.CustomDomain) bool {
 	if cuser.Type == entities.AdminUser {
 		return true
 	}
 
-	return cuser.ID == d.Owner.ID
+	return cuser.ID == domain.Owner.ID
 }
 
-func canVerifyDomain(cuser entities.User, d entities.CustomDomain) bool {
+func canVerifyDomain(cuser entities.User, domain entities.CustomDomain) bool {
 	if cuser.Type == entities.AdminUser {
 		return true
 	}
 
-	return cuser.ID == d.Owner.ID
+	return cuser.ID == domain.Owner.ID
 }

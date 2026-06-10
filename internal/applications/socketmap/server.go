@@ -14,10 +14,9 @@ type server struct {
 	cancel   context.CancelFunc
 	listener net.Listener
 	wg       sync.WaitGroup
-	logger   *slog.Logger
 }
 
-func newServer(network, addr string, logger *slog.Logger) (*server, error) {
+func newServer(network, addr string) (*server, error) {
 	lnr, err := net.Listen(network, addr)
 	if err != nil {
 		return nil, err
@@ -47,7 +46,11 @@ func (s *server) Wait(handler Handler) {
 
 		// track active connection
 		s.wg.Add(1)
-		go handle(s.ctx, &s.wg, conn, handler)
+		go func() {
+			if err := handle(s.ctx, &s.wg, conn, handler); err != nil {
+				slog.Error("handler error", "err", err.Error())
+			}
+		}()
 	}
 }
 

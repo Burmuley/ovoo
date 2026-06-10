@@ -19,7 +19,11 @@ func (a *Application) successResponse(w http.ResponseWriter, data any, status in
 	}
 
 	w.WriteHeader(status)
-	w.Write(dataJson)
+	if _, err := w.Write(dataJson); err != nil {
+		a.logger.Error("writing response", "err", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // errorLogNResponse logs an error, creates an error response, and writes it to the HTTP response writer.
@@ -49,5 +53,9 @@ func (c *Application) errorLogNResponse(w http.ResponseWriter, operation string,
 	}
 	errBytes, _ := json.Marshal(err_response)
 	w.WriteHeader(st_code)
-	w.Write(errBytes)
+	if _, err := w.Write(errBytes); err != nil {
+		c.logger.Error("writing error response", "err", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

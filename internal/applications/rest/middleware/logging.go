@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -55,7 +54,7 @@ func Logging(logger *slog.Logger) Adapter {
 			}
 
 			logger.Log(r.Context(), logLevel, r.RequestURI,
-				"method", fmt.Sprintf("%s", r.Method),
+				"method", r.Method,
 				"status", lrw.status,
 				"size", lrw.size,
 				"duration", duration,

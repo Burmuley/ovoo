@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Burmuley/ovoo/internal/applications/ovooclient"
@@ -20,12 +21,15 @@ func startSocketmap(cfg *config.SocketMapConfig) error {
 	))
 	slog.SetDefault(logger)
 
-	network := cfg.Network
+	var network string
+	var addr string
+
+	network = strings.TrimSpace(cfg.Network)
 	if network == "" {
 		network = socketmap.DefaultSocketmapNetwork
 	}
 
-	addr := cfg.ListenAddr
+	addr = strings.TrimSpace(cfg.ListenAddr)
 	if addr == "" {
 		addr = socketmap.DefaultSocketmapAddr
 	}
@@ -35,7 +39,7 @@ func startSocketmap(cfg *config.SocketMapConfig) error {
 		return err
 	}
 
-	app, err := socketmap.New(cfg.Network, cfg.ListenAddr, logger, cli)
+	app, err := socketmap.New(cfg.Network, cfg.ListenAddr, cli)
 	if err != nil {
 		return err
 	}
