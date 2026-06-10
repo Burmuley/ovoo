@@ -1,0 +1,12 @@
+[Unit]
+Description=Ovoo Mail Aliasing Milter Service
+
+[Service]
+User=ovoo
+Group=ovoo
+ExecStart=/usr/local/bin/ovoo milter -config /usr/local/etc/ovoo/config.json
+
+[Install]
+WantedBy=multi-user.target
+Wants=ovoo-api.service
+After=ovoo-api.service

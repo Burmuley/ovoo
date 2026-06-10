@@ -23,10 +23,10 @@ smtp_tls_security_level=may
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 
 smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
-myhostname = mx1.ovoomail.domain
+myhostname = mx.ovoodomain.example
 myorigin = /etc/mailname
 relayhost =
-relay_domains = ovoomail.domain
+relay_domains = socketmap:inet:127.0.0.1:7788:relay_domain
 
 inet_interfaces = all
 mynetworks_style = host
@@ -80,10 +80,9 @@ smtp_destination_recipient_limit = 1000
 mailbox_size_limit = 0
 recipient_delimiter = +
 
-# the first milter in the list is OpenDKIM
-# after successful DKIM validation mail is passed to the Ovoo Milter
+# Enabled milters: Ovoo Milter, OpenDKIM
 smtpd_milters = inet:127.0.0.1:8891 inet:127.0.0.1:6785
-non_smtpd_milters = inet:127.0.0.1:8891 inet:127.0.0.1:6785
+non_smtpd_milters = $smtpd_milters
 milter_default_action = tempfail
 milter_protocol = 6
 

@@ -12,7 +12,10 @@ Ovoo works with two simple concepts:
 
 Setting up Ovoo is straightforward - you just need one server running the Ovoo software and an email server (MTA) to handle the actual email delivery (which can be on the same host).
 
-You can find example configurations for the Postfix email server in [examples/postfix](./docs/examples/postfix).
+You can find comprehensive setup guide for a single server in [docs/mail_setup](docs/mail_setup).
+
+Related components:
+* Chrome extension: [Ovoo Chrome Extension](https://github.com/Burmuley/ovoo-chrome-extension)
 
 ## Components
 
@@ -51,7 +54,7 @@ Ovoo ecosystem, in other words if it can find an `Alias` in the database, it wil
 
 Here is simple diagram depicting the basic workflow:
 
-<p align="left">
+<p align="center">
     <img width="70%" src="docs/assets/overview/ovoo_overview.png" alt="Ovoo overview diagram" />
 </p>
 
@@ -76,7 +79,7 @@ It listens on a configurable Unix domain socket (default: `/tmp/ovoo_socketmap.s
 - [x] Milter and integration with Postfix
 - [x] WebUI for simple access
 - [x] Multiple domain support
+- [x] [Ovoo Chrome Extension](https://github.com/Burmuley/ovoo-chrome-extension)
 - [ ] NoSQL databases support
-- [ ] Chrome browser plugin
 - [ ] Safari browser plugin
 - [ ] IaC for easy deployments to: GCP, AWS, VPS

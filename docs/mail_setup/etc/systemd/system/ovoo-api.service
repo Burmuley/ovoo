@@ -1,0 +1,10 @@
+[Unit]
+Description=Ovoo Mail Aliasing API Service
+
+[Service]
+User=ovoo
+Group=ovoo
+ExecStart=/usr/local/bin/ovoo api -config /usr/local/etc/ovoo/config.json
+
+[Install]
+WantedBy=multi-user.target
