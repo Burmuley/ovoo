@@ -13,12 +13,19 @@ body {
   @include transition(padding .15s);
 }
 
+.sidebar-header,
 .header > .container-fluid {
-  min-height: calc(4rem + 1px);
+  min-height: 4.875rem;
 }
 
+.header > .container-fluid {
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-footer,
 .footer {
-  min-height: calc(3rem + 1px);
+  min-height: 4.5rem;
 }
 
 .sidebar-header-toggle {
