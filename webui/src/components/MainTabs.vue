@@ -1,11 +1,14 @@
 <template>
 <div>
-    <CSidebar class="border-end" color-scheme="dark" position="fixed" :unfoldable="false" :visible="sidebarVisible"
-        @visible-change="sidebarVisible = $event">
-        <CSidebarHeader class="border-bottom">
-            <CSidebarBrand>
-                <span class="sidebar-brand-full fs-5 fw-semibold">Ovoo</span>
-            </CSidebarBrand>
+    <CSidebar class="border-end" color-scheme="dark" position="fixed" :unfoldable="false" :visible="true"
+        :narrow="sidebarCollapsed">
+        <CSidebarHeader class="border-bottom sidebar-header-toggle" :class="{ 'is-collapsed': sidebarCollapsed }">
+            <button class="sidebar-toggler-btn" @click="sidebarCollapsed = !sidebarCollapsed">
+                <CIcon icon="cilMenu" size="lg" />
+            </button>
+            <span class="sidebar-brand-text fw-semibold ms-2" :class="{ 'is-collapsed': sidebarCollapsed }">
+                Ovoo Privacy Gateway
+            </span>
         </CSidebarHeader>
         <CSidebarNav>
             <CNavItem>
@@ -42,7 +45,7 @@
         <CSidebarFooter class="border-top">
             <CNavLink href="/api/docs" target="_blank">
                 <CIcon icon="cilBook" class="nav-icon" />
-                API Docs
+                <span v-show="!sidebarCollapsed" class="sidebar-nav-text">API Docs</span>
             </CNavLink>
         </CSidebarFooter>
     </CSidebar>
@@ -50,10 +53,6 @@
     <div class="wrapper d-flex flex-column min-vh-100">
         <CHeader position="sticky" class="mb-4 p-0">
             <CContainer fluid class="border-bottom px-4">
-                <CHeaderToggler @click="sidebarVisible = !sidebarVisible" style="margin-inline-start: -14px">
-                    <CIcon icon="cilMenu" size="lg" />
-                </CHeaderToggler>
-                <span class="fw-semibold ms-2">Ovoo Privacy Mail Gateway</span>
                 <CHeaderNav class="ms-auto">
                     <CNavItem>
                         <UserInfo :user-info="userInfo" />
@@ -98,7 +97,7 @@ function tabFromHash() {
 
 const currentTab = ref(tabFromHash())
 const userInfo = ref({})
-const sidebarVisible = ref(true)
+const sidebarCollapsed = ref(false)
 
 watch(currentTab, (tab) => {
     if (MAIN_TABS.has(tab)) location.hash = tab
