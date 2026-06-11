@@ -1,7 +1,8 @@
 <template>
 <div>
-    <CSidebar class="border-end" color-scheme="dark" position="fixed" :unfoldable="false" :visible="true"
-        :narrow="sidebarCollapsed">
+    <CSidebar class="border-end" color-scheme="dark" position="fixed" :unfoldable="false"
+        :visible="!sidebarCollapsed || !isMobile" :narrow="sidebarCollapsed"
+        @update:visible="(v) => { if (!v) sidebarCollapsed = true }">
         <CSidebarHeader class="border-bottom sidebar-header-toggle" :class="{ 'is-collapsed': sidebarCollapsed }">
             <button class="sidebar-toggler-btn" @click="sidebarCollapsed = !sidebarCollapsed">
                 <CIcon icon="cilMenu" size="lg" />
@@ -95,12 +96,24 @@ function tabFromHash() {
     return MAIN_TABS.has(tab) ? tab : 'aliases'
 }
 
+const MOBILE_BREAKPOINT = 992
+
 const currentTab = ref(tabFromHash())
 const userInfo = ref({})
 const sidebarCollapsed = ref(false)
+const isMobile = ref(window.innerWidth < MOBILE_BREAKPOINT)
+
+const handleResize = () => {
+    isMobile.value = window.innerWidth < MOBILE_BREAKPOINT
+    if (isMobile.value) sidebarCollapsed.value = true
+}
 
 watch(currentTab, (tab) => {
     if (MAIN_TABS.has(tab)) location.hash = tab
+})
+
+watch(currentTab, () => {
+    if (isMobile.value) sidebarCollapsed.value = true
 })
 
 const load = async () => {
@@ -114,8 +127,13 @@ const onHashChange = () => {
 
 onMounted(() => {
     load()
+    handleResize()
     window.addEventListener('hashchange', onHashChange)
+    window.addEventListener('resize', handleResize)
 })
 
-onUnmounted(() => window.removeEventListener('hashchange', onHashChange))
+onUnmounted(() => {
+    window.removeEventListener('hashchange', onHashChange)
+    window.removeEventListener('resize', handleResize)
+})
 </script>

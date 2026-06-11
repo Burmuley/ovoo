@@ -83,3 +83,44 @@ body {
     background-color: var(--cui-dark-bg-subtle);
   }
 }
+
+// On narrow viewports, show sidebar folded (icons-only) instead of hiding it off-screen.
+// Mirrors the desktop sidebar-narrow styles for the mobile breakpoint.
+@media (max-width: 991.98px) {
+  // Remove the negative-margin CoreUI uses to hide the sidebar on mobile;
+  // apply the narrow width instead.
+  .sidebar.sidebar-narrow:not(.sidebar-end) {
+    margin-inline-start: 0 !important;
+    width: var(--cui-sidebar-narrow-width);
+  }
+
+  // Push main content right via CoreUI's sibling-selector mechanism
+  // (same pattern as _sidebar-narrow.scss lines 94-96).
+  // Use a literal value, not var(--cui-sidebar-narrow-width): CSS custom properties
+  // don't cascade to siblings, so .wrapper cannot resolve a variable set on .sidebar.
+  .sidebar.sidebar-narrow:not(.sidebar-end) ~ * {
+    --cui-sidebar-occupy-start: 4rem;
+  }
+
+  // Apply overflow / text-hiding rules that are normally desktop-only.
+  .sidebar.sidebar-narrow {
+    .nav-link {
+      overflow: hidden;
+    }
+
+    .nav-label,
+    .nav-title,
+    .nav-group-items,
+    .sidebar-form {
+      height: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    .d-sidebar-narrow-none {
+      display: none !important;
+    }
+  }
+}
