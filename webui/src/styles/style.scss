@@ -123,4 +123,16 @@ body {
       display: none !important;
     }
   }
+
+}
+
+// Center the footer nav-link icon when sidebar is narrow (applies at all widths).
+// CSidebarFooter is outside .sidebar-nav so it doesn't receive CoreUI's narrow
+// padding-x reduction; we override it explicitly here.
+.sidebar.sidebar-narrow .sidebar-footer .nav-link {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0;
 }
