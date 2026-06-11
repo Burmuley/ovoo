@@ -1,14 +1,14 @@
 <template>
-    <CDropdown>
-        <CDropdownToggle color="secondary" variant="outline">
-            {{ selectedText }}
-        </CDropdownToggle>
-        <CDropdownMenu>
-            <CDropdownItem v-for="item in items" :key="item.id" @click="select(item)">
-                {{ item.text }}
-            </CDropdownItem>
-        </CDropdownMenu>
-    </CDropdown>
+<CDropdown>
+    <CDropdownToggle color="secondary" variant="outline">
+        {{ selectedText }}
+    </CDropdownToggle>
+    <CDropdownMenu>
+        <CDropdownItem v-for="item in items" :key="item.id" @click="select(item)">
+            {{ item.text }}
+        </CDropdownItem>
+    </CDropdownMenu>
+</CDropdown>
 </template>
 
 <script setup>

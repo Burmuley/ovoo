@@ -1,19 +1,19 @@
 <template>
-    <div class="d-flex align-items-center gap-3">
-        <span v-if="totalItems != null" class="text-body-secondary small">{{ totalItems }} items</span>
-        <CPagination aria-label="Page navigation" class="mb-0">
-            <CPaginationItem aria-label="Previous" :disabled="page <= 1" href="#" @click.prevent="changePage(page - 1)">
-                &laquo;
-            </CPaginationItem>
-            <CPaginationItem disabled>
-                {{ page }} / {{ totalPages }}
-            </CPaginationItem>
-            <CPaginationItem aria-label="Next" :disabled="page >= totalPages" href="#"
-                @click.prevent="changePage(page + 1)">
-                &raquo;
-            </CPaginationItem>
-        </CPagination>
-    </div>
+<div class="d-flex align-items-center gap-3">
+    <span v-if="totalItems != null" class="text-body-secondary small">{{ totalItems }} items</span>
+    <CPagination aria-label="Page navigation" class="mb-0">
+        <CPaginationItem aria-label="Previous" :disabled="page <= 1" href="#" @click.prevent="changePage(page - 1)">
+            &laquo;
+        </CPaginationItem>
+        <CPaginationItem disabled>
+            {{ page }} / {{ totalPages }}
+        </CPaginationItem>
+        <CPaginationItem aria-label="Next" :disabled="page >= totalPages" href="#"
+            @click.prevent="changePage(page + 1)">
+            &raquo;
+        </CPaginationItem>
+    </CPagination>
+</div>
 </template>
 
 <script setup>

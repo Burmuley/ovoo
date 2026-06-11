@@ -1,42 +1,38 @@
 <template>
-    <CCard style="max-width: 540px;">
-        <CCardHeader class="fw-semibold">Add New API Key</CCardHeader>
-        <CCardBody>
-            <CForm @submit.prevent="createApiKey">
-                <div class="mb-3">
-                    <CFormLabel for="name">Name</CFormLabel>
-                    <CFormInput id="name" v-model="name" placeholder="My API Key" />
-                </div>
-                <div class="mb-3">
-                    <CFormLabel for="description">Description</CFormLabel>
-                    <CFormInput id="description" v-model="description" placeholder="Optional description" />
-                </div>
-                <div class="mb-3">
-                    <CFormLabel for="expire_in">Expires In (days)</CFormLabel>
-                    <CFormInput id="expire_in" v-model="expire_in" type="number" min="1" />
-                </div>
-                <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary" :disabled="submitting">
-                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
-                    </CButton>
-                    <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
-                </div>
-            </CForm>
-            <CAlert v-if="result.status === 201" color="success" class="mt-3">
-                API key created. Save it now — it will not be shown again.
-                <div class="mt-2">
-                    <code class="user-select-all d-block" style="word-break: break-all;">{{ result.json.api_token
-                        }}</code>
-                    <CButton size="sm" color="success" variant="outline" class="mt-2" @click="copyToken">
-                        {{ copied ? 'Copied!' : 'Copy' }}
-                    </CButton>
-                </div>
-            </CAlert>
-            <CAlert v-else-if="result.status" color="danger" class="mt-3">
-                <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
-            </CAlert>
-        </CCardBody>
-    </CCard>
+<CForm @submit.prevent="createApiKey">
+    <div class="mb-3">
+        <CFormLabel for="name">Name</CFormLabel>
+        <CFormInput id="name" v-model="name" placeholder="My API Key" />
+    </div>
+    <div class="mb-3">
+        <CFormLabel for="description">Description</CFormLabel>
+        <CFormInput id="description" v-model="description" placeholder="Optional description" />
+    </div>
+    <div class="mb-3">
+        <CFormLabel for="expire_in">Expires In (days)</CFormLabel>
+        <CFormInput id="expire_in" v-model="expire_in" type="number" min="1" />
+    </div>
+    <CAlert v-if="result.status === 201" color="success" class="mb-3">
+        API key created. Save it now — it will not be shown again.
+        <div class="mt-2">
+            <code class="user-select-all d-block" style="word-break: break-all;">{{ result.json.api_token }}</code>
+            <CButton size="sm" color="success" variant="outline" class="mt-2" @click="copyToken">
+                {{ copied ? 'Copied!' : 'Copy' }}
+            </CButton>
+        </div>
+    </CAlert>
+    <CAlert v-else-if="result.status" color="danger" class="mb-3">
+        <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
+    </CAlert>
+    <div class="d-flex gap-2">
+        <CButton v-if="result.status !== 201" type="submit" color="primary" :disabled="submitting">
+            <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+        </CButton>
+        <CButton color="secondary" variant="outline" @click="emit('done')">
+            {{ result.status === 201 ? 'Close' : 'Cancel' }}
+        </CButton>
+    </div>
+</CForm>
 </template>
 
 <script setup>

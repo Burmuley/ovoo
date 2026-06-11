@@ -1,10 +1,10 @@
 <template>
-    <div v-if="authChecked && !isAuthenticated">
-        <Login />
-    </div>
-    <div v-else-if="authChecked && isAuthenticated">
-        <MainTabs />
-    </div>
+<div v-if="authChecked && !isAuthenticated">
+    <Login />
+</div>
+<div v-else-if="authChecked && isAuthenticated">
+    <MainTabs />
+</div>
 </template>
 
 <script setup>

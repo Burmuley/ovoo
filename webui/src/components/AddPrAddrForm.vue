@@ -1,45 +1,36 @@
 <template>
-    <CCard style="max-width: 540px;">
-        <CCardHeader class="fw-semibold">Add New Protected Address</CCardHeader>
-        <CCardBody>
-            <CForm @submit.prevent="createPrAddr">
-                <div class="mb-3">
-                    <CFormLabel for="praddr-email">Email Address</CFormLabel>
-                    <CFormInput id="praddr-email" v-model="praddr_email" type="email" placeholder="you@example.com" />
-                </div>
-                <div class="mb-3">
-                    <CFormLabel for="comment">Comment</CFormLabel>
-                    <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
-                </div>
-                <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary" :disabled="submitting">
-                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
-                    </CButton>
-                    <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
-                </div>
-            </CForm>
-            <CAlert v-if="result.status === 201" color="success" class="mt-3">
-                Protected address <strong>{{ result.json.email }}</strong> was successfully created.
-            </CAlert>
-            <CAlert v-else-if="result.status" color="danger" class="mt-3">
-                <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
-            </CAlert>
-        </CCardBody>
-    </CCard>
+<CForm @submit.prevent="createPrAddr">
+    <div class="mb-3">
+        <CFormLabel for="praddr-email">Email Address</CFormLabel>
+        <CFormInput id="praddr-email" v-model="praddr_email" type="email" placeholder="you@example.com" />
+    </div>
+    <div class="mb-3">
+        <CFormLabel for="comment">Comment</CFormLabel>
+        <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
+    </div>
+    <CAlert v-if="errorMessage" color="danger" class="mb-3">{{ errorMessage }}</CAlert>
+    <div class="d-flex gap-2">
+        <CButton type="submit" color="primary" :disabled="submitting">
+            <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+        </CButton>
+        <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
+    </div>
+</CForm>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { apiFetch } from '../utils/api'
 
-const emit = defineEmits(['done'])
+const emit = defineEmits(['done', 'created'])
 
 const praddr_email = ref('')
 const comment = ref('')
-const result = ref({})
+const errorMessage = ref('')
 const submitting = ref(false)
 
 const createPrAddr = async () => {
+    errorMessage.value = ''
     submitting.value = true
     const res = await apiFetch('/api/v1/praddrs', {
         method: 'POST',
@@ -48,7 +39,12 @@ const createPrAddr = async () => {
             metadata: { comment: comment.value },
         }),
     })
-    result.value = { status: res.status, json: await res.json() }
+    const json = await res.json()
     submitting.value = false
+    if (res.status === 201) {
+        emit('created', json.email)
+    } else {
+        errorMessage.value = json.errors?.[0]?.detail ?? 'An unexpected error occurred'
+    }
 }
 </script>

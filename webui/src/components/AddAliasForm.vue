@@ -1,48 +1,32 @@
 <template>
-    <CCard style="max-width: 540px;">
-        <CCardHeader class="fw-semibold">Add New Alias</CCardHeader>
-        <CCardBody>
-            <CForm @submit.prevent="createAlias">
-                <div class="mb-3">
-                    <CFormLabel>Protected Address</CFormLabel>
-                    <Dropdown text="Select address" :items="praddrs" @filter-selected="praddrSelected = $event" />
-                </div>
-                <div class="mb-3">
-                    <CFormLabel>Domain</CFormLabel>
-                    <CFormSelect v-model="domainSelected" :disabled="domainItems.length === 0">
-                        <option v-if="domainItems.length === 0" value="" disabled>No domains available</option>
-                        <option v-for="d in domainItems" :key="d.id" :value="d.id">{{ d.text }}</option>
-                    </CFormSelect>
-                </div>
-                <div class="mb-3">
-                    <CFormLabel for="svcname">Service Name</CFormLabel>
-                    <CFormInput id="svcname" v-model="svcname" placeholder="e.g. GitHub" />
-                </div>
-                <div class="mb-3">
-                    <CFormLabel for="comment">Comment</CFormLabel>
-                    <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
-                </div>
-                <div class="d-flex gap-2">
-                    <CButton type="submit" color="primary" :disabled="submitting">
-                        <CSpinner v-if="submitting" size="sm" class="me-1" />Create
-                    </CButton>
-                    <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
-                </div>
-            </CForm>
-            <CAlert v-if="result.status === 201" color="success" class="mt-3">
-                Alias was successfully created.
-                <div class="mt-2 d-flex align-items-center gap-2">
-                    <code class="user-select-all">{{ result.json.email }}</code>
-                    <CButton size="sm" color="success" variant="outline" @click="copyAlias">
-                        {{ copied ? 'Copied!' : 'Copy' }}
-                    </CButton>
-                </div>
-            </CAlert>
-            <CAlert v-else-if="result.status" color="danger" class="mt-3">
-                <div v-for="error in result.json.errors" :key="error.detail">{{ error.detail }}</div>
-            </CAlert>
-        </CCardBody>
-    </CCard>
+<CForm @submit.prevent="createAlias">
+    <div class="mb-3">
+        <CFormLabel>Protected Address</CFormLabel>
+        <Dropdown text="Select address" :items="praddrs" @filter-selected="praddrSelected = $event" />
+    </div>
+    <div class="mb-3">
+        <CFormLabel>Domain</CFormLabel>
+        <CFormSelect v-model="domainSelected" :disabled="domainItems.length === 0">
+            <option v-if="domainItems.length === 0" value="" disabled>No domains available</option>
+            <option v-for="d in domainItems" :key="d.id" :value="d.id">{{ d.text }}</option>
+        </CFormSelect>
+    </div>
+    <div class="mb-3">
+        <CFormLabel for="svcname">Service Name</CFormLabel>
+        <CFormInput id="svcname" v-model="svcname" placeholder="e.g. GitHub" />
+    </div>
+    <div class="mb-3">
+        <CFormLabel for="comment">Comment</CFormLabel>
+        <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
+    </div>
+    <CAlert v-if="errorMessage" color="danger" class="mb-3">{{ errorMessage }}</CAlert>
+    <div class="d-flex gap-2">
+        <CButton type="submit" color="primary" :disabled="submitting">
+            <CSpinner v-if="submitting" size="sm" class="me-1" />Create
+        </CButton>
+        <CButton color="secondary" variant="outline" @click="emit('done')">Cancel</CButton>
+    </div>
+</CForm>
 </template>
 
 <script setup>
@@ -50,7 +34,7 @@ import { ref, onMounted } from 'vue'
 import { apiFetch } from '../utils/api'
 import Dropdown from './Dropdown.vue'
 
-const emit = defineEmits(['done'])
+const emit = defineEmits(['done', 'created'])
 
 const praddrs = ref([])
 const praddrSelected = ref('')
@@ -59,8 +43,7 @@ const domainItems = ref([])
 const domainSelected = ref('')
 const svcname = ref('')
 const comment = ref('')
-const result = ref({})
-const copied = ref(false)
+const errorMessage = ref('')
 const submitting = ref(false)
 
 const load = async () => {
@@ -82,14 +65,8 @@ const loadDomains = async () => {
     }
 }
 
-const copyAlias = async () => {
-    await navigator.clipboard.writeText(result.value.json.email)
-    copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
-}
-
 const createAlias = async () => {
-    copied.value = false
+    errorMessage.value = ''
     submitting.value = true
     const body = {
         protected_address_id: praddrSelected.value.toString(),
@@ -105,8 +82,13 @@ const createAlias = async () => {
         method: 'POST',
         body: JSON.stringify(body),
     })
-    result.value = { status: res.status, json: await res.json() }
+    const json = await res.json()
     submitting.value = false
+    if (res.status === 201) {
+        emit('created', json.email)
+    } else {
+        errorMessage.value = json.errors?.[0]?.detail ?? 'An unexpected error occurred'
+    }
 }
 
 onMounted(() => {
