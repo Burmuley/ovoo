@@ -12,7 +12,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"regexp"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,6 +23,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/services"
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/lpar/gzipped/v2"
 	"golang.org/x/oauth2"
 )
 
@@ -211,7 +214,19 @@ func (a *Application) Start() error {
 	if err != nil {
 		return err
 	}
-	mux.Handle("/", http.FileServer(http.FS(webui)))
+
+	// gzipping static contents for the webui
+	withIndexHTML := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasSuffix(r.URL.Path, "/") || len(r.URL.Path) == 0 {
+				newpath := path.Join(r.URL.Path, "index.html")
+				r.URL.Path = newpath
+			}
+			h.ServeHTTP(w, r)
+		})
+	}
+
+	mux.Handle("/", withIndexHTML(gzipped.FileServer(gzipped.FS(webui))))
 
 	handler := middleware.Adapt(mux,
 		middleware.SecurityHeaders(),
