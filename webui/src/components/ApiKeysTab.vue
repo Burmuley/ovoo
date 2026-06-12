@@ -38,7 +38,7 @@
                             <div class="text-body-secondary" style="font-size: 0.75rem;">{{
                                 key.description || ' ' }}</div>
                             <div class="text-body-secondary" style="font-size: 0.75rem;">Expires: {{
-                                moment(key.expiration).format('LLL') }}</div>
+                                formatDate(key.expiration) }}</div>
                         </CTableDataCell>
                         <CTableDataCell class="text-center text-nowrap">
                             <CBadge :color="key.active ? 'success' : 'danger'">
@@ -131,12 +131,14 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import moment from 'moment'
+
 import { apiFetch } from '../utils/api'
 import { useToast } from '../composables/useToast'
 import EmptyState from './EmptyState.vue'
 import InfoPopover from './InfoPopover.vue'
 import AddApiKeyForm from './AddApiKeyForm.vue'
+
+const formatDate = d => new Date(d).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })
 
 const { showToast } = useToast()
 

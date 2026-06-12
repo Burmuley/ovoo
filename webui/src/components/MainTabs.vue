@@ -78,16 +78,16 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { apiFetch } from '../utils/api'
-import AliasesTab from './AliasesTab.vue'
-import PrAddrsTab from './PrAddrsTab.vue'
-import UsersTab from './UsersTab.vue'
-import ApiKeysTab from './ApiKeysTab.vue'
-import UserInfo from './UserInfo.vue'
-import AppFooter from './AppFooter.vue'
-import DomainsTab from './DomainsTab.vue'
-import ToastContainer from './ToastContainer.vue'
+const AliasesTab     = defineAsyncComponent(() => import('./AliasesTab.vue'))
+const PrAddrsTab     = defineAsyncComponent(() => import('./PrAddrsTab.vue'))
+const UsersTab       = defineAsyncComponent(() => import('./UsersTab.vue'))
+const ApiKeysTab     = defineAsyncComponent(() => import('./ApiKeysTab.vue'))
+const UserInfo       = defineAsyncComponent(() => import('./UserInfo.vue'))
+const AppFooter      = defineAsyncComponent(() => import('./AppFooter.vue'))
+const DomainsTab     = defineAsyncComponent(() => import('./DomainsTab.vue'))
+const ToastContainer = defineAsyncComponent(() => import('./ToastContainer.vue'))
 
 const MAIN_TABS = new Set(['aliases', 'praddrs', 'apikeys', 'users', 'domains'])
 

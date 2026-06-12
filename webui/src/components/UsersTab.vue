@@ -174,7 +174,7 @@
                 </tr>
                 <tr>
                     <th>Locked Until</th>
-                    <td>{{ selectedUser?.lockout_until ? moment(selectedUser.lockout_until).format('LLL') : '—' }}
+                    <td>{{ selectedUser?.lockout_until ? formatDate(selectedUser.lockout_until) : '—' }}
                     </td>
                 </tr>
             </tbody>
@@ -249,13 +249,15 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import moment from 'moment'
+
 import { apiFetch } from '../utils/api'
 import { useToast } from '../composables/useToast'
 import Paginator from './Paginator.vue'
 import EmptyState from './EmptyState.vue'
 import InfoPopover from './InfoPopover.vue'
 import AddUserForm from './AddUserForm.vue'
+
+const formatDate = d => new Date(d).toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })
 
 const props = defineProps({ userInfo: { type: Object, default: () => ({}) } })
 const { showToast } = useToast()
