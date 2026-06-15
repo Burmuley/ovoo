@@ -97,10 +97,6 @@ func (d *DomainsService) Create(ctx context.Context, cuser entities.User, cmd Do
 		return entities.CustomDomain{}, fmt.Errorf("%w: name field cannot be empty", entities.ErrValidation)
 	}
 
-	if domain, err := d.repof.Domain.GetByName(ctx, cmd.Name); err == nil && domain.ID.Validate() == nil {
-		return entities.CustomDomain{}, fmt.Errorf("%w: domain already exists", entities.ErrDuplicateEntry)
-	}
-
 	now := time.Now()
 	vd, err := fillVerificationData(
 		entities.DomainVerificationData{
@@ -126,6 +122,10 @@ func (d *DomainsService) Create(ctx context.Context, cuser entities.User, cmd Do
 
 	if err := domain.Validate(); err != nil {
 		return entities.CustomDomain{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+	}
+
+	if domain, err := d.repof.Domain.GetByName(ctx, cmd.Name); err == nil && domain.ID.Validate() == nil {
+		return entities.CustomDomain{}, fmt.Errorf("%w: domain already exists", entities.ErrDuplicateEntry)
 	}
 
 	if err := d.repof.Domain.Create(ctx, domain); err != nil {

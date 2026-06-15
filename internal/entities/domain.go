@@ -2,6 +2,7 @@ package entities
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -12,6 +13,8 @@ const (
 	CNAMERecord DNSRecordType = "cname"
 	TXTRecord   DNSRecordType = "txt"
 )
+
+var fqdnRe = regexp.MustCompile(`(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]`)
 
 type DomainVerificationData struct {
 	RecordType             DNSRecordType
@@ -45,6 +48,10 @@ func (cd *CustomDomain) Validate() error {
 
 	if err := cd.Owner.Validate(); err != nil {
 		return fmt.Errorf("validating domain owner: %w", err)
+	}
+
+	if !fqdnRe.MatchString(cd.Name) {
+		return fmt.Errorf("validating domain name: must be FQDN")
 	}
 
 	return nil
