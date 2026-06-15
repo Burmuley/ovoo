@@ -68,7 +68,7 @@
                             </CBadge>
                         </CTableDataCell>
                         <CTableDataCell class="text-end text-nowrap">
-                            <CButton v-if="domain.type === 'personal' && !domain.verified" v-c-tooltip="'Verify'"
+                            <CButton v-if="domain.type === 'personal'" v-c-tooltip="'Verify'"
                                 color="primary" size="sm" variant="outline" class="me-1" @click="openVerify(domain)">
                                 <CIcon icon="cilShieldAlt" />
                             </CButton>

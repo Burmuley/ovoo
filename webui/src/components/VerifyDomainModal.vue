@@ -4,6 +4,9 @@
         <CModalTitle>Verify Domain — {{ domain?.name }}</CModalTitle>
     </CModalHeader>
     <CModalBody>
+        <CAlert v-if="domain?.verified && !verifyResult" color="success" class="mb-3">
+            This domain is already verified. DNS records are shown below for reference.
+        </CAlert>
         <template v-if="domain?.verification_data">
             <p>Make sure the following DNS record is published, then click <strong>Verify</strong>.</p>
             <div class="p-3 rounded mb-3"
