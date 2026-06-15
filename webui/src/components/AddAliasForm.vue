@@ -1,7 +1,7 @@
 <template>
 <CForm @submit.prevent="createAlias">
     <div class="mb-3">
-        <CFormLabel>Protected Address</CFormLabel>
+        <CFormLabel>Protected Address </CFormLabel>
         <Dropdown text="Select address" :items="praddrs" @filter-selected="praddrSelected = $event" />
     </div>
     <div class="mb-3">
@@ -53,7 +53,7 @@ const load = async () => {
 }
 
 const loadDomains = async () => {
-    const query_params = new URLSearchParams({ include_global: 'true' })
+    const query_params = new URLSearchParams({ include_global: 'true', verified: 'true' })
     const res = await apiFetch('/api/v1/domains?' + query_params)
     const data = await res.json()
     domains.value = data.domains
