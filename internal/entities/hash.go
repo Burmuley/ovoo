@@ -13,7 +13,11 @@ type Hash string
 // NewHash creates a new Hash from two input strings.
 // It concatenates the inputs with a '+' separator and generates a SHA-512/256 hash.
 func NewHash(s1, s2 string) Hash {
-	hash := sha512.Sum512_256([]byte(strings.Join([]string{s1, s2}, "+")))
+	return SimpleHash(strings.Join([]string{s1, s2}, "+"))
+}
+
+func SimpleHash(s string) Hash {
+	hash := sha512.Sum512_256([]byte(s))
 	return Hash(fmt.Sprintf("%x", hash))
 }
 

@@ -22,7 +22,7 @@ func TestAddress_Validate(t *testing.T) {
 				Type: AliasAddress,
 				ID:   NewId(),
 				Email: func() Email {
-					email, _ := GenAliasEmail("domain.local", testDict)
+					email, _ := GenAliasEmail("domain.local", testDict, nil)
 					return email
 				}(),
 				ForwardAddress: &Address{ID: NewId(), Email: Email("some@protected.email"), Type: ProtectedAddress, Owner: User{ID: NewId()}},
@@ -38,7 +38,7 @@ func TestAddress_Validate(t *testing.T) {
 				Type: AliasAddress,
 				ID:   NewId(),
 				Email: func() Email {
-					email, _ := GenAliasEmail("domain.local", testDict)
+					email, _ := GenAliasEmail("domain.local", testDict, nil)
 					return email
 				}(),
 				ForwardAddress: &Address{ID: NewId(), Email: Email("some@protected.email"), Type: ProtectedAddress},
@@ -51,7 +51,7 @@ func TestAddress_Validate(t *testing.T) {
 				Type: ProtectedAddress,
 				ID:   NewId(),
 				Email: func() Email {
-					email, _ := GenAliasEmail("domain.local", testDict)
+					email, _ := GenAliasEmail("domain.local", testDict, nil)
 					return email
 				}(),
 				Owner: User{
@@ -66,7 +66,7 @@ func TestAddress_Validate(t *testing.T) {
 				Type: ProtectedAddress,
 				ID:   NewId(),
 				Email: func() Email {
-					email, _ := GenAliasEmail("domain.local", testDict)
+					email, _ := GenAliasEmail("domain.local", testDict, nil)
 					return email
 				}(),
 				ForwardAddress: &Address{ID: NewId(), Email: Email("some@protected.email"), Type: ProtectedAddress},
@@ -107,7 +107,7 @@ func TestAddress_Validate(t *testing.T) {
 				Type: AliasAddress,
 				ID:   "some invalid ID",
 				Email: func() Email {
-					email, _ := GenAliasEmail("domain.local", testDict)
+					email, _ := GenAliasEmail("domain.local", testDict, nil)
 					return email
 				}(),
 				ForwardAddress: &Address{ID: NewId(), Email: Email("some@protected.email"), Type: ProtectedAddress},
@@ -136,7 +136,7 @@ func TestAddress_Validate(t *testing.T) {
 				Type: ReplyAliasAddress,
 				ID:   NewId(),
 				Email: func() Email {
-					email, _ := GenAliasEmail("domain.local", testDict)
+					email, _ := GenAliasEmail("domain.local", testDict, nil)
 					return email
 				}(),
 				ForwardAddress: &Address{ID: NewId(), Email: Email("some#invalid_protected.email"), Type: ExternalAddress},

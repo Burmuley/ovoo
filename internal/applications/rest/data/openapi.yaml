@@ -1184,6 +1184,9 @@ components:
                 description: "Target domain ID for alias generation"
               metadata:
                 $ref: "#/components/schemas/addressMetadata"
+              custom_prefix:
+                type: string
+                description: "Custom prefix to be used when generating new alias"
             required:
               - protected_address_id
               - metadata

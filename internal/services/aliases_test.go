@@ -853,6 +853,45 @@ func TestAliasesService_Update_SetActive_Admin(t *testing.T) {
 	addressRepo.AssertExpectations(t)
 }
 
+func TestAliasesService_Create_WithCustomPrefix(t *testing.T) {
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
+	ctx := context.Background()
+
+	userId := entities.NewId()
+	user := entities.User{
+		ID:    userId,
+		Type:  entities.RegularUser,
+		Login: "user@test.com",
+	}
+
+	prAddrId := entities.NewId()
+	protectedAddr := entities.Address{
+		ID:     prAddrId,
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  user,
+		Active: true,
+	}
+
+	prefix := "mycustomprefix"
+	cmd := AliasCreateCmd{
+		ProtectedAddressId: string(prAddrId),
+		DomainId:           entities.NewId(),
+		Prefix:             &prefix,
+	}
+
+	addressRepo.On("GetById", ctx, prAddrId).Return(protectedAddr, nil)
+	addressRepo.On("Create", ctx, mock.AnythingOfType("entities.Address")).Return(nil)
+
+	alias, err := service.Create(ctx, user, cmd)
+
+	assert.NoError(t, err)
+	assert.Equal(t, entities.AliasAddress, alias.Type)
+	assert.Contains(t, alias.Email.String(), prefix)
+	addressRepo.AssertExpectations(t)
+}
+
 func TestAliasesService_Update_SetActive_NotAuthorized(t *testing.T) {
 	service, repof := setupAliasesService(t)
 	addressRepo := repof.Address.(*MockAddressRepo)

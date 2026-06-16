@@ -383,6 +383,9 @@ type UpdateUserResponse = UserData
 
 // CreateAliasRequest defines model for createAliasRequest.
 type CreateAliasRequest struct {
+	// CustomPrefix Custom prefix to be used when generating new alias
+	CustomPrefix *string `json:"custom_prefix,omitempty"`
+
 	// DomainId Target domain ID for alias generation
 	DomainId           string          `json:"domain_id"`
 	Metadata           AddressMetadata `json:"metadata"`
@@ -490,6 +493,9 @@ type GetAliasesParams struct {
 
 // CreateAliasJSONBody defines parameters for CreateAlias.
 type CreateAliasJSONBody struct {
+	// CustomPrefix Custom prefix to be used when generating new alias
+	CustomPrefix *string `json:"custom_prefix,omitempty"`
+
 	// DomainId Target domain ID for alias generation
 	DomainId           string          `json:"domain_id"`
 	Metadata           AddressMetadata `json:"metadata"`

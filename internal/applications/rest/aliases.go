@@ -90,6 +90,7 @@ func (a *Application) CreateAlias(w http.ResponseWriter, r *http.Request) {
 		},
 		ProtectedAddressId: req.ProtectedAddressId,
 		DomainId:           entities.Id(req.DomainId),
+		Prefix:             req.CustomPrefix,
 	})
 
 	if err != nil {

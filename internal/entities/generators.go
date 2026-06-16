@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+const (
+	aliasPrefixMinLength = 10
+)
+
+var customPrefixReg = regexp.MustCompile(fmt.Sprintf(`^[a-z0-9\-]{%d,}$`, aliasPrefixMinLength))
+
 // GenAliasEmail generates an alias email address using the provided domain and dictionary.
 // Parameters:
 //   - domain: the domain part of the email address (e.g., "example.com")
@@ -16,7 +22,7 @@ import (
 // Returns:
 //   - Email: the generated alias email address
 //   - error: error if validation fails or random number generation fails
-func GenAliasEmail(domain string, dict []string) (Email, error) {
+func GenAliasEmail(domain string, dict []string, prefix *string) (Email, error) {
 	if len(domain) == 0 {
 		return "", fmt.Errorf("%w: domain can not be empty", ErrValidation)
 	}
@@ -24,17 +30,29 @@ func GenAliasEmail(domain string, dict []string) (Email, error) {
 		return "", fmt.Errorf("%w: dictionary can not be empty", ErrValidation)
 	}
 
-	words := make([]string, 2)
-	for i := range words {
-		r, err := rand.Int(rand.Reader, big.NewInt(int64(len(dict))))
-		if err != nil {
-			return "", fmt.Errorf("%w: making new random number: %w", ErrValidation, err)
+	var email string
+
+	if prefix == nil {
+		words := make([]string, 2)
+		for i := range words {
+			r, err := rand.Int(rand.Reader, big.NewInt(int64(len(dict))))
+			if err != nil {
+				return "", fmt.Errorf("%w: making new random number: %w", ErrValidation, err)
+			}
+			words[i] = dict[r.Uint64()]
 		}
-		words[i] = dict[r.Uint64()]
+
+		email = strings.Join(words, "-")
+	} else {
+		if !customPrefixReg.MatchString(*prefix) {
+			return "", fmt.Errorf(
+				"%w: custom prefix must be at least %d symbols from the following range: a-z, 0-9, dash", ErrValidation, aliasPrefixMinLength,
+			)
+		}
+		email = *prefix
 	}
 
-	email := strings.Join(words, "-")
-	hash := NewHash(words[0], words[1])
+	hash := SimpleHash(email)
 	email = fmt.Sprintf("%s-%s", email, hash.String()[0:3])
 	email = fmt.Sprintf("%s@%s", email, domain)
 	return Email(email), nil

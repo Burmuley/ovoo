@@ -18,6 +18,7 @@ type AliasCreateCmd struct {
 		Comment     *string
 		ServiceName *string
 	}
+	Prefix *string
 }
 
 type AliasUpdateCmd struct {
@@ -53,8 +54,6 @@ func (als *AliasesService) Create(
 	ctx context.Context,
 	cuser entities.User,
 	cmd AliasCreateCmd,
-	// protAddrId entities.Id,
-	// metadata entities.AddressMetadata,
 ) (entities.Address, error) {
 	if !canCreateAlias(cuser) {
 		return entities.Address{}, entities.ErrNotAuthorized
@@ -86,7 +85,7 @@ func (als *AliasesService) Create(
 		return entities.Address{}, fmt.Errorf("%w: unknown or inactive domain %q", entities.ErrValidation, cmd.DomainId)
 	}
 
-	aliasEmail, err := entities.GenAliasEmail(domain.Name, als.wordsDictionary)
+	aliasEmail, err := entities.GenAliasEmail(domain.Name, als.wordsDictionary, cmd.Prefix)
 	if err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
 	}

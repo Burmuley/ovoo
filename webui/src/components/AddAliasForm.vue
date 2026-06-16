@@ -19,6 +19,10 @@
         <CFormLabel for="comment">Comment</CFormLabel>
         <CFormInput id="comment" v-model="comment" placeholder="Optional note" />
     </div>
+    <div class="mb-3">
+        <CFormLabel for="customPrefix">Custom Prefix</CFormLabel>
+        <CFormInput id="customPrefix" v-model="customPrefix" placeholder="Optional, min. 7 characters" />
+    </div>
     <CAlert v-if="errorMessage" color="danger" class="mb-3">{{ errorMessage }}</CAlert>
     <div class="d-flex gap-2">
         <CButton type="submit" color="primary" :disabled="submitting">
@@ -43,6 +47,7 @@ const domainItems = ref([])
 const domainSelected = ref('')
 const svcname = ref('')
 const comment = ref('')
+const customPrefix = ref('')
 const errorMessage = ref('')
 const submitting = ref(false)
 
@@ -77,6 +82,9 @@ const createAlias = async () => {
     }
     if (domainSelected.value) {
         body.domain_id = domainSelected.value
+    }
+    if (customPrefix.value) {
+        body.custom_prefix = customPrefix.value
     }
     const res = await apiFetch('/api/v1/aliases', {
         method: 'POST',

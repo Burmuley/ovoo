@@ -7,10 +7,13 @@ import (
 
 var testDict = []string{"soooome", "words", "toooooo", "teeeeest", "theeeeee", "function", "oopsie"}
 
+func strPtr(s string) *string { return &s }
+
 func TestGenAliasEmail(t *testing.T) {
 	type args struct {
 		domain    string
 		wordsDict []string
+		prefix    *string
 	}
 
 	tests := []struct {
@@ -55,11 +58,31 @@ func TestGenAliasEmail(t *testing.T) {
 			wantErr: true,
 			want:    "",
 		},
+		{
+			name: "Valid email with custom prefix",
+			args: args{
+				wordsDict: testDict,
+				domain:    "aliases-test.local",
+				prefix:    strPtr("myprefix"),
+			},
+			wantErr: false,
+			want:    `myprefix-\w{3}@aliases-test.local`,
+		},
+		{
+			name: "Custom prefix too short",
+			args: args{
+				wordsDict: testDict,
+				domain:    "aliases-test.local",
+				prefix:    strPtr("short"),
+			},
+			wantErr: true,
+			want:    "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenAliasEmail(tt.args.domain, tt.args.wordsDict)
+			got, err := GenAliasEmail(tt.args.domain, tt.args.wordsDict, tt.args.prefix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenAliasEmail() error = %v, wantErr %v", err, tt.wantErr)
 				return
