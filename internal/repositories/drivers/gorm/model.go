@@ -53,6 +53,8 @@ type Address struct {
 	UpdatedByID      string          `gorm:"column:updated_by_id"`
 	UpdatedBy        User            `gorm:"foreignKey:UpdatedByID"`
 	Active           bool            `gorm:"column:active;default:true"`
+	Verified         bool            `gorm:"column:verified;default:false"`
+	VerifiedAt       time.Time       `gorm:"column:verified_at"`
 }
 
 // TableName specifies the table name for Address

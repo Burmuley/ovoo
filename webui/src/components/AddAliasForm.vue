@@ -54,7 +54,9 @@ const submitting = ref(false)
 const load = async () => {
     const res = await apiFetch('/api/v1/praddrs')
     const data = await res.json()
-    praddrs.value = data.protected_addresses.map(a => ({ id: a.id, text: a.email }))
+    praddrs.value = data.protected_addresses
+        .filter(a => a.active && a.verified)
+        .map(a => ({ id: a.id, text: a.email }))
 }
 
 const loadDomains = async () => {

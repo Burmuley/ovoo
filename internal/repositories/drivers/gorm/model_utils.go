@@ -94,6 +94,8 @@ func addressFromEntity(e entities.Address) Address {
 		UpdatedBy:   userFromEntity(e.UpdatedBy),
 		UpdatedByID: e.UpdatedBy.ID.String(),
 		Active:      e.Active,
+		Verified:    e.Verified,
+		VerifiedAt:  e.VerifiedAt,
 	}
 	if e.ForwardAddress != nil {
 		fa := addressFromEntity(*e.ForwardAddress)
@@ -126,10 +128,12 @@ func addressToEntity(a Address) entities.Address {
 			Comment:     a.Metadata.Comment,
 			ServiceName: a.Metadata.ServiceName,
 		},
-		UpdatedAt: a.UpdatedAt,
-		CreatedAt: a.CreatedAt,
-		UpdatedBy: userToEntity(a.UpdatedBy),
-		Active:    a.Active,
+		UpdatedAt:  a.UpdatedAt,
+		CreatedAt:  a.CreatedAt,
+		UpdatedBy:  userToEntity(a.UpdatedBy),
+		Active:     a.Active,
+		Verified:   a.Verified,
+		VerifiedAt: a.VerifiedAt,
 	}
 
 	if a.ForwardAddress != nil {
