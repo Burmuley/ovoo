@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"log/slog"
+	"net/mail"
 	"slices"
 	"strings"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
+	gomail "github.com/wneessen/go-mail"
 )
 
 type PrAddrCreateCmd struct {
@@ -38,9 +40,10 @@ type PrAddrUpdateCmd struct {
 // ProtectedAddrService handles operations related to protected addresses
 type ProtectedAddrService struct {
 	repof                *factory.RepoFactory
-	smtpClient           *SMTPClient
+	smtpClient           *gomail.Client
 	praddrVerifyTmpl     string
 	praddrVerifyHostname string
+	praddrVerifyFrom     mail.Address
 	logger               *slog.Logger
 	verifyEmailWG        sync.WaitGroup
 }
@@ -51,7 +54,7 @@ func NewProtectedAddrService(repoFactory *factory.RepoFactory, template string, 
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
-	smtpClient, err := NewSMTPClient(notifyCfg)
+	smtpClient, err := setupSMTPClient(notifyCfg)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", entities.ErrConfiguration, err)
 	}
@@ -61,12 +64,31 @@ func NewProtectedAddrService(repoFactory *factory.RepoFactory, template string, 
 	}
 
 	return &ProtectedAddrService{
-		repof: repoFactory, smtpClient: smtpClient,
+		repof:                repoFactory,
+		smtpClient:           smtpClient,
 		praddrVerifyTmpl:     template,
 		praddrVerifyHostname: notifyCfg.OvooHostname,
+		praddrVerifyFrom:     mail.Address{Name: notifyCfg.FromName, Address: notifyCfg.FromAddress},
 		logger:               logger,
 		verifyEmailWG:        sync.WaitGroup{},
 	}, nil
+}
+
+func setupSMTPClient(cfg config.MailNotificationConfig) (*gomail.Client, error) {
+	smtpOptions := []gomail.Option{
+		gomail.WithPort(cfg.SMTPPort),
+		gomail.WithTLSPolicy(gomail.TLSOpportunistic),
+	}
+
+	if strings.TrimSpace(cfg.SMTPUsername) != "" &&
+		strings.TrimSpace(cfg.SMTPPassword) != "" {
+		smtpOptions = append(smtpOptions,
+			gomail.WithUsername(cfg.SMTPUsername),
+			gomail.WithPassword(cfg.SMTPPassword),
+		)
+	}
+
+	return gomail.NewClient(cfg.SMTPHost, smtpOptions...)
 }
 
 // Create creates a new protected address
@@ -318,13 +340,19 @@ func (prs *ProtectedAddrService) SendVerifyEmail(ctx context.Context, cuser enti
 		return err
 	}
 
-	msg := new(bytes.Buffer)
-	if err := tmpl.Execute(msg, struct{ VerifyLink string }{VerifyLink: verifyLink}); err != nil {
+	msgRndr := new(bytes.Buffer)
+	if err := tmpl.Execute(msgRndr, struct{ VerifyLink string }{VerifyLink: verifyLink}); err != nil {
 		return err
 	}
 
+	msg := gomail.NewMsg()
+	msg.Subject("Verify email address ownership")
+	msg.SetBodyString(gomail.TypeTextPlain, msgRndr.String())
+	msg.From(prs.praddrVerifyFrom.String())
+	msg.To(prAddr.Email.String())
+
 	// send verification email to the Protected Address
-	if err := prs.smtpClient.SendMessage(string(prAddr.Email), msg.Bytes()); err != nil {
+	if err := prs.smtpClient.DialAndSend(msg); err != nil {
 		return err
 	}
 
