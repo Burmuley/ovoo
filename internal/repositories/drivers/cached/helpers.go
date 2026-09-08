@@ -148,3 +148,13 @@ func customDomainListPrefix() string { return "domain:list" }
 func customDomainKeyList(filter entities.CustomDomainFilter) string {
 	return filterKey(customDomainListPrefix(), filter)
 }
+
+// --- AddressVerifyToken key builders ---
+
+func addrVerifyTokenIdKey(id entities.Id) string {
+	return "addr_verify:id:" + id.String()
+}
+
+func addrVerifyTokenAddressKey(id entities.Id) string {
+	return "addr_verify:addr_id:" + id.String()
+}

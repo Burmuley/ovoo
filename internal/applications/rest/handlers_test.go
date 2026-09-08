@@ -195,7 +195,7 @@ func buildTestApplication(t *testing.T, addrRepo *mockAddressRepo) *Application 
 
 	aliasesSvc, err := services.NewAliasesService([]string{"alpha", "bravo", "charlie"}, repof)
 	require.NoError(t, err)
-	prAddrsSvc, err := services.NewProtectedAddrService(repof)
+	prAddrsSvc, err := services.NewProtectedAddrService(repof, "", testSMTPCfg(), nil)
 	require.NoError(t, err)
 	usersSvc, err := services.NewUsersService(repof)
 	require.NoError(t, err)

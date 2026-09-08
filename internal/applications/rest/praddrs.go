@@ -149,3 +149,44 @@ func (a *Application) DeletePrAddr(w http.ResponseWriter, r *http.Request) {
 
 	a.successResponse(w, "", http.StatusNoContent)
 }
+
+func (a *Application) SendNewPrAddrVerification(w http.ResponseWriter, r *http.Request) {
+	user, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "sending protected address verification: identifying user", err)
+		return
+	}
+
+	prAddrId := entities.Id(r.PathValue("id"))
+	if err := a.svcGw.PrAddrs.SendVerifyEmail(r.Context(), user, prAddrId); err != nil {
+		a.errorLogNResponse(w, "sending praddr verification email", err)
+		return
+	}
+
+	a.successResponse(w, "", http.StatusNoContent)
+}
+
+func (a *Application) ValidatePrAddrVerificationToken(w http.ResponseWriter, r *http.Request) {
+	user, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "validating protected address verification token: identifying user", err)
+		return
+	}
+
+	prAddrId := entities.Id(r.PathValue("id"))
+
+	req := ValidatePrAddrTokenRequest{}
+	if err := readBody(r.Body, &req); err != nil {
+		a.errorLogNResponse(w, "parsing protected address token verify request", err)
+		return
+	}
+
+	praddr, err := a.svcGw.PrAddrs.ValidateVerifyToken(r.Context(), user, prAddrId, req.Token)
+	if err != nil {
+		a.errorLogNResponse(w, "validating protected address token", err)
+		return
+	}
+
+	resp := VerifyProtectedAddressResponse(addressTPrAddrData(praddr))
+	a.successResponse(w, resp, http.StatusCreated)
+}

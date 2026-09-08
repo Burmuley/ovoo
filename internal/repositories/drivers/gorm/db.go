@@ -46,7 +46,9 @@ func NewDatabase(config config.ConfigDB) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err := gdb.AutoMigrate(&User{}, &ApiToken{}, &Address{}, &Chain{}, &CustomDomain{}); err != nil {
+	if err := gdb.AutoMigrate(
+		&User{}, &ApiToken{}, &Address{}, &Chain{}, &CustomDomain{}, &AddressVerifyToken{},
+	); err != nil {
 		return nil, err
 	}
 

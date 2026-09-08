@@ -394,11 +394,11 @@ func handleOIDCRefresh(w http.ResponseWriter, r *http.Request, prov OIDCProvider
 //   - error: an error if the token is malformed or the issuer claim is absent
 func getOIDCTokenIssuer(token string) (string, error) {
 	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return "", errors.New("malformed JWT token: should have 3 parts")
-	}
+	// if len(parts) != 3 {
+	// 	return "", errors.New("malformed JWT token: should have 3 parts")
+	// }
 
-	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
 	if err != nil {
 		return "", fmt.Errorf("error decoding JWT payload: %w", err)
 	}

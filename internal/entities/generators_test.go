@@ -7,8 +7,6 @@ import (
 
 var testDict = []string{"soooome", "words", "toooooo", "teeeeest", "theeeeee", "function", "oopsie"}
 
-func strPtr(s string) *string { return &s }
-
 func TestGenAliasEmail(t *testing.T) {
 	type args struct {
 		domain    string
@@ -63,17 +61,17 @@ func TestGenAliasEmail(t *testing.T) {
 			args: args{
 				wordsDict: testDict,
 				domain:    "aliases-test.local",
-				prefix:    strPtr("myprefix"),
+				prefix:    new("my-valid-prefix"),
 			},
 			wantErr: false,
-			want:    `myprefix-\w{3}@aliases-test.local`,
+			want:    `my-valid-prefix-\w{3}@aliases-test.local`,
 		},
 		{
 			name: "Custom prefix too short",
 			args: args{
 				wordsDict: testDict,
 				domain:    "aliases-test.local",
-				prefix:    strPtr("short"),
+				prefix:    new("short"),
 			},
 			wantErr: true,
 			want:    "",

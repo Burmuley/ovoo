@@ -11,13 +11,18 @@ import (
 	"github.com/Burmuley/ovoo/internal/services"
 )
 
-func makeServices(repoFactory *factory.RepoFactory, dict []string) (*services.ServiceGateway, error) {
+func makeServices(repoFactory *factory.RepoFactory, dict []string, smtpCfg config.MailNotificationConfig, tmplCfg config.NotificationTemplates, logger *slog.Logger) (*services.ServiceGateway, error) {
 	aliases, err := services.NewAliasesService(dict, repoFactory)
 	if err != nil {
 		return nil, fmt.Errorf("initializing aliases service: %w", err)
 	}
 
-	prAddrs, err := services.NewProtectedAddrService(repoFactory)
+	template, err := loadPrAddrNotifyTmpl(tmplCfg.ProtectedAddrVerifyPath)
+	if err != nil {
+		return nil, fmt.Errorf("reading template file: %w", err)
+	}
+
+	prAddrs, err := services.NewProtectedAddrService(repoFactory, template, smtpCfg, logger)
 	if err != nil {
 		return nil, fmt.Errorf("initializing protected addresses service: %w", err)
 	}
@@ -74,10 +79,12 @@ func startApi(cfg *config.APIConfig) error {
 	}
 
 	// initialize services
-	svcGw, err := makeServices(repos, dict)
+	svcGw, err := makeServices(repos, dict, cfg.SMTP, cfg.SMTP.NotificationTemplates, logger)
 	if err != nil {
 		return fmt.Errorf("error initializing services gateway: %w", err)
 	}
+
+	// read templates
 
 	// initialize REST controller
 	listen_addr := cfg.ListenAddr

@@ -38,5 +38,9 @@ func newGormRepoFactory(config config.ConfigDB) (*RepoFactory, error) {
 		return nil, err
 	}
 
+	if repoFactory.AddressVerify, err = gorm.NewAddressVerifyGORMRepo(db); err != nil {
+		return nil, err
+	}
+
 	return repoFactory, nil
 }

@@ -42,6 +42,8 @@ type Address struct {
 	UpdatedAt      time.Time
 	UpdatedBy      User
 	Active         bool
+	Verified       bool
+	VerifiedAt     time.Time
 }
 
 // Validate checks if the Address object is valid according to the defined rules.

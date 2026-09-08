@@ -16,11 +16,12 @@ import (
 
 // RepoFactory represents a collection of repositories for different entities.
 type RepoFactory struct {
-	Users     repositories.UsersReadWriter
-	Address   repositories.AddressReadWriter
-	ApiTokens repositories.TokensReadWriter
-	Chain     repositories.ChainReadWriter
-	Domain    repositories.CustomDomainsReadWriter
+	Users         repositories.UsersReadWriter
+	Address       repositories.AddressReadWriter
+	ApiTokens     repositories.TokensReadWriter
+	Chain         repositories.ChainReadWriter
+	Domain        repositories.CustomDomainsReadWriter
+	AddressVerify repositories.AddressVerifyReadWriter
 }
 
 // New creates a new RepoFactory instance based on the provided repository type and configuration.

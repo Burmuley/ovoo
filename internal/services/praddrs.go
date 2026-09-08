@@ -1,12 +1,19 @@
 package services
 
 import (
+	"bytes"
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
+	"html/template"
+	"log/slog"
 	"slices"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 )
@@ -30,16 +37,36 @@ type PrAddrUpdateCmd struct {
 
 // ProtectedAddrService handles operations related to protected addresses
 type ProtectedAddrService struct {
-	repof *factory.RepoFactory
+	repof                *factory.RepoFactory
+	smtpClient           *SMTPClient
+	praddrVerifyTmpl     string
+	praddrVerifyHostname string
+	logger               *slog.Logger
+	verifyEmailWG        sync.WaitGroup
 }
 
-// NewProtectedAddrService creates a new ProtectedAddrUsecase
-func NewProtectedAddrService(repoFactory *factory.RepoFactory) (*ProtectedAddrService, error) {
+// NewProtectedAddrService creates a new ProtectedAddrService
+func NewProtectedAddrService(repoFactory *factory.RepoFactory, template string, notifyCfg config.MailNotificationConfig, logger *slog.Logger) (*ProtectedAddrService, error) {
 	if repoFactory == nil {
 		return nil, fmt.Errorf("%w: repository fabric should be defined", entities.ErrConfiguration)
 	}
 
-	return &ProtectedAddrService{repof: repoFactory}, nil
+	smtpClient, err := NewSMTPClient(notifyCfg)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", entities.ErrConfiguration, err)
+	}
+
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	return &ProtectedAddrService{
+		repof: repoFactory, smtpClient: smtpClient,
+		praddrVerifyTmpl:     template,
+		praddrVerifyHostname: notifyCfg.OvooHostname,
+		logger:               logger,
+		verifyEmailWG:        sync.WaitGroup{},
+	}, nil
 }
 
 // Create creates a new protected address
@@ -87,7 +114,40 @@ func (prs *ProtectedAddrService) Create(ctx context.Context, cuser entities.User
 		return entities.Address{}, err
 	}
 
+	// send the verification email asynchronously so creation latency isn't tied to
+	// the SMTP round trip, and a slow/failing send can't undo an already-persisted address
+	prs.verifyEmailWG.Go(func() {
+		defer func() {
+			if r := recover(); r != nil {
+				prs.logger.Error("panic while sending protected address verification email", "praddr_id", praddr.ID, "panic", r)
+			}
+		}()
+
+		sendCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		defer cancel()
+
+		if err := prs.SendVerifyEmail(sendCtx, cuser, praddr.ID); err != nil {
+			prs.logger.Error("sending protected address verification email", "praddr_id", praddr.ID, "email", string(praddr.Email), "err", err)
+		}
+	})
+
 	return praddr, nil
+}
+
+// ShutdownVerifyEmailWG waits for any in-flight verification emails to finish sending, up to ctx's deadline.
+func (prs *ProtectedAddrService) ShutdownVerifyEmailWG(ctx context.Context) {
+	done := make(chan struct{})
+	go func() {
+		prs.verifyEmailWG.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		prs.logger.Info("all verification emails handlers has been finished")
+	case <-ctx.Done():
+		prs.logger.Warn("shutdown timed out waiting for in-flight verification emails")
+	}
 }
 
 // Update updates an existing protected address
@@ -219,4 +279,111 @@ func (prs *ProtectedAddrService) DeleteById(ctx context.Context, cuser entities.
 	}
 
 	return nil
+}
+
+func (prs *ProtectedAddrService) SendVerifyEmail(ctx context.Context, cuser entities.User, prAddrId entities.Id) error {
+	if err := prAddrId.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", entities.ErrValidation, err)
+	}
+
+	// get protected address by ID
+	prAddr, err := prs.repof.Address.GetById(ctx, prAddrId)
+	if err != nil {
+		return err
+	}
+
+	token, tokenStr, err := entities.NewAddressVerifyToken(time.Now().Add(time.Hour*12), prAddrId)
+	if err != nil {
+		return err
+	}
+
+	// create new token keeping old ones also active
+	// in case previous emails did not reach the destination or received after delay
+	if err := prs.repof.AddressVerify.Create(ctx, token); err != nil {
+		return err
+	}
+
+	// form a verification link that points to the WebUI handler
+	// token is placed in the URL fragment so it is never sent to any server
+	verifyLink := fmt.Sprintf(
+		"https://%s/verify/%s#%s",
+		prs.praddrVerifyHostname,
+		prAddrId.String(),
+		tokenStr,
+	)
+
+	// render email template
+	tmpl, err := template.New("verify").Parse(prs.praddrVerifyTmpl)
+	if err != nil {
+		return err
+	}
+
+	msg := new(bytes.Buffer)
+	if err := tmpl.Execute(msg, struct{ VerifyLink string }{VerifyLink: verifyLink}); err != nil {
+		return err
+	}
+
+	// send verification email to the Protected Address
+	if err := prs.smtpClient.SendMessage(string(prAddr.Email), msg.Bytes()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (prs *ProtectedAddrService) ValidateVerifyToken(ctx context.Context, cuser entities.User, addrId entities.Id, tokenInput string) (entities.Address, error) {
+	if err := addrId.Validate(); err != nil {
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+	}
+
+	tokenId, rawToken, err := entities.DecodeAddressVerifyToken(tokenInput)
+	if err != nil {
+		return entities.Address{}, err
+	}
+
+	token, err := prs.repof.AddressVerify.GetById(ctx, tokenId)
+	if err != nil {
+		return entities.Address{}, err
+	}
+
+	// verify token validity
+	if err := token.Validate(rawToken); err != nil {
+		return entities.Address{}, err
+	}
+
+	// verify if token expired
+	if token.IsExpired() {
+		return entities.Address{}, fmt.Errorf("%w: verification token has expired", entities.ErrValidation)
+	}
+
+	// get protected address by ID
+	addr, err := prs.repof.Address.GetById(ctx, addrId)
+	if err != nil {
+		return entities.Address{}, err
+	}
+
+	// if address is already verified - return clean
+	if addr.Verified {
+		return addr, nil
+	}
+
+	// verify token belongs to the address
+	if subtle.ConstantTimeCompare([]byte(token.AddrId), []byte(addrId)) != 1 {
+		return entities.Address{}, fmt.Errorf("%w: token does not belong to the address", entities.ErrValidation)
+	}
+
+	// mark address as verified
+	addr.Verified = true
+	addr.VerifiedAt = time.Now().UTC()
+
+	if err := prs.repof.Address.Update(ctx, addr); err != nil {
+		return entities.Address{}, err
+	}
+
+	// delete verification token after successful address verification
+	if err := prs.repof.AddressVerify.Delete(ctx, cuser, token.ID); err != nil {
+		return entities.Address{}, err
+	}
+
+	return addr, nil
 }

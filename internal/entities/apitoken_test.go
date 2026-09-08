@@ -30,7 +30,7 @@ func TestApiToken_Validate(t *testing.T) {
 				return fields{
 					ID:          NewId(),
 					Name:        "Test token",
-					TokenHash:   HashApiToken(salt, rawToken),
+					TokenHash:   HashSaltToken(salt, rawToken),
 					Salt:        salt,
 					Description: "test token",
 					Owner: User{
@@ -52,7 +52,7 @@ func TestApiToken_Validate(t *testing.T) {
 				return fields{
 					ID:          NewId(),
 					Name:        "Test token",
-					TokenHash:   HashApiToken(salt, rawToken),
+					TokenHash:   HashSaltToken(salt, rawToken),
 					Salt:        salt,
 					Description: "",
 					Expiration:  time.Now().Add(time.Hour * 2),
@@ -69,7 +69,7 @@ func TestApiToken_Validate(t *testing.T) {
 				return fields{
 					ID:          NewId(),
 					Name:        "Test token",
-					TokenHash:   HashApiToken(salt, rawToken),
+					TokenHash:   HashSaltToken(salt, rawToken),
 					Salt:        salt,
 					Description: "",
 					Owner: User{
@@ -110,7 +110,7 @@ func TestApiToken_Validate(t *testing.T) {
 				rawToken, _ := RandString(32)
 				return fields{
 					Name:        "Test token",
-					TokenHash:   HashApiToken(salt, rawToken),
+					TokenHash:   HashSaltToken(salt, rawToken),
 					Salt:        salt,
 					Description: "test token",
 					Owner: User{
@@ -131,7 +131,7 @@ func TestApiToken_Validate(t *testing.T) {
 				rawToken, _ := RandString(32)
 				return fields{
 					ID:          NewId(),
-					TokenHash:   HashApiToken(salt, rawToken),
+					TokenHash:   HashSaltToken(salt, rawToken),
 					Salt:        salt,
 					Description: "test token",
 					Owner: User{
@@ -181,7 +181,7 @@ func TestApiToken_Expired(t *testing.T) {
 	}
 	tests := []test{
 		func() test {
-			token, _ := NewToken(time.Now().Add(time.Hour*2), "test token", "test token description", User{ID: NewId(), Login: "test_owner", Type: MilterUser})
+			token, _ := NewApiToken(time.Now().Add(time.Hour*2), "test token", "test token description", User{ID: NewId(), Login: "test_owner", Type: MilterUser})
 			return test{
 				name:  "expiration time higher than now",
 				want:  false,
@@ -189,7 +189,7 @@ func TestApiToken_Expired(t *testing.T) {
 			}
 		}(),
 		func() test {
-			token, _ := NewToken(time.Now().Add(time.Hour*-2), "test token", "test token description", User{ID: NewId(), Login: "test_owner", Type: MilterUser})
+			token, _ := NewApiToken(time.Now().Add(time.Hour*-2), "test token", "test token description", User{ID: NewId(), Login: "test_owner", Type: MilterUser})
 			return test{
 				name:  "expiration time lower than now",
 				want:  true,

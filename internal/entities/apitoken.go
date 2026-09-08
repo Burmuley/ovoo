@@ -1,8 +1,6 @@
 package entities
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -32,8 +30,8 @@ type ApiToken struct {
 	UpdatedBy   User
 }
 
-// NewToken creates a new ApiToken with the given expiration, description, and owner.
-func NewToken(expiration time.Time, name, description string, owner User) (*ApiToken, error) {
+// NewApiToken creates a new ApiToken with the given expiration, description, and owner.
+func NewApiToken(expiration time.Time, name, description string, owner User) (*ApiToken, error) {
 	rawToken, err := RandString(32)
 	if err != nil {
 		return nil, err
@@ -42,7 +40,7 @@ func NewToken(expiration time.Time, name, description string, owner User) (*ApiT
 	if err != nil {
 		return nil, err
 	}
-	hash := HashApiToken(salt, rawToken)
+	hash := HashSaltToken(salt, rawToken)
 	id := NewId()
 	token := &ApiToken{
 		ID:          id,
@@ -83,12 +81,4 @@ func (t *ApiToken) Validate() error {
 // Expired checks if the ApiToken has expired.
 func (t *ApiToken) Expired() bool {
 	return time.Now().Compare(t.Expiration) >= 0
-}
-
-// HashApiToken creates a SHA-256 hash of a token by prepending the salt.
-// The salt adds randomness to prevent rainbow table attacks.
-// Returns the hex-encoded hash string.
-func HashApiToken(salt, token string) string {
-	sum := sha256.Sum256(append([]byte(salt), []byte(token)...))
-	return hex.EncodeToString(sum[:])
 }

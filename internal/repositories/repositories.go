@@ -109,3 +109,18 @@ type CustomDomainsReadWriter interface {
 	CustomDomainsReader
 	CustomDomainWriter
 }
+
+type AddressVerifyReader interface {
+	GetById(ctx context.Context, id entities.Id) (entities.AddressVerifyToken, error)
+	GetByAddrId(ctx context.Context, addrId entities.Id) ([]entities.AddressVerifyToken, error)
+}
+
+type AddressVerifyWriter interface {
+	Create(ctx context.Context, token entities.AddressVerifyToken) error
+	Delete(ctx context.Context, cuser entities.User, id entities.Id) error
+}
+
+type AddressVerifyReadWriter interface {
+	AddressVerifyReader
+	AddressVerifyWriter
+}

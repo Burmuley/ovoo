@@ -44,5 +44,12 @@ func newCachedRepoFactory(cache cache.Cache, repoFactory *RepoFactory, config *c
 		}
 	}
 
+	{
+		var err error
+		if cachedRF.AddressVerify, err = cached.NewCachedAddrVerifyRepo(cache, repoFactory.AddressVerify, config); err != nil {
+			return nil, err
+		}
+	}
+
 	return cachedRF, nil
 }

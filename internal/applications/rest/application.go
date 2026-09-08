@@ -34,9 +34,6 @@ const (
 //go:embed data/**
 var staticData embed.FS
 
-//go:embed data/webui/**
-var webuiData embed.FS
-
 // Application represents the main structure for handling REST API requests.
 // It contains references to a service gateway for business logic, network configuration,
 // application context, logging, authentication settings, and OIDC provider configurations.
@@ -89,7 +86,7 @@ func New(
 		ctrl.listenAddr = DefaultListenAddr
 	}
 
-	// if any of "validation" values above true -> one of usecases is nil -> error
+	// if any of "validation" values above true -> one of services is nil -> error
 	if cmp.Or([]bool{
 		ctrl.svcGw.Aliases == nil,
 		ctrl.svcGw.Users == nil,
@@ -104,7 +101,7 @@ func New(
 		return nil, errors.New("logger must be set")
 	}
 
-	ctrl.authSkipURIs = []string{"/index.html", "/assets"}
+	ctrl.authSkipURIs = []string{"/index.html", "/assets", "/verify"}
 
 	{
 		var err error
@@ -148,8 +145,12 @@ func (a *Application) Start() error {
 	mux := http.NewServeMux()
 
 	// docs
-	mux.HandleFunc("/api/docs/openapi.yaml", a.handleOpenAPI)
-	mux.HandleFunc("/api/docs", a.handleDocs)
+	mux.HandleFunc("/api/docs/openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, staticData, "data/openapi.yaml")
+	})
+	mux.HandleFunc("/api/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, staticData, "data/docs/index.html")
+	})
 
 	// users routes
 	mux.HandleFunc("GET /api/v1/users", a.GetUsers)
@@ -186,6 +187,8 @@ func (a *Application) Start() error {
 	mux.HandleFunc("POST /api/v1/praddrs", a.CreatePrAddr)
 	mux.HandleFunc("PATCH /api/v1/praddrs/{id}", a.UpdatePrAddr)
 	mux.HandleFunc("DELETE /api/v1/praddrs/{id}", a.DeletePrAddr)
+	mux.HandleFunc("POST /api/v1/praddrs/{id}/sendverify", a.SendNewPrAddrVerification)
+	mux.HandleFunc("POST /api/v1/praddrs/{id}/tokenvalidate", a.ValidatePrAddrVerificationToken)
 
 	// chains routes
 	mux.HandleFunc("GET /private/api/v1/chains/{hash}", a.getChainByHash)
@@ -210,7 +213,7 @@ func (a *Application) Start() error {
 	})
 
 	// root
-	webui, err := fs.Sub(webuiData, "data/webui")
+	webui, err := fs.Sub(staticData, "data/webui")
 	if err != nil {
 		return err
 	}
@@ -226,7 +229,16 @@ func (a *Application) Start() error {
 		})
 	}
 
-	mux.Handle("/", withIndexHTML(gzipped.FileServer(gzipped.FS(webui))))
+	webuiFileServer := gzipped.FileServer(gzipped.FS(webui))
+
+	// protected address email verification page: served by the SPA, not a static file,
+	// so requests are rewritten to index.html regardless of the {id} path value
+	mux.HandleFunc("GET /verify/{id}", func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = "/index.html"
+		webuiFileServer.ServeHTTP(w, r)
+	})
+
+	mux.Handle("/", withIndexHTML(webuiFileServer))
 
 	handler := middleware.Adapt(mux,
 		middleware.SecurityHeaders(),
@@ -261,17 +273,14 @@ func (a *Application) Start() error {
 		a.logger.Error("server shutdown failed", "err", err.Error())
 		return err
 	}
+
+	// wait for any in-flight protected address verification emails to finish sending
+	drainCtx, drainCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer drainCancel()
+	a.logger.Info("draining in-flight verification emails")
+	a.svcGw.PrAddrs.ShutdownVerifyEmailWG(drainCtx)
+
 	return nil
-}
-
-// handleDocs serves the API documentation HTML page
-func (a *Application) handleDocs(w http.ResponseWriter, r *http.Request) {
-	http.ServeFileFS(w, r, staticData, "data/docs/index.html")
-}
-
-// handleOpenAPI serves the OpenAPI specification file
-func (a *Application) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
-	http.ServeFileFS(w, r, staticData, "data/openapi.yaml")
 }
 
 // parseProvidersCfg initializes OIDC providers from configuration.

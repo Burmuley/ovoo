@@ -160,7 +160,9 @@ func TestAddressTPrAddrData(t *testing.T) {
 			Comment:     "note",
 			ServiceName: "acme",
 		},
-		Active: true,
+		Active:     true,
+		Verified:   true,
+		VerifiedAt: time.Now(),
 	}
 	result := addressTPrAddrData(prAddr)
 	assert.Equal(t, "protected@example.com", string(result.Email))
@@ -169,7 +171,8 @@ func TestAddressTPrAddrData(t *testing.T) {
 	assert.Equal(t, "note", *result.Metadata.Comment)
 	assert.Equal(t, "acme", *result.Metadata.ServiceName)
 	assert.NotNil(t, result.Active)
-	assert.True(t, *result.Active)
+	assert.True(t, result.Active)
+	assert.True(t, result.Verified)
 }
 
 func TestChainTChainData(t *testing.T) {
