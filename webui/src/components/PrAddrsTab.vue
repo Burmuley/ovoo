@@ -28,20 +28,22 @@
                     <CTableHeaderCell>Email</CTableHeaderCell>
                     <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Status
                     </CTableHeaderCell>
+                    <CTableHeaderCell class="text-center" style="width: 1%; white-space: nowrap;">Verified
+                    </CTableHeaderCell>
                     <CTableHeaderCell style="width: 1%; white-space: nowrap;"></CTableHeaderCell>
                 </CTableRow>
             </CTableHead>
             <CTableBody>
                 <template v-if="loading">
                     <CTableRow v-for="n in 3" :key="n">
-                        <CTableDataCell v-for="c in 3" :key="c">
+                        <CTableDataCell v-for="c in 4" :key="c">
                             <div class="placeholder-glow"><span class="placeholder col-8"></span></div>
                         </CTableDataCell>
                     </CTableRow>
                 </template>
                 <EmptyState v-else-if="praddrs.length === 0" icon="cilShieldAlt"
                     message="No protected addresses yet. Add one to start creating aliases." action-label="Add Address"
-                    :colspan="3" @action-clicked="showAddModal = true" />
+                    :colspan="4" @action-clicked="showAddModal = true" />
                 <template v-else>
                     <CTableRow v-for="addr in praddrs" :key="addr.id">
                         <CTableDataCell>
@@ -55,7 +57,18 @@
                                 {{ addr.active ? 'Active' : 'Inactive' }}
                             </CBadge>
                         </CTableDataCell>
+                        <CTableDataCell class="text-center text-nowrap">
+                            <CBadge :color="addr.verified ? 'success' : 'secondary'">
+                                {{ addr.verified ? 'Verified' : 'Unverified' }}
+                            </CBadge>
+                        </CTableDataCell>
                         <CTableDataCell class="text-end text-nowrap">
+                            <CButton v-if="!addr.verified" v-c-tooltip="'Resend verification email'" color="secondary"
+                                size="sm" variant="outline" class="me-1" :disabled="resendingId === addr.id"
+                                @click="resendVerification(addr.id)">
+                                <CSpinner v-if="resendingId === addr.id" size="sm" />
+                                <CIcon v-else icon="cilEnvelopeClosed" />
+                            </CButton>
                             <CButton v-c-tooltip="'Edit'" color="primary" size="sm" variant="outline" class="me-1"
                                 @click="startEdit(addr)">
                                 <CIcon icon="cilPencil" />
@@ -186,6 +199,7 @@ const deletingId = ref(null)
 const confirmingDeactivateId = ref(null)
 const confirmingActivateId = ref(null)
 const apiError = ref(null)
+const resendingId = ref(null)
 
 const deletingAddr = computed(() => praddrs.value.find(a => a.id === deletingId.value))
 const confirmingDeactivateAddr = computed(() => praddrs.value.find(a => a.id === confirmingDeactivateId.value))
@@ -219,8 +233,16 @@ watch(searchQuery, () => {
 
 function onAddrCreated(email) {
     showAddModal.value = false
-    showToast(`Protected address ${email} created.`)
+    showToast(`Protected address ${email} created — check your inbox to verify it.`)
     load()
+}
+
+const resendVerification = async (id) => {
+    resendingId.value = id
+    const res = await apiFetch(`/api/v1/praddrs/${id}/sendverify`, { method: 'POST' })
+    resendingId.value = null
+    if (!res.ok) { await handleApiError(res); return }
+    showToast('Verification email sent.')
 }
 
 const startEdit = (addr) => {

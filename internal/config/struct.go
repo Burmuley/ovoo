@@ -3,15 +3,32 @@ package config
 // Ovoo API configuration
 
 type APIConfig struct {
-	Cache        *ConfigCache          `koanf:"cache"`
-	Database     ConfigDB              `koanf:"database"`
-	DefaultAdmin *ConfigDefaultAdmin   `koanf:"default_admin"`
-	ListenAddr   string                `koanf:"listen_addr"`
-	Log          ConfigLogging         `koanf:"logging"`
-	OIDC         map[string]ConfigOIDC `koanf:"oidc"`
-	TLS          ConfigTLS             `koanf:"tls"`
-	SysInfo      SystemInfo            `koanf:"sysinfo"`
-	Version      SystemVersion
+	Cache        *ConfigCache           `koanf:"cache"`
+	Database     ConfigDB               `koanf:"database"`
+	DefaultAdmin *ConfigDefaultAdmin    `koanf:"default_admin"`
+	ListenAddr   string                 `koanf:"listen_addr"`
+	Log          ConfigLogging          `koanf:"logging"`
+	OIDC         map[string]ConfigOIDC  `koanf:"oidc"`
+	TLS          ConfigTLS              `koanf:"tls"`
+	SysInfo      SystemInfo             `koanf:"sysinfo"`
+	SMTP         MailNotificationConfig `koanf:"smtp"`
+	Version      SystemVersion          `koanf:"-"`
+}
+
+type MailNotificationConfig struct {
+	SMTPHost              string                `koanf:"host"`
+	SMTPPort              int                   `koanf:"port"`
+	SMTPUsername          string                `koanf:"username"`
+	SMTPPassword          string                `koanf:"password"`
+	FromAddress           string                `koanf:"from_address"`
+	FromName              string                `koanf:"from_name"`
+	TLSMode               string                `koanf:"tls_mode"`
+	NotificationTemplates NotificationTemplates `koanf:"notification_templates"`
+	OvooHostname          string                `koanf:"ovoo_hostname"`
+}
+
+type NotificationTemplates struct {
+	ProtectedAddrVerifyPath string `koanf:"pr_address_verify_path"`
 }
 
 type SystemInfo struct {

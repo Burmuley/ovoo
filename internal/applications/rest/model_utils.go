@@ -94,8 +94,10 @@ func addressTPrAddrData(praddr entities.Address) ProtectedAddressData {
 			Comment:     &praddr.Metadata.Comment,
 			ServiceName: &praddr.Metadata.ServiceName,
 		},
-		Owner:  userTResponse(praddr.Owner),
-		Active: &praddr.Active,
+		Owner:      userTResponse(praddr.Owner),
+		Active:     praddr.Active,
+		Verified:   praddr.Verified,
+		VerifiedAt: &praddr.VerifiedAt,
 	}
 }
 

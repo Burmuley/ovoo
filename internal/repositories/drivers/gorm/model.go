@@ -53,6 +53,8 @@ type Address struct {
 	UpdatedByID      string          `gorm:"column:updated_by_id"`
 	UpdatedBy        User            `gorm:"foreignKey:UpdatedByID"`
 	Active           bool            `gorm:"column:active;default:true"`
+	Verified         bool            `gorm:"column:verified;default:false"`
+	VerifiedAt       time.Time       `gorm:"column:verified_at"`
 }
 
 // TableName specifies the table name for Address
@@ -127,4 +129,23 @@ type CustomDomain struct {
 // TableName specifies the table name for CustomDomain
 func (cd CustomDomain) TableName() string {
 	return "custom_domains"
+}
+
+type AddressVerifyToken struct {
+	Model
+	AddrId      string    `gorm:"column:addr_id"`
+	Hash        string    `gorm:"column:hash"`
+	Salt        string    `gorm:"column:salt"`
+	ExpiryAt    time.Time `gorm:"column:expiry_at"`
+	Verified    bool      `gorm:"column:verified"`
+	VerifiedAt  time.Time `gorm:"column:verified_at"`
+	UpdatedByID string    `gorm:"column:updated_by_id"`
+	UpdatedBy   User      `gorm:"foreignKey:UpdatedByID"`
+	OwnerID     string    `gorm:"column:owner_id"`
+	Owner       User      `gorm:"foreignKey:OwnerID"`
+}
+
+// TableName specifies the table name for CustomDomain
+func (av AddressVerifyToken) TableName() string {
+	return "address_verify"
 }

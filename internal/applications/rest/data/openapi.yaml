@@ -603,6 +603,62 @@ paths:
         schema:
           type: string
         required: true
+  /api/v1/praddrs/{id}/sendverify:
+    post:
+      summary: Create and send verification email to validate ownership of the Protected Address
+      description: >-
+        Creates a new address verification token and sends verification email to the address.
+        All users (regular or admins) can only request verification for their own Protected Addresses.
+      operationId: sendPrAddrVerification
+      tags:
+        - Protected Addresses
+      parameters:
+        - in: path
+          name: id
+          description: Protected Address ID
+          schema:
+            type: string
+          required: true
+      responses:
+        "204":
+          description: ""
+          content: {}
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+  /api/v1/praddrs/{id}/tokenvalidate:
+    post:
+      summary: Verify `token` validity for the Protected Address with `id`
+      description: >-
+        Validates provided token to verify Protected Address ownership. Marks the Protected Address as valid in case of success.
+      operationId: validatePrAddrToken
+      tags:
+        - Protected Addresses
+      parameters:
+        - in: path
+          name: id
+          description: Protected Address ID
+          schema:
+            type: string
+          required: true
+      requestBody:
+        $ref: "#/components/requestBodies/validatePrAddrTokenRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/verifyProtectedAddressResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
   /api/v1/domains:
     get:
       summary: Get all alias domains available to the current user
@@ -1013,10 +1069,19 @@ components:
         active:
           type: boolean
           description: Indicates whether the Protected Address is active and can be used
+        verified:
+          type: boolean
+          description: Indicates whether the Protected Address is verified; also influences the `active` state - not verified Protected Address are not active
+        verified_at:
+          type: string
+          format: date-time
+          description: Timestamp when email verification has been done
       required:
         - email
         - owner
         - id
+        - verified
+        - active
     chainAddressData:
       type: object
       properties:
@@ -1357,6 +1422,17 @@ components:
                 type: string
               password:
                 type: string
+    validatePrAddrTokenRequest:
+      required: true
+      description: Request to validate protected email address ownership
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+            required: ["token"]
   responses:
     HTTP403:
       description: Forbidden error response
@@ -1399,6 +1475,13 @@ components:
                   $ref: "#/components/schemas/error"
             required:
               - errors
+    verifyProtectedAddressResponse:
+      description: Response containing Protected Address details after verification procedure
+      headers: {}
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/protectedAddressData"
     getAliasesResponse:
       headers: {}
       content:

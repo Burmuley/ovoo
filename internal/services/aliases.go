@@ -76,6 +76,10 @@ func (als *AliasesService) Create(
 		return entities.Address{}, fmt.Errorf("%w: can not create alias for inactive protected address", entities.ErrValidation)
 	}
 
+	if !protAddr.Verified {
+		return entities.Address{}, fmt.Errorf("%w: can not create alias for unverified protected address", entities.ErrValidation)
+	}
+
 	if err := cmd.DomainId.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("%w: invalid domain id defined %q", entities.ErrValidation, cmd.DomainId)
 	}

@@ -92,7 +92,7 @@ func (t *ApiTokensService) Create(ctx context.Context, cuser entities.User, cmd 
 		return entities.ApiToken{}, fmt.Errorf("%w: expire_in value cannot be less than 1", entities.ErrValidation)
 	}
 
-	token, err := entities.NewToken(time.Now().Add(time.Duration(cmd.ExpireIn*24)*time.Hour), cmd.Name, cmd.Description, cuser)
+	token, err := entities.NewApiToken(time.Now().Add(time.Duration(cmd.ExpireIn*24)*time.Hour), cmd.Name, cmd.Description, cuser)
 	if err != nil {
 		return entities.ApiToken{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
 	}

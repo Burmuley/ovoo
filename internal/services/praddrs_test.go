@@ -8,9 +8,20 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 )
+
+func testSMTPCfg() config.MailNotificationConfig {
+	return config.MailNotificationConfig{
+		SMTPHost:     "localhost",
+		SMTPPort:     25,
+		FromAddress:  "noreply@example.com",
+		FromName:     "Ovoo",
+		OvooHostname: "example.com",
+	}
+}
 
 func setupProtectedAddrService(t *testing.T) (*ProtectedAddrService, *MockAddressRepo, *MockChainRepo) {
 	addressRepo := new(MockAddressRepo)
@@ -21,7 +32,7 @@ func setupProtectedAddrService(t *testing.T) (*ProtectedAddrService, *MockAddres
 		Chain:   chainRepo,
 	}
 
-	service, err := NewProtectedAddrService(repof)
+	service, err := NewProtectedAddrService(repof, "", testSMTPCfg(), nil)
 	require.NoError(t, err)
 
 	return service, addressRepo, chainRepo
@@ -29,14 +40,14 @@ func setupProtectedAddrService(t *testing.T) (*ProtectedAddrService, *MockAddres
 
 func TestNewProtectedAddrService(t *testing.T) {
 	repof := &factory.RepoFactory{}
-	service, err := NewProtectedAddrService(repof)
+	service, err := NewProtectedAddrService(repof, "", testSMTPCfg(), nil)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, service)
 }
 
 func TestNewProtectedAddrService_NilRepoFactory(t *testing.T) {
-	service, err := NewProtectedAddrService(nil)
+	service, err := NewProtectedAddrService(nil, "", testSMTPCfg(), nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, service)

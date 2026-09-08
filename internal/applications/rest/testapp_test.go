@@ -8,10 +8,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
 	"github.com/Burmuley/ovoo/internal/services"
 )
+
+func testSMTPCfg() config.MailNotificationConfig {
+	return config.MailNotificationConfig{
+		SMTPHost:     "localhost",
+		SMTPPort:     25,
+		FromAddress:  "noreply@example.com",
+		FromName:     "Ovoo",
+		OvooHostname: "example.com",
+	}
+}
 
 type testApp struct {
 	app        *Application
@@ -40,7 +51,7 @@ func newTestApp(t *testing.T) *testApp {
 	}
 	aliasesSvc, err := services.NewAliasesService([]string{"alpha", "bravo", "charlie"}, repof)
 	require.NoError(t, err)
-	prAddrsSvc, err := services.NewProtectedAddrService(repof)
+	prAddrsSvc, err := services.NewProtectedAddrService(repof, "", testSMTPCfg(), nil)
 	require.NoError(t, err)
 	usersSvc, err := services.NewUsersService(repof)
 	require.NoError(t, err)

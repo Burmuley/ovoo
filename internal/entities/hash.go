@@ -1,7 +1,9 @@
 package entities
 
 import (
+	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strings"
@@ -39,4 +41,12 @@ func (h Hash) Validate() error {
 // String returns the string representation of the Hash.
 func (h Hash) String() string {
 	return string(h)
+}
+
+// HashSaltToken creates a SHA-256 hash of a token by prepending the salt.
+// The salt adds randomness to prevent rainbow table attacks.
+// Returns the hex-encoded hash string.
+func HashSaltToken(salt, token string) string {
+	sum := sha256.Sum256(append([]byte(salt), []byte(token)...))
+	return hex.EncodeToString(sum[:])
 }

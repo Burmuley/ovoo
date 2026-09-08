@@ -94,6 +94,8 @@ func addressFromEntity(e entities.Address) Address {
 		UpdatedBy:   userFromEntity(e.UpdatedBy),
 		UpdatedByID: e.UpdatedBy.ID.String(),
 		Active:      e.Active,
+		Verified:    e.Verified,
+		VerifiedAt:  e.VerifiedAt,
 	}
 	if e.ForwardAddress != nil {
 		fa := addressFromEntity(*e.ForwardAddress)
@@ -126,10 +128,12 @@ func addressToEntity(a Address) entities.Address {
 			Comment:     a.Metadata.Comment,
 			ServiceName: a.Metadata.ServiceName,
 		},
-		UpdatedAt: a.UpdatedAt,
-		CreatedAt: a.CreatedAt,
-		UpdatedBy: userToEntity(a.UpdatedBy),
-		Active:    a.Active,
+		UpdatedAt:  a.UpdatedAt,
+		CreatedAt:  a.CreatedAt,
+		UpdatedBy:  userToEntity(a.UpdatedBy),
+		Active:     a.Active,
+		Verified:   a.Verified,
+		VerifiedAt: a.VerifiedAt,
 	}
 
 	if a.ForwardAddress != nil {
@@ -326,4 +330,52 @@ func customDomainToEntityList(domains []CustomDomain) []entities.CustomDomain {
 	}
 
 	return edomains
+}
+
+func addrVerifyTokenTEntity(t AddressVerifyToken) entities.AddressVerifyToken {
+	return entities.AddressVerifyToken{
+		ID:        entities.Id(t.ID),
+		AddrId:    entities.Id(t.AddrId),
+		Hash:      t.Hash,
+		Salt:      t.Salt,
+		ExpiryAt:  t.ExpiryAt,
+		CreatedAt: t.CreatedAt,
+		UpdatedAt: t.UpdatedAt,
+		UpdatedBy: userToEntity(t.UpdatedBy),
+		Owner:     userToEntity(t.Owner),
+	}
+}
+
+func addrVerifyTokenTEntityList(tokens []AddressVerifyToken) []entities.AddressVerifyToken {
+	etokens := make([]entities.AddressVerifyToken, 0, len(tokens))
+	for _, v := range tokens {
+		etokens = append(etokens, addrVerifyTokenTEntity(v))
+	}
+
+	return etokens
+}
+
+func addrVerifyTokenFEntity(e entities.AddressVerifyToken) AddressVerifyToken {
+	return AddressVerifyToken{
+		Model: Model{
+			ID:        e.ID.String(),
+			CreatedAt: e.CreatedAt,
+			UpdatedAt: e.UpdatedAt,
+		},
+		AddrId:    e.AddrId.String(),
+		Hash:      e.Hash,
+		Salt:      e.Salt,
+		ExpiryAt:  e.ExpiryAt,
+		UpdatedBy: userFromEntity(e.UpdatedBy),
+		Owner:     userFromEntity(e.Owner),
+	}
+}
+
+func addrVerifyTokenFEntityList(etokens []entities.AddressVerifyToken) []AddressVerifyToken {
+	tokens := make([]AddressVerifyToken, 0, len(etokens))
+	for _, v := range etokens {
+		tokens = append(tokens, addrVerifyTokenFEntity(v))
+	}
+
+	return tokens
 }

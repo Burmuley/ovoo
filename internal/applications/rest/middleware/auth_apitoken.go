@@ -59,7 +59,7 @@ func validateApiToken(ctx context.Context, svcGw *services.ServiceGateway, apiTo
 		return entities.User{}, err
 	}
 
-	hash := entities.HashApiToken(token.Salt, tokenBody)
+	hash := entities.HashSaltToken(token.Salt, tokenBody)
 
 	if subtle.ConstantTimeCompare([]byte(hash), []byte(token.TokenHash)) != 1 ||
 		token.Expired() || !token.Active || !token.Owner.Active {
