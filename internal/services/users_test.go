@@ -74,6 +74,72 @@ func TestUsersService_Create_Success(t *testing.T) {
 	assert.Equal(t, cmd.Login, user.Login)
 	assert.Equal(t, cmd.Type, user.Type)
 	assert.NotEmpty(t, user.ID)
+	// no password in the command: the account is OIDC-only and keeps an empty hash
+	assert.Empty(t, user.PasswordHash)
+	usersRepo.AssertExpectations(t)
+}
+
+// TestUsersService_Create_WithPassword guards the bug where Create hashed the (still empty)
+// user.PasswordHash instead of cmd.Password, discarding the supplied password and storing a
+// bcrypt hash of the empty string that any caller could authenticate against.
+func TestUsersService_Create_WithPassword(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminUser := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	password := "s3cr3t-p@ssw0rd"
+	cmd := UserCreateCmd{
+		FirstName: "John",
+		LastName:  "Doe",
+		Login:     "john@test.com",
+		Type:      entities.RegularUser,
+		Password:  &password,
+	}
+
+	usersRepo.On("Create", ctx, mock.AnythingOfType("entities.User")).Return(nil)
+
+	user, err := service.Create(ctx, adminUser, cmd)
+
+	assert.NoError(t, err)
+	assert.NotEqual(t, password, user.PasswordHash, "password stored in plain text")
+	assert.True(t, entities.ValidPassword(password, user.PasswordHash),
+		"the supplied password does not validate against the stored hash")
+	assert.False(t, entities.ValidPassword("", user.PasswordHash),
+		"empty password validates against the stored hash")
+	usersRepo.AssertExpectations(t)
+}
+
+func TestUsersService_Create_EmptyPassword(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminUser := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.AdminUser,
+		Login: "admin@test.com",
+	}
+
+	password := ""
+	cmd := UserCreateCmd{
+		FirstName: "John",
+		LastName:  "Doe",
+		Login:     "john@test.com",
+		Type:      entities.RegularUser,
+		Password:  &password,
+	}
+
+	usersRepo.On("Create", ctx, mock.AnythingOfType("entities.User")).Return(nil)
+
+	user, err := service.Create(ctx, adminUser, cmd)
+
+	// an empty password means the same as no password: an OIDC-only account
+	assert.NoError(t, err)
+	assert.Empty(t, user.PasswordHash)
 	usersRepo.AssertExpectations(t)
 }
 
@@ -147,6 +213,30 @@ func TestUsersService_CreatePriv_Success(t *testing.T) {
 	assert.Equal(t, user.LastName, createdUser.LastName)
 	assert.Equal(t, user.Login, createdUser.Login)
 	assert.NotEmpty(t, createdUser.ID)
+	// the incoming field carries a plaintext password and must come back hashed
+	assert.NotEqual(t, "password123", createdUser.PasswordHash)
+	assert.True(t, entities.ValidPassword("password123", createdUser.PasswordHash))
+	usersRepo.AssertExpectations(t)
+}
+
+func TestUsersService_CreatePriv_NoPassword(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	user := entities.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Login:     "john@test.com",
+		Type:      entities.RegularUser,
+	}
+
+	usersRepo.On("Create", ctx, mock.AnythingOfType("entities.User")).Return(nil)
+
+	createdUser, err := service.CreatePriv(ctx, user)
+
+	// no password must not be turned into a usable hash of the empty string
+	assert.NoError(t, err)
+	assert.Empty(t, createdUser.PasswordHash)
 	usersRepo.AssertExpectations(t)
 }
 

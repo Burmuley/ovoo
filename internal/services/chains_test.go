@@ -354,7 +354,7 @@ func TestChainsService_DeleteByHash_InvalidHash(t *testing.T) {
 }
 
 func TestChainsService_Create_NotAuthorized_RegularUser(t *testing.T) {
-	service, _, _ := setupChainsService(t)
+	service, chainRepo, addressRepo := setupChainsService(t)
 	ctx := context.Background()
 
 	regularUser := entities.User{
@@ -364,16 +364,262 @@ func TestChainsService_Create_NotAuthorized_RegularUser(t *testing.T) {
 	}
 
 	owner := entities.User{
-		ID:    entities.NewId(),
-		Type:  entities.RegularUser,
-		Login: "owner@test.com",
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
 	}
 
-	chain, err := service.Create(ctx, regularUser, "from@example.com", "to@test.com", owner)
+	fromEmail := "from@example.com"
+	toEmail := "to@test.com"
+	hash := entities.NewHash(fromEmail, toEmail)
+
+	protectedAddr := entities.Address{
+		ID:    entities.NewId(),
+		Type:  entities.ProtectedAddress,
+		Email: "protected@example.com",
+		Owner: owner,
+	}
+
+	// the alias belongs to somebody else than the requesting user
+	aliasAddr := entities.Address{
+		ID:             entities.NewId(),
+		Type:           entities.AliasAddress,
+		Email:          entities.Email(toEmail),
+		ForwardAddress: &protectedAddr,
+		Owner:          owner,
+		Active:         true,
+	}
+
+	chainRepo.On("GetByHash", ctx, hash).Return(entities.Chain{}, entities.ErrNotFound)
+	addressRepo.On("GetByEmail", ctx, entities.Email(toEmail)).Return([]entities.Address{aliasAddr}, nil)
+
+	chain, err := service.Create(ctx, regularUser, fromEmail, toEmail, owner)
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
 	assert.Equal(t, entities.Chain{}, chain)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestChainsService_Create_RegularUser_OwnAlias(t *testing.T) {
+	service, chainRepo, addressRepo := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
+	}
+
+	fromEmail := "sender@external.com"
+	toEmail := "alias@test.com"
+	hash := entities.NewHash(fromEmail, toEmail)
+
+	protectedAddr := entities.Address{
+		ID:    entities.NewId(),
+		Type:  entities.ProtectedAddress,
+		Email: "protected@example.com",
+		Owner: owner,
+	}
+
+	aliasAddr := entities.Address{
+		ID:             entities.NewId(),
+		Type:           entities.AliasAddress,
+		Email:          entities.Email(toEmail),
+		ForwardAddress: &protectedAddr,
+		Owner:          owner,
+		Active:         true,
+	}
+
+	chainRepo.On("GetByHash", ctx, hash).Return(entities.Chain{}, entities.ErrNotFound)
+	addressRepo.On("GetByEmail", ctx, entities.Email(toEmail)).Return([]entities.Address{aliasAddr}, nil)
+	addressRepo.On("GetByEmail", ctx, entities.Email(fromEmail)).Return(nil, entities.ErrNotFound)
+	addressRepo.On("Create", ctx, mock.MatchedBy(func(addr entities.Address) bool {
+		return addr.Type == entities.ExternalAddress && addr.Email == entities.Email(fromEmail)
+	})).Return(nil)
+	addressRepo.On("Create", ctx, mock.MatchedBy(func(addr entities.Address) bool {
+		return addr.Type == entities.ReplyAliasAddress
+	})).Return(nil)
+	chainRepo.On("BatchCreate", ctx, mock.AnythingOfType("[]entities.Chain")).Return(nil)
+
+	chain, err := service.Create(ctx, owner, fromEmail, toEmail, owner)
+
+	assert.NoError(t, err)
+	assert.Equal(t, hash, chain.Hash)
+	// the reply alias is what the owner has to send to from the protected address
+	assert.Equal(t, entities.ReplyAliasAddress, chain.FromAddress.Type)
+	assert.Equal(t, protectedAddr.Email, chain.ToAddress.Email)
+	chainRepo.AssertExpectations(t)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestChainsService_Create_ExistingChain_NotAuthorized_RegularUser(t *testing.T) {
+	service, chainRepo, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	regularUser := entities.User{
+		ID:    entities.NewId(),
+		Type:  entities.RegularUser,
+		Login: "user@test.com",
+	}
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "owner@test.com",
+		Active: true,
+	}
+
+	fromEmail := "from@example.com"
+	toEmail := "to@test.com"
+	hash := entities.NewHash(fromEmail, toEmail)
+
+	existingChain := entities.Chain{
+		Hash: hash,
+		OrigToAddress: entities.Address{
+			ID:     entities.NewId(),
+			Type:   entities.AliasAddress,
+			Email:  entities.Email(toEmail),
+			Owner:  owner,
+			Active: true,
+		},
+		CreatedAt: time.Now(),
+	}
+
+	chainRepo.On("GetByHash", ctx, hash).Return(existingChain, nil)
+
+	chain, err := service.Create(ctx, regularUser, fromEmail, toEmail, owner)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	assert.Equal(t, entities.Chain{}, chain)
+	chainRepo.AssertExpectations(t)
+}
+
+func TestChainsService_GetAll_NoAliasFilter(t *testing.T) {
+	service, _, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+
+	chains, err := service.GetAll(ctx, owner, entities.ChainFilter{})
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.Nil(t, chains)
+}
+
+func TestChainsService_GetAll_NotAuthorized_OtherUsersAlias(t *testing.T) {
+	service, _, addressRepo := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	other := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+
+	aliasAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  owner,
+		Active: true,
+	}
+
+	addressRepo.On("GetById", ctx, aliasAddr.ID).Return(aliasAddr, nil)
+
+	chains, err := service.GetAll(ctx, other, entities.ChainFilter{OrigToAddrIds: []entities.Id{aliasAddr.ID}})
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	assert.Nil(t, chains)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestChainsService_GetAll_NotAnAlias(t *testing.T) {
+	service, _, addressRepo := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+
+	praddr := entities.Address{
+		ID:    entities.NewId(),
+		Type:  entities.ProtectedAddress,
+		Email: "protected@example.com",
+		Owner: owner,
+	}
+
+	addressRepo.On("GetById", ctx, praddr.ID).Return(praddr, nil)
+
+	chains, err := service.GetAll(ctx, owner, entities.ChainFilter{OrigToAddrIds: []entities.Id{praddr.ID}})
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+	assert.Nil(t, chains)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestChainsService_GetAll_Success(t *testing.T) {
+	service, chainRepo, addressRepo := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+
+	aliasAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  owner,
+		Active: true,
+	}
+
+	filter := entities.ChainFilter{OrigToAddrIds: []entities.Id{aliasAddr.ID}}
+
+	expected := []entities.Chain{
+		{
+			Hash:          entities.NewHash("sender@external.com", string(aliasAddr.Email)),
+			OrigToAddress: aliasAddr,
+			CreatedAt:     time.Now(),
+		},
+	}
+
+	addressRepo.On("GetById", ctx, aliasAddr.ID).Return(aliasAddr, nil)
+	chainRepo.On("GetByFilters", ctx, filter).Return(expected, nil)
+
+	chains, err := service.GetAll(ctx, owner, filter)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, chains)
+	chainRepo.AssertExpectations(t)
+	addressRepo.AssertExpectations(t)
+}
+
+func TestChainsService_GetAll_AdminUser(t *testing.T) {
+	service, chainRepo, addressRepo := setupChainsService(t)
+	ctx := context.Background()
+
+	admin := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+
+	aliasAddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.AliasAddress,
+		Email:  "alias@test.com",
+		Owner:  owner,
+		Active: true,
+	}
+
+	filter := entities.ChainFilter{OrigToAddrIds: []entities.Id{aliasAddr.ID}}
+
+	addressRepo.On("GetById", ctx, aliasAddr.ID).Return(aliasAddr, nil)
+	chainRepo.On("GetByFilters", ctx, filter).Return([]entities.Chain{}, nil)
+
+	chains, err := service.GetAll(ctx, admin, filter)
+
+	assert.NoError(t, err)
+	assert.Empty(t, chains)
+	chainRepo.AssertExpectations(t)
+	addressRepo.AssertExpectations(t)
 }
 
 func TestChainsService_Create_ExistingChain(t *testing.T) {

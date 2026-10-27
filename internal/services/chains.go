@@ -51,6 +51,47 @@ func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, has
 	return chain, nil
 }
 
+// GetAll returns chains matching the filter.
+//
+// The alias filter (ChainFilter.OrigToAddrIds) is required: it both scopes the result set and is
+// the unit of authorization - the current user must be allowed to see every alias listed there.
+// Every chain keyed on an alias as OrigToAddress is a forward chain, so the result holds one
+// record per correspondent of that alias.
+//
+// NOTE: the result is not paginated - applyChainFilter in the GORM driver does not honour
+// Filter.Page/PageSize. Requiring the alias filter is what keeps the result set bounded.
+func (cs *ChainsService) GetAll(ctx context.Context, cuser entities.User, filter entities.ChainFilter) ([]entities.Chain, error) {
+	if len(filter.OrigToAddrIds) == 0 {
+		return nil, fmt.Errorf("%w: 'alias' filter is required", entities.ErrValidation)
+	}
+
+	for _, aliasId := range filter.OrigToAddrIds {
+		if err := aliasId.Validate(); err != nil {
+			return nil, fmt.Errorf("%w: %w", entities.ErrValidation, err)
+		}
+
+		alias, err := cs.repof.Address.GetById(ctx, aliasId)
+		if err != nil {
+			return nil, err
+		}
+
+		if alias.Type != entities.AliasAddress {
+			return nil, fmt.Errorf("%w: alias %q not found", entities.ErrNotFound, aliasId)
+		}
+
+		if !canGetAlias(cuser, alias) {
+			return nil, entities.ErrNotAuthorized
+		}
+	}
+
+	chains, err := cs.repof.Chain.GetByFilters(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return chains, nil
+}
+
 func (cs *ChainsService) DeleteByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
 	if !canDeleteChain(cuser) {
 		return entities.Chain{}, entities.ErrNotAuthorized
@@ -69,10 +110,6 @@ func (cs *ChainsService) DeleteByHash(ctx context.Context, cuser entities.User, 
 }
 
 func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEmail, toEmail string, owner entities.User) (entities.Chain, error) {
-	if !canCreateChain(cuser) {
-		return entities.Chain{}, entities.ErrNotAuthorized
-	}
-
 	// calculate hash and return corresponding chain if found in the DB
 	hash := entities.NewHash(fromEmail, toEmail)
 	if chain, err := cs.repof.Chain.GetByHash(ctx, hash); err == nil {
@@ -83,6 +120,12 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 
 		if chain.OrigToAddress.ForwardAddress != nil && !chain.OrigToAddress.ForwardAddress.Active {
 			return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrNotFound)
+		}
+
+		// for a forward chain OrigToAddress is the alias itself, for a reply chain it is the
+		// reply alias - in both cases its owner is the one allowed to drive the chain
+		if !canCreateChain(cuser, chain.OrigToAddress) {
+			return entities.Chain{}, entities.ErrNotAuthorized
 		}
 
 		return chain, nil
@@ -106,6 +149,10 @@ func (cs *ChainsService) Create(ctx context.Context, cuser entities.User, fromEm
 
 	if alias == nil {
 		return entities.Chain{}, fmt.Errorf("%w: destination alias not found", entities.ErrNotFound)
+	}
+
+	if !canCreateChain(cuser, *alias) {
+		return entities.Chain{}, entities.ErrNotAuthorized
 	}
 
 	src, err := checkCreateSrcAddr(ctx, cs.repof, fromEmail, owner)

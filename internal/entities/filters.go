@@ -217,6 +217,32 @@ type ChainFilter struct {
 	ToAddrIds       []Id
 }
 
+// NewChainFilter parses and returns a ChainFilter from the given input map.
+// Supported keys: "alias" - one or more alias ids, mapped onto OrigToAddrIds, since a forward
+// chain is keyed on the alias as its original destination address. The remaining address id
+// fields are reserved for internal callers and are not exposed as query parameters.
+func NewChainFilter(input map[string][]string) (ChainFilter, error) {
+	cf := ChainFilter{}
+	filter, err := NewFilter(input)
+	if err != nil {
+		return ChainFilter{}, err
+	}
+
+	cf.Filter = filter
+	for key, vals := range input {
+		switch key {
+		case "alias":
+			ids := make([]Id, 0, len(vals))
+			for _, val := range vals {
+				ids = append(ids, Id(val))
+			}
+			cf.OrigToAddrIds = ids
+		}
+	}
+
+	return cf, nil
+}
+
 type CustomDomainFilter struct {
 	Filter
 	Active        *bool

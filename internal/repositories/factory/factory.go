@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/Burmuley/ovoo/internal/cache"
 	"github.com/Burmuley/ovoo/internal/cache/drivers/memory"
@@ -74,13 +75,27 @@ func New(
 }
 
 func handleDefaultAdmin(logger *slog.Logger, repo *RepoFactory, defAdminCfg *config.ConfigDefaultAdmin) error {
+	// without a password the default admin could only ever sign in through OIDC, which makes
+	// bootstrapping it pointless - skip it instead of creating an unusable account
+	if strings.TrimSpace(defAdminCfg.Password) == "" {
+		logger.Warn("default admin password is not configured, skipping default admin creation",
+			"login", defAdminCfg.Login)
+		return nil
+	}
+
+	pwdHash, err := entities.NewPasswordHash(defAdminCfg.Password)
+	if err != nil {
+		return fmt.Errorf("hashing default admin password: %w", err)
+	}
+
 	adminUser := entities.User{
 		FirstName:    defAdminCfg.FirstName,
 		LastName:     defAdminCfg.LastName,
 		Login:        defAdminCfg.Login,
 		ID:           entities.NewId(),
 		Type:         entities.AdminUser,
-		PasswordHash: defAdminCfg.Password,
+		PasswordHash: pwdHash,
+		Active:       true,
 	}
 
 	if err := repo.Users.Create(context.Background(), adminUser); err != nil {

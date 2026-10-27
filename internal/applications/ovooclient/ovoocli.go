@@ -198,7 +198,7 @@ func (o Client) CreateChain(ctx context.Context, fromEmail, toEmail string) (*Ch
 	req, err := o.createRequest(
 		ctx,
 		o.server,
-		"/private/api/v1/chains",
+		"/api/v1/chains",
 		http.MethodPost,
 		bytes.NewReader(bodyBytes),
 		headers,

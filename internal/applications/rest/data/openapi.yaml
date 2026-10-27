@@ -850,12 +850,51 @@ paths:
       security:
         - OAuth2: []
         - BasicAuthentication: []
-  /private/api/v1/chains:
+  /api/v1/chains:
+    get:
+      summary: Get email chains for an alias
+      description: >-
+        Retrieve email address chains related to one or more aliases. The
+        \`alias\` query parameter is required - it scopes the result and is the
+        unit of authorization, so regular users can only list chains of aliases
+        they own. Every returned record is a forward chain, i.e. one record per
+        correspondent of the alias. The result is not paginated.
+      operationId: getChains
+      tags:
+        - Email chains
+      parameters:
+        - in: query
+          name: alias
+          description: Alias ID to return chains for. May be repeated.
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/getChainsResponse"
+        "400":
+          $ref: "#/components/responses/HTTP400"
+        "401":
+          $ref: "#/components/responses/HTTP401"
+        "403":
+          $ref: "#/components/responses/HTTP403"
+        "404":
+          $ref: "#/components/responses/HTTP404"
+      security:
+        - OAuth2: []
+        - BasicAuthentication: []
+        - ApiToken: []
     post:
       summary: Create new email chain
       description: >-
         Create new email address chain. the request if of
-        \`application/json\` type.
+        \`application/json\` type. Available to admins, the milter service user
+        and to regular users creating a chain for an alias they own - the latter
+        is how a user initiates correspondence before the other party writes
+        first. The \`from_email\` of the response is the address to send from
+        the protected address to.
       operationId: createChain
       tags:
         - Email chains
@@ -872,8 +911,10 @@ paths:
         "403":
           $ref: "#/components/responses/HTTP403"
       security:
+        - OAuth2: []
+        - BasicAuthentication: []
         - ApiToken: []
-  /private/api/v1/chains/{hash}:
+  /api/v1/chains/{hash}:
     get:
       summary: Get a particular email chain by its hash
       description: >-
@@ -1105,6 +1146,10 @@ components:
           $ref: "#/components/schemas/chainAddressData"
         orig_to_address:
           $ref: "#/components/schemas/chainAddressData"
+        created_at:
+          type: string
+          format: date-time
+          description: When the chain was created
       required:
         - hash
         - from_email
@@ -1611,6 +1656,23 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/chainData"
+    getChainsResponse:
+      description: >-
+        List of email chains matching the filter. Carries no
+        \`pagination_metadata\` - the listing is always scoped to the requested
+        aliases and is returned in full.
+      headers: {}
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              chains:
+                type: array
+                items:
+                  $ref: "#/components/schemas/chainData"
+            required:
+              - chains
     createApiTokenResponse:
       description: Response containing information about newly created API token
       content:

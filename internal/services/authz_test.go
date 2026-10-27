@@ -292,17 +292,33 @@ func TestCanGetChain_RegularUser(t *testing.T) {
 // Tests for canCreateChain
 func TestCanCreateChain_AdminUser(t *testing.T) {
 	user := createTestUser(entities.AdminUser)
-	assert.True(t, canCreateChain(user))
+	addr := createTestAddress(createTestUser(entities.RegularUser))
+	assert.True(t, canCreateChain(user, addr))
 }
 
 func TestCanCreateChain_MilterUser(t *testing.T) {
 	user := createTestUser(entities.MilterUser)
-	assert.True(t, canCreateChain(user))
+	addr := createTestAddress(createTestUser(entities.RegularUser))
+	assert.True(t, canCreateChain(user, addr))
 }
 
-func TestCanCreateChain_RegularUser(t *testing.T) {
+func TestCanCreateChain_RegularUser_NotOwner(t *testing.T) {
 	user := createTestUser(entities.RegularUser)
-	assert.False(t, canCreateChain(user))
+	addr := createTestAddress(createTestUser(entities.RegularUser))
+	assert.False(t, canCreateChain(user, addr))
+}
+
+func TestCanCreateChain_RegularUser_Owner(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+	assert.True(t, canCreateChain(owner, addr))
+}
+
+func TestCanCreateChain_MilterUser_OwnAddress(t *testing.T) {
+	// a milter user owning the alias still passes through the service-user branch
+	milter := createTestUser(entities.MilterUser)
+	addr := createTestAddress(milter)
+	assert.True(t, canCreateChain(milter, addr))
 }
 
 // Tests for canDeleteChain

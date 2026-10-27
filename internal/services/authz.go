@@ -126,10 +126,14 @@ func canGetChain(cuser entities.User) bool {
 	return false
 }
 
-// canCreateChain determines if the user can create a new chain entry.
-// Returns true if the user is an Admin or a MilterUser.
-func canCreateChain(cuser entities.User) bool {
+// canCreateChain determines if the user can create a new chain entry for the given target alias.
+// Returns true if the user is an Admin or a MilterUser, or a RegularUser owning the alias.
+func canCreateChain(cuser entities.User, alias entities.Address) bool {
 	if cuser.Type == entities.AdminUser || cuser.Type == entities.MilterUser {
+		return true
+	}
+
+	if alias.Owner.ID == cuser.ID && cuser.Type == entities.RegularUser {
 		return true
 	}
 

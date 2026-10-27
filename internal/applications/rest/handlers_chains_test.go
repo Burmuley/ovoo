@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -123,6 +124,108 @@ func TestGetChainByHash_Success(t *testing.T) {
 	ta.chainRepo.AssertExpectations(t)
 }
 
+// --- GetChains ---
+
+func TestGetChains_NoUser(t *testing.T) {
+	ta := newTestApp(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains?alias="+entities.NewId().String(), nil)
+	w := httptest.NewRecorder()
+	ta.app.GetChains(w, req)
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+func TestGetChains_NoAliasFilter(t *testing.T) {
+	ta := newTestApp(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains", nil)
+	req = withUser(req, testUser())
+	w := httptest.NewRecorder()
+	ta.app.GetChains(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestGetChains_NotOwnedAlias(t *testing.T) {
+	ta := newTestApp(t)
+	regularUser := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	alias := testAlias(entities.NewId())
+
+	ta.addrRepo.On("GetById", mock.Anything, alias.ID).Return(alias, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains?alias="+alias.ID.String(), nil)
+	req = withUser(req, regularUser)
+	w := httptest.NewRecorder()
+	ta.app.GetChains(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	ta.addrRepo.AssertExpectations(t)
+}
+
+func TestGetChains_NotAnAlias(t *testing.T) {
+	ta := newTestApp(t)
+	user := testUser()
+	praddr := testProtectedAddr(user.ID)
+
+	ta.addrRepo.On("GetById", mock.Anything, praddr.ID).Return(praddr, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains?alias="+praddr.ID.String(), nil)
+	req = withUser(req, user)
+	w := httptest.NewRecorder()
+	ta.app.GetChains(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	ta.addrRepo.AssertExpectations(t)
+}
+
+func TestGetChains_Success(t *testing.T) {
+	ta := newTestApp(t)
+	user := testUser()
+	alias := testAlias(user.ID)
+	chain := testChain()
+
+	ta.addrRepo.On("GetById", mock.Anything, alias.ID).Return(alias, nil)
+	ta.chainRepo.On("GetByFilters", mock.Anything, entities.ChainFilter{
+		Filter:        entities.Filter{Page: entities.DefaulPageNumber, PageSize: entities.DefaultPageSize},
+		OrigToAddrIds: []entities.Id{alias.ID},
+	}).Return([]entities.Chain{chain}, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains?alias="+alias.ID.String(), nil)
+	req = withUser(req, user)
+	w := httptest.NewRecorder()
+	ta.app.GetChains(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Type"), "application/json")
+
+	var resp GetChainsResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	require.Len(t, resp.Chains, 1)
+	assert.Equal(t, chain.Hash.String(), resp.Chains[0].Hash)
+	assert.Equal(t, string(chain.FromAddress.Email), resp.Chains[0].FromEmail)
+	assert.NotNil(t, resp.Chains[0].CreatedAt)
+
+	ta.addrRepo.AssertExpectations(t)
+	ta.chainRepo.AssertExpectations(t)
+}
+
+func TestGetChains_Empty(t *testing.T) {
+	ta := newTestApp(t)
+	user := testUser()
+	alias := testAlias(user.ID)
+
+	ta.addrRepo.On("GetById", mock.Anything, alias.ID).Return(alias, nil)
+	ta.chainRepo.On("GetByFilters", mock.Anything, mock.AnythingOfType("entities.ChainFilter")).
+		Return([]entities.Chain{}, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains?alias="+alias.ID.String(), nil)
+	req = withUser(req, user)
+	w := httptest.NewRecorder()
+	ta.app.GetChains(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{"chains":[]}`, w.Body.String())
+	ta.addrRepo.AssertExpectations(t)
+	ta.chainRepo.AssertExpectations(t)
+}
+
 // --- CreateChain ---
 
 func TestGetChainByHash_MilterUserSuccess(t *testing.T) {
@@ -153,15 +256,67 @@ func TestCreateChain_NoUser(t *testing.T) {
 }
 
 func TestCreateChain_UnauthorizedUser(t *testing.T) {
-	// RegularUser cannot create chains.
+	// A RegularUser cannot create a chain for an alias owned by somebody else.
 	ta := newTestApp(t)
 	regularUser := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
-	body := bytes.NewBufferString(`{"from_email": "from@example.com", "to_email": "to@example.com"}`)
+	alias := testAlias(entities.NewId())
+	fromEmail := "from@example.com"
+	toEmail := string(alias.Email)
+	hash := entities.NewHash(fromEmail, toEmail)
+
+	ta.chainRepo.On("GetByHash", mock.Anything, hash).Return(entities.Chain{}, entities.ErrNotFound)
+	ta.addrRepo.On("GetByEmail", mock.Anything, alias.Email).Return([]entities.Address{alias}, nil)
+
+	body := bytes.NewBufferString(`{"from_email": "` + fromEmail + `", "to_email": "` + toEmail + `"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/chains", body)
 	req = withUser(req, regularUser)
 	w := httptest.NewRecorder()
 	ta.app.CreateChain(w, req)
+
 	assert.Equal(t, http.StatusForbidden, w.Code)
+	ta.chainRepo.AssertExpectations(t)
+	ta.addrRepo.AssertExpectations(t)
+}
+
+func TestCreateChain_RegularUserOwnAlias(t *testing.T) {
+	// A RegularUser initiates a chain on their own alias: this is how a user starts
+	// correspondence before the other party writes first.
+	ta := newTestApp(t)
+	ownerID := entities.NewId()
+	regularUser := entities.User{ID: ownerID, Type: entities.RegularUser}
+	alias := testAlias(ownerID)
+	alias.Owner.Type = entities.RegularUser
+
+	fromEmail := "recipient@external.com"
+	toEmail := string(alias.Email)
+	hash := entities.NewHash(fromEmail, toEmail)
+
+	ta.chainRepo.On("GetByHash", mock.Anything, hash).Return(entities.Chain{}, entities.ErrNotFound)
+	ta.addrRepo.On("GetByEmail", mock.Anything, alias.Email).Return([]entities.Address{alias}, nil)
+	ta.addrRepo.On("GetByEmail", mock.Anything, entities.Email(fromEmail)).Return([]entities.Address{}, nil)
+	ta.addrRepo.On("Create", mock.Anything, mock.AnythingOfType("entities.Address")).Return(nil)
+	ta.chainRepo.On("BatchCreate", mock.Anything, mock.AnythingOfType("[]entities.Chain")).Return(nil)
+
+	body := bytes.NewBufferString(`{"from_email": "` + fromEmail + `", "to_email": "` + toEmail + `"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/chains", body)
+	req = withUser(req, regularUser)
+	w := httptest.NewRecorder()
+	ta.app.CreateChain(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var resp ChainData
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	// the forward chain is returned: from_email is the generated reply alias the user has to
+	// send to, to_email is the protected address they have to send from
+	assert.Equal(t, "alias", resp.OrigToAddress.Type)
+	assert.Equal(t, toEmail, resp.OrigToAddress.Email)
+	assert.Equal(t, fromEmail, resp.OrigFromAddress.Email)
+	assert.Equal(t, string(alias.ForwardAddress.Email), resp.ToEmail)
+	assert.Contains(t, resp.FromEmail, "_at_")
+
+	ta.chainRepo.AssertExpectations(t)
+	ta.addrRepo.AssertExpectations(t)
 }
 
 func TestCreateChain_InvalidBody(t *testing.T) {

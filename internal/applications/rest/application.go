@@ -191,9 +191,10 @@ func (a *Application) Start() error {
 	mux.HandleFunc("POST /api/v1/praddrs/{id}/tokenvalidate", a.ValidatePrAddrVerificationToken)
 
 	// chains routes
-	mux.HandleFunc("GET /private/api/v1/chains/{hash}", a.getChainByHash)
-	mux.HandleFunc("POST /private/api/v1/chains", a.CreateChain)
-	mux.HandleFunc("DELETE /private/api/v1/chains/{hash}", a.DeleteChain)
+	mux.HandleFunc("GET /api/v1/chains", a.GetChains)
+	mux.HandleFunc("GET /api/v1/chains/{hash}", a.getChainByHash)
+	mux.HandleFunc("POST /api/v1/chains", a.CreateChain)
+	mux.HandleFunc("DELETE /api/v1/chains/{hash}", a.DeleteChain)
 
 	// version
 	mux.HandleFunc("GET /api/v1/version", func(w http.ResponseWriter, r *http.Request) {

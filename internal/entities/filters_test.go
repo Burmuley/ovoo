@@ -457,3 +457,70 @@ func TestNewApiTokensFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestNewChainFilter(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        map[string][]string
+		wantAliasIds []Id
+		wantPage     int
+		wantPageSize int
+		wantErr      error
+	}{
+		{
+			name:         "single alias",
+			input:        map[string][]string{"alias": {"alias1"}},
+			wantAliasIds: []Id{"alias1"},
+			wantPage:     DefaulPageNumber,
+			wantPageSize: DefaultPageSize,
+		},
+		{
+			name:         "multiple aliases with paging",
+			input:        map[string][]string{"alias": {"alias1", "alias2"}, "page": {"3"}, "page_size": {"20"}},
+			wantAliasIds: []Id{"alias1", "alias2"},
+			wantPage:     3,
+			wantPageSize: 20,
+		},
+		{
+			name:         "no alias filter",
+			input:        map[string][]string{},
+			wantAliasIds: nil,
+			wantPage:     DefaulPageNumber,
+			wantPageSize: DefaultPageSize,
+		},
+		{
+			name:    "invalid page",
+			input:   map[string][]string{"alias": {"alias1"}, "page": {"abc"}},
+			wantErr: ErrValidation,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewChainFilter(tt.input)
+			if tt.wantErr != nil {
+				if !errors.Is(err, tt.wantErr) {
+					t.Fatalf("error = %v, want %v", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if len(got.OrigToAddrIds) != len(tt.wantAliasIds) {
+				t.Fatalf("OrigToAddrIds = %v, want %v", got.OrigToAddrIds, tt.wantAliasIds)
+			}
+			for i, id := range tt.wantAliasIds {
+				if got.OrigToAddrIds[i] != id {
+					t.Errorf("OrigToAddrIds[%d] = %v, want %v", i, got.OrigToAddrIds[i], id)
+				}
+			}
+			if got.Page != tt.wantPage {
+				t.Errorf("Page = %v, want %v", got.Page, tt.wantPage)
+			}
+			if got.PageSize != tt.wantPageSize {
+				t.Errorf("PageSize = %v, want %v", got.PageSize, tt.wantPageSize)
+			}
+		})
+	}
+}

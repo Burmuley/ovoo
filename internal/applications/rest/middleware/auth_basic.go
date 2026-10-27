@@ -14,6 +14,9 @@ import (
 // the provided password against the stored password hash. If either the user lookup
 // fails or the password doesn't match, an error is returned.
 //
+// A user with an empty stored password hash is rejected outright: such accounts are
+// authenticated through OIDC only and can never be reached with a password.
+//
 // Parameters:
 //   - ctx: The context for the authentication request
 //   - username: The user's email address used as login
@@ -27,6 +30,11 @@ func validateBasicAuth(ctx context.Context, username, password string, svcGw *se
 	user, err := svcGw.Users.GetByLogin(ctx, username)
 	if err != nil {
 		return entities.User{}, err
+	}
+
+	// an empty stored hash means password authentication is not enabled for this account
+	if len(user.PasswordHash) == 0 {
+		return entities.User{}, fmt.Errorf("password authentication is not enabled for the user")
 	}
 
 	if !entities.ValidPassword(password, user.PasswordHash) {

@@ -250,11 +250,12 @@ func testAlias(ownerID entities.Id) entities.Address {
 
 func testProtectedAddr(ownerID entities.Id) entities.Address {
 	return entities.Address{
-		ID:     entities.NewId(),
-		Type:   entities.ProtectedAddress,
-		Email:  "protected@example.com",
-		Owner:  entities.User{ID: ownerID, Type: entities.AdminUser},
-		Active: true,
+		ID:       entities.NewId(),
+		Type:     entities.ProtectedAddress,
+		Email:    "protected@example.com",
+		Owner:    entities.User{ID: ownerID, Type: entities.AdminUser},
+		Active:   true,
+		Verified: true,
 	}
 }
 

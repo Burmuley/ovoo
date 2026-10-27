@@ -141,6 +141,8 @@ type ChainAddressData struct {
 
 // ChainData defines model for chainData.
 type ChainData struct {
+	// CreatedAt When the chain was created
+	CreatedAt       *time.Time       `json:"created_at,omitempty"`
 	FromEmail       string           `json:"from_email"`
 	Hash            string           `json:"hash"`
 	OrigFromAddress ChainAddressData `json:"orig_from_address"`
@@ -335,6 +337,11 @@ type GetApiTokenDetailsResponse = ApiTokenData
 // GetApiTokensResponse defines model for getApiTokensResponse.
 type GetApiTokensResponse = []ApiTokenData
 
+// GetChainsResponse defines model for getChainsResponse.
+type GetChainsResponse struct {
+	Chains []ChainData `json:"chains"`
+}
+
 // GetDomainsResponse defines model for getDomainsResponse.
 type GetDomainsResponse struct {
 	Domains            []DomainData       `json:"domains"`
@@ -509,6 +516,18 @@ type UpdateAliasJSONBody struct {
 	Metadata *AddressMetadata `json:"metadata,omitempty"`
 }
 
+// GetChainsParams defines parameters for GetChains.
+type GetChainsParams struct {
+	// Alias Alias ID to return chains for. May be repeated.
+	Alias []string `form:"alias" json:"alias"`
+}
+
+// CreateChainJSONBody defines parameters for CreateChain.
+type CreateChainJSONBody struct {
+	FromEmail openapi_types.Email `json:"from_email"`
+	ToEmail   openapi_types.Email `json:"to_email"`
+}
+
 // GetDomainsParams defines parameters for GetDomains.
 type GetDomainsParams struct {
 	// DomainName FQDN to lookup within the scope available to the user
@@ -610,17 +629,14 @@ type UpdateUserJSONBody struct {
 	Type      *string `json:"type,omitempty"`
 }
 
-// CreateChainJSONBody defines parameters for CreateChain.
-type CreateChainJSONBody struct {
-	FromEmail openapi_types.Email `json:"from_email"`
-	ToEmail   openapi_types.Email `json:"to_email"`
-}
-
 // CreateAliasJSONRequestBody defines body for CreateAlias for application/json ContentType.
 type CreateAliasJSONRequestBody CreateAliasJSONBody
 
 // UpdateAliasJSONRequestBody defines body for UpdateAlias for application/json ContentType.
 type UpdateAliasJSONRequestBody UpdateAliasJSONBody
+
+// CreateChainJSONRequestBody defines body for CreateChain for application/json ContentType.
+type CreateChainJSONRequestBody CreateChainJSONBody
 
 // CreateDomainJSONRequestBody defines body for CreateDomain for application/json ContentType.
 type CreateDomainJSONRequestBody CreateDomainJSONBody
@@ -648,6 +664,3 @@ type UpdateApiTokenJSONRequestBody UpdateApiTokenJSONBody
 
 // UpdateUserJSONRequestBody defines body for UpdateUser for application/json ContentType.
 type UpdateUserJSONRequestBody UpdateUserJSONBody
-
-// CreateChainJSONRequestBody defines body for CreateChain for application/json ContentType.
-type CreateChainJSONRequestBody CreateChainJSONBody
