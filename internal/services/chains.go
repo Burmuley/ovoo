@@ -26,10 +26,6 @@ func NewChainsService(repof *factory.RepoFactory) (*ChainsService, error) {
 }
 
 func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {
-	if !canGetChain(cuser) {
-		return entities.Chain{}, entities.ErrNotAuthorized
-	}
-
 	if err := hash.Validate(); err != nil {
 		return entities.Chain{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
@@ -37,6 +33,13 @@ func (cs *ChainsService) GetByHash(ctx context.Context, cuser entities.User, has
 	chain, err := cs.repof.Chain.GetByHash(ctx, hash)
 	if err != nil {
 		return entities.Chain{}, err
+	}
+
+	// a chain hash is derived from two email addresses and so is guessable by anyone who knows
+	// them - report an unowned chain as missing rather than forbidden, so the response can not
+	// be used to confirm that two parties correspond
+	if !canGetChain(cuser, chain) {
+		return entities.Chain{}, fmt.Errorf("%w: chain not found", entities.ErrNotFound)
 	}
 
 	// checking if addresses in the chain are active (alias or praddr)
@@ -89,7 +92,16 @@ func (cs *ChainsService) GetAll(ctx context.Context, cuser entities.User, filter
 		return nil, err
 	}
 
-	return chains, nil
+	owned := make([]entities.Chain, 0, len(chains))
+	for _, chain := range chains {
+		// the alias filter above already scopes the query; this is a second barrier so a
+		// filtering bug in a driver can not leak another user's correspondence
+		if canGetChain(cuser, chain) {
+			owned = append(owned, chain)
+		}
+	}
+
+	return owned, nil
 }
 
 func (cs *ChainsService) DeleteByHash(ctx context.Context, cuser entities.User, hash entities.Hash) (entities.Chain, error) {

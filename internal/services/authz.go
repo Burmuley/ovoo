@@ -116,11 +116,43 @@ func canDeletePrAddr(cuser entities.User, addr entities.Address) bool {
 	return false
 }
 
-// canGetChain determines if the user can retrieve chain-related data.
-// Returns true if the user is an Admin or a MilterUser.
-func canGetChain(cuser entities.User) bool {
+// chainOwnedBy reports whether every address in the chain that carries a trustworthy owner
+// belongs to user.
+//
+// Only AliasAddress and ProtectedAddress are considered. A chain's reply alias and external
+// address are owned by whoever created the chain - the milter service user for inbound mail -
+// so their Owner says nothing about whose correspondence this is. Every chain holds exactly
+// one alias and one protected address, and both always belong to the real user.
+func chainOwnedBy(user entities.User, chain entities.Chain) bool {
+	found := false
+
+	for _, addr := range []entities.Address{
+		chain.OrigFromAddress, chain.OrigToAddress, chain.FromAddress, chain.ToAddress,
+	} {
+		if addr.Type != entities.AliasAddress && addr.Type != entities.ProtectedAddress {
+			continue
+		}
+
+		if addr.Owner.ID != user.ID {
+			return false
+		}
+
+		found = true
+	}
+
+	return found
+}
+
+// canGetChain determines if the user can read the given chain.
+// Returns true if the user is an Admin or a MilterUser, or a RegularUser who owns the alias
+// and the protected address the chain connects.
+func canGetChain(cuser entities.User, chain entities.Chain) bool {
 	if cuser.Type == entities.AdminUser || cuser.Type == entities.MilterUser {
 		return true
+	}
+
+	if cuser.Type == entities.RegularUser {
+		return chainOwnedBy(cuser, chain)
 	}
 
 	return false

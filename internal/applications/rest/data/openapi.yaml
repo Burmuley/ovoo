@@ -920,7 +920,12 @@ paths:
       description: >-
         Retrieve deteiled information of a particular email address
         chain by its hash. The \`hash\` is a path parameter and is of
-        SHA2-512/256 format.
+        SHA2-512/256 format. Admins and the milter service user may read any
+        chain; a regular user may read only a chain connecting an alias and a
+        protected address they own. Because the hash is derived from the two
+        email addresses, a chain the caller does not own answers \`404\`,
+        indistinguishable from an unknown hash, so the response can not be used
+        to confirm that two parties correspond.
       operationId: getChainByHash
       tags:
         - Email chains
@@ -935,12 +940,17 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
       security:
+        - OAuth2: []
+        - BasicAuthentication: []
         - ApiToken: []
     delete:
       summary: Delete a particular email chain by it hash
       description: >-
         Delete a particular email address chain by its hash. The
         \`hash\` is a path parameter and is of SHA2-512/256 format.
+        Restricted to admins and the milter service user - unlike reading,
+        deletion is not owner-scoped, so a regular user gets \`403\` even for
+        a chain of their own alias.
       operationId: deleteChainByHash
       tags:
         - Email chains
@@ -957,6 +967,8 @@ paths:
         "404":
           $ref: "#/components/responses/HTTP404"
       security:
+        - OAuth2: []
+        - BasicAuthentication: []
         - ApiToken: []
     parameters:
       - in: path

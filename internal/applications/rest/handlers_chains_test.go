@@ -26,19 +26,45 @@ func TestGetChainByHash_NoUser(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
-func TestGetChainByHash_UnauthorizedUser(t *testing.T) {
-	// RegularUser cannot get chains; only AdminUser or MilterUser are allowed.
+func TestGetChainByHash_NotOwnedByRegularUser(t *testing.T) {
+	// A RegularUser may only read chains connecting an alias and protected address they own.
+	// The hash is derived from two email addresses, so someone else's chain must answer 404 -
+	// a 403 would confirm that those two addresses correspond.
 	ta := newTestApp(t)
-	regularUser := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
-	hash := entities.NewHash("a@b.com", "c@d.com")
+	regularUser := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Active: true}
+	chain := testChain()
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains/"+hash.String(), nil)
-	req.SetPathValue("hash", hash.String())
+	ta.chainRepo.On("GetByHash", mock.Anything, chain.Hash).Return(chain, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains/"+chain.Hash.String(), nil)
+	req.SetPathValue("hash", chain.Hash.String())
 	req = withUser(req, regularUser)
 	w := httptest.NewRecorder()
 	ta.app.getChainByHash(w, req)
 
-	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	ta.chainRepo.AssertExpectations(t)
+}
+
+func TestGetChainByHash_OwnedByRegularUser(t *testing.T) {
+	ta := newTestApp(t)
+	chain := testChain()
+
+	// the chain fixture hangs its alias and protected address off a single owner
+	owner := chain.OrigToAddress.Owner
+	owner.Type = entities.RegularUser
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/chains/"+chain.Hash.String(), nil)
+	req.SetPathValue("hash", chain.Hash.String())
+	req = withUser(req, owner)
+	w := httptest.NewRecorder()
+
+	ta.chainRepo.On("GetByHash", mock.Anything, chain.Hash).Return(chain, nil)
+	ta.app.getChainByHash(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Type"), "application/json")
+	ta.chainRepo.AssertExpectations(t)
 }
 
 func TestGetChainByHash_InvalidHash(t *testing.T) {

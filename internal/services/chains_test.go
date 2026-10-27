@@ -160,23 +160,140 @@ func TestChainsService_GetByHash_Success_MilterUser(t *testing.T) {
 	chainRepo.AssertExpectations(t)
 }
 
-func TestChainsService_GetByHash_NotAuthorized_RegularUser(t *testing.T) {
-	service, _, _ := setupChainsService(t)
+// milterOwnedChain builds the pair of chains the milter creates for inbound mail to owner's
+// alias. Only the alias and the protected address carry owner; the generated reply alias and the
+// external sender address belong to the milter service user.
+func milterOwnedChain(owner entities.User) (forward, reply entities.Chain) {
+	milter := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.MilterUser,
+		Login:  "milter@test.com",
+		Active: true,
+	}
+
+	external := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.ExternalAddress,
+		Email:  "from@example.com",
+		Owner:  milter,
+		Active: true,
+	}
+	praddr := entities.Address{
+		ID:     entities.NewId(),
+		Type:   entities.ProtectedAddress,
+		Email:  "protected@example.com",
+		Owner:  owner,
+		Active: true,
+	}
+	alias := entities.Address{
+		ID:             entities.NewId(),
+		Type:           entities.AliasAddress,
+		Email:          "to@test.com",
+		Owner:          owner,
+		ForwardAddress: &praddr,
+		Active:         true,
+	}
+	ralias := entities.Address{
+		ID:             entities.NewId(),
+		Type:           entities.ReplyAliasAddress,
+		Email:          "reply@test.com",
+		Owner:          milter,
+		ForwardAddress: &external,
+		Active:         true,
+	}
+
+	forward = entities.Chain{
+		Hash:            entities.NewHash(string(external.Email), string(alias.Email)),
+		FromAddress:     ralias,
+		ToAddress:       praddr,
+		OrigFromAddress: external,
+		OrigToAddress:   alias,
+	}
+	reply = entities.Chain{
+		Hash:            entities.NewHash(string(praddr.Email), string(ralias.Email)),
+		FromAddress:     alias,
+		ToAddress:       external,
+		OrigFromAddress: praddr,
+		OrigToAddress:   ralias,
+	}
+
+	return forward, reply
+}
+
+// A chain hash is computable from any two email addresses, so a chain a regular user does not own
+// must read as missing rather than forbidden - a 403 would confirm the two parties correspond.
+func TestChainsService_GetByHash_NotOwned_RegularUser(t *testing.T) {
+	service, chainRepo, _ := setupChainsService(t)
 	ctx := context.Background()
 
 	regularUser := entities.User{
-		ID:    entities.NewId(),
-		Type:  entities.RegularUser,
-		Login: "user@test.com",
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "user@test.com",
+		Active: true,
 	}
 
-	hash := entities.NewHash("from@example.com", "to@test.com")
+	otherUser := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "other@test.com",
+		Active: true,
+	}
 
-	chain, err := service.GetByHash(ctx, regularUser, hash)
+	forward, _ := milterOwnedChain(otherUser)
+	chainRepo.On("GetByHash", ctx, forward.Hash).Return(forward, nil)
+
+	chain, err := service.GetByHash(ctx, regularUser, forward.Hash)
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+	assert.NotErrorIs(t, err, entities.ErrNotAuthorized)
 	assert.Equal(t, entities.Chain{}, chain)
+	chainRepo.AssertExpectations(t)
+}
+
+func TestChainsService_GetByHash_Owned_RegularUser_ForwardChain(t *testing.T) {
+	service, chainRepo, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "user@test.com",
+		Active: true,
+	}
+
+	forward, _ := milterOwnedChain(owner)
+	chainRepo.On("GetByHash", ctx, forward.Hash).Return(forward, nil)
+
+	chain, err := service.GetByHash(ctx, owner, forward.Hash)
+
+	assert.NoError(t, err)
+	assert.Equal(t, forward.Hash, chain.Hash)
+	chainRepo.AssertExpectations(t)
+}
+
+// The reply chain's OrigToAddress is the milter-owned reply alias, so this is the case an
+// OrigToAddress-only ownership check would wrongly reject.
+func TestChainsService_GetByHash_Owned_RegularUser_ReplyChain(t *testing.T) {
+	service, chainRepo, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "user@test.com",
+		Active: true,
+	}
+
+	_, reply := milterOwnedChain(owner)
+	chainRepo.On("GetByHash", ctx, reply.Hash).Return(reply, nil)
+
+	chain, err := service.GetByHash(ctx, owner, reply.Hash)
+
+	assert.NoError(t, err)
+	assert.Equal(t, reply.Hash, chain.Hash)
+	chainRepo.AssertExpectations(t)
 }
 
 func TestChainsService_GetByHash_InvalidHash(t *testing.T) {
@@ -563,25 +680,13 @@ func TestChainsService_GetAll_Success(t *testing.T) {
 	service, chainRepo, addressRepo := setupChainsService(t)
 	ctx := context.Background()
 
-	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Active: true}
 
-	aliasAddr := entities.Address{
-		ID:     entities.NewId(),
-		Type:   entities.AliasAddress,
-		Email:  "alias@test.com",
-		Owner:  owner,
-		Active: true,
-	}
+	forward, _ := milterOwnedChain(owner)
+	aliasAddr := forward.OrigToAddress
 
 	filter := entities.ChainFilter{OrigToAddrIds: []entities.Id{aliasAddr.ID}}
-
-	expected := []entities.Chain{
-		{
-			Hash:          entities.NewHash("sender@external.com", string(aliasAddr.Email)),
-			OrigToAddress: aliasAddr,
-			CreatedAt:     time.Now(),
-		},
-	}
+	expected := []entities.Chain{forward}
 
 	addressRepo.On("GetById", ctx, aliasAddr.ID).Return(aliasAddr, nil)
 	chainRepo.On("GetByFilters", ctx, filter).Return(expected, nil)
@@ -620,6 +725,67 @@ func TestChainsService_GetAll_AdminUser(t *testing.T) {
 	assert.Empty(t, chains)
 	chainRepo.AssertExpectations(t)
 	addressRepo.AssertExpectations(t)
+}
+
+// The alias filter already scopes the query, but GetAll filters the repository result a second
+// time so a driver-side filtering bug can not leak another user's correspondence.
+func TestChainsService_GetAll_DropsForeignChains(t *testing.T) {
+	service, chainRepo, addressRepo := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "user@test.com",
+		Active: true,
+	}
+
+	other := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "other@test.com",
+		Active: true,
+	}
+
+	mine, _ := milterOwnedChain(owner)
+	foreign, _ := milterOwnedChain(other)
+
+	aliasId := mine.OrigToAddress.ID
+	filter := entities.ChainFilter{OrigToAddrIds: []entities.Id{aliasId}}
+
+	addressRepo.On("GetById", ctx, aliasId).Return(mine.OrigToAddress, nil)
+	// the repository misbehaves and returns a chain outside the requested alias
+	chainRepo.On("GetByFilters", ctx, filter).Return([]entities.Chain{mine, foreign}, nil)
+
+	chains, err := service.GetAll(ctx, owner, filter)
+
+	assert.NoError(t, err)
+	require.Len(t, chains, 1)
+	assert.Equal(t, mine.Hash, chains[0].Hash)
+	chainRepo.AssertExpectations(t)
+	addressRepo.AssertExpectations(t)
+}
+
+// Reading a chain is owner-scoped, but deleting one stays admin/milter only - a regular user may
+// not delete even a chain they own.
+func TestChainsService_DeleteByHash_NotAuthorized_RegularUser_OwnChain(t *testing.T) {
+	service, _, _ := setupChainsService(t)
+	ctx := context.Background()
+
+	owner := entities.User{
+		ID:     entities.NewId(),
+		Type:   entities.RegularUser,
+		Login:  "user@test.com",
+		Active: true,
+	}
+
+	forward, _ := milterOwnedChain(owner)
+
+	chain, err := service.DeleteByHash(ctx, owner, forward.Hash)
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	assert.Equal(t, entities.Chain{}, chain)
 }
 
 func TestChainsService_Create_ExistingChain(t *testing.T) {
