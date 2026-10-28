@@ -19,6 +19,8 @@
     <div class="mb-3">
         <CFormLabel for="password">Password</CFormLabel>
         <CFormInput id="password" v-model="password" type="password" />
+        <div class="form-text">Leave blank for an OIDC-only account — the user will not be able to
+            sign in with a password.</div>
     </div>
     <CAlert v-if="errorMessage" color="danger" class="mb-3">{{ errorMessage }}</CAlert>
     <div class="d-flex gap-2">

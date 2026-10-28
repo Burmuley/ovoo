@@ -116,6 +116,7 @@ func chainTChainData(chain entities.Chain) ChainData {
 			Email: string(chain.OrigToAddress.Email),
 			Type:  addrTypeTStr(chain.OrigToAddress.Type),
 		},
+		CreatedAt: &chain.CreatedAt,
 	}
 }
 

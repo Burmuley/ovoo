@@ -273,36 +273,145 @@ func TestCanDeletePrAddr_MilterUser(t *testing.T) {
 	assert.False(t, canDeletePrAddr(milter, addr))
 }
 
+// createTestForwardChain builds a forward chain (external -> alias -> protected address) as the
+// milter creates it: the alias and the protected address belong to owner, while the generated
+// reply alias and the external sender address are owned by the milter service user.
+func createTestForwardChain(owner, milter entities.User) entities.Chain {
+	return entities.Chain{
+		Hash:            entities.NewHash("external@example.com", "alias@test.com"),
+		OrigFromAddress: createTestTypedAddress(entities.ExternalAddress, milter),
+		OrigToAddress:   createTestTypedAddress(entities.AliasAddress, owner),
+		FromAddress:     createTestTypedAddress(entities.ReplyAliasAddress, milter),
+		ToAddress:       createTestTypedAddress(entities.ProtectedAddress, owner),
+	}
+}
+
+// createTestReplyChain builds the reply chain paired with the forward chain above. Note that its
+// OrigToAddress is the milter-owned reply alias, so ownership can only be established from the
+// alias and the protected address.
+func createTestReplyChain(owner, milter entities.User) entities.Chain {
+	return entities.Chain{
+		Hash:            entities.NewHash("protected@example.com", "reply@test.com"),
+		OrigFromAddress: createTestTypedAddress(entities.ProtectedAddress, owner),
+		OrigToAddress:   createTestTypedAddress(entities.ReplyAliasAddress, milter),
+		FromAddress:     createTestTypedAddress(entities.AliasAddress, owner),
+		ToAddress:       createTestTypedAddress(entities.ExternalAddress, milter),
+	}
+}
+
+func createTestTypedAddress(atype entities.AddressType, owner entities.User) entities.Address {
+	addr := createTestAddress(owner)
+	addr.Type = atype
+	return addr
+}
+
 // Tests for canGetChain
 func TestCanGetChain_AdminUser(t *testing.T) {
 	user := createTestUser(entities.AdminUser)
-	assert.True(t, canGetChain(user))
+	milter := createTestUser(entities.MilterUser)
+	chain := createTestForwardChain(createTestUser(entities.RegularUser), milter)
+
+	assert.True(t, canGetChain(user, chain))
 }
 
 func TestCanGetChain_MilterUser(t *testing.T) {
-	user := createTestUser(entities.MilterUser)
-	assert.True(t, canGetChain(user))
+	milter := createTestUser(entities.MilterUser)
+	chain := createTestForwardChain(createTestUser(entities.RegularUser), milter)
+
+	assert.True(t, canGetChain(milter, chain))
 }
 
-func TestCanGetChain_RegularUser(t *testing.T) {
+func TestCanGetChain_RegularUser_OwnForwardChain(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	chain := createTestForwardChain(owner, createTestUser(entities.MilterUser))
+
+	assert.True(t, canGetChain(owner, chain))
+}
+
+// A milter-created reply chain carries the milter user on its OrigToAddress, so an
+// OrigToAddress-only ownership check would wrongly reject the real owner here.
+func TestCanGetChain_RegularUser_OwnReplyChain(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	chain := createTestReplyChain(owner, createTestUser(entities.MilterUser))
+
+	assert.True(t, canGetChain(owner, chain))
+}
+
+func TestCanGetChain_RegularUser_OtherUsersChain(t *testing.T) {
+	milter := createTestUser(entities.MilterUser)
+	chain := createTestForwardChain(createTestUser(entities.RegularUser), milter)
+	other := createTestUser(entities.RegularUser)
+
+	assert.False(t, canGetChain(other, chain))
+}
+
+// The milter owning the reply alias and the external address must not be enough on its own: a
+// regular user who owns neither the alias nor the protected address gets nothing.
+func TestCanGetChain_RegularUser_OwnsOnlyUntrustedAddresses(t *testing.T) {
 	user := createTestUser(entities.RegularUser)
-	assert.False(t, canGetChain(user))
+	chain := createTestForwardChain(createTestUser(entities.RegularUser), user)
+
+	assert.False(t, canGetChain(user, chain))
+}
+
+// A malformed chain whose alias and protected address belong to different users is readable by
+// neither of them.
+func TestCanGetChain_RegularUser_SplitOwnership(t *testing.T) {
+	aliasOwner := createTestUser(entities.RegularUser)
+	praddrOwner := createTestUser(entities.RegularUser)
+	milter := createTestUser(entities.MilterUser)
+
+	chain := createTestForwardChain(aliasOwner, milter)
+	chain.ToAddress = createTestTypedAddress(entities.ProtectedAddress, praddrOwner)
+
+	assert.False(t, canGetChain(aliasOwner, chain))
+	assert.False(t, canGetChain(praddrOwner, chain))
+}
+
+// A chain holding no alias and no protected address carries no trustworthy owner at all.
+func TestCanGetChain_RegularUser_NoOwnedAddressTypes(t *testing.T) {
+	user := createTestUser(entities.RegularUser)
+	chain := entities.Chain{
+		Hash:            entities.NewHash("external@example.com", "reply@test.com"),
+		OrigFromAddress: createTestTypedAddress(entities.ExternalAddress, user),
+		OrigToAddress:   createTestTypedAddress(entities.ReplyAliasAddress, user),
+		FromAddress:     createTestTypedAddress(entities.ReplyAliasAddress, user),
+		ToAddress:       createTestTypedAddress(entities.ExternalAddress, user),
+	}
+
+	assert.False(t, canGetChain(user, chain))
 }
 
 // Tests for canCreateChain
 func TestCanCreateChain_AdminUser(t *testing.T) {
 	user := createTestUser(entities.AdminUser)
-	assert.True(t, canCreateChain(user))
+	addr := createTestAddress(createTestUser(entities.RegularUser))
+	assert.True(t, canCreateChain(user, addr))
 }
 
 func TestCanCreateChain_MilterUser(t *testing.T) {
 	user := createTestUser(entities.MilterUser)
-	assert.True(t, canCreateChain(user))
+	addr := createTestAddress(createTestUser(entities.RegularUser))
+	assert.True(t, canCreateChain(user, addr))
 }
 
-func TestCanCreateChain_RegularUser(t *testing.T) {
+func TestCanCreateChain_RegularUser_NotOwner(t *testing.T) {
 	user := createTestUser(entities.RegularUser)
-	assert.False(t, canCreateChain(user))
+	addr := createTestAddress(createTestUser(entities.RegularUser))
+	assert.False(t, canCreateChain(user, addr))
+}
+
+func TestCanCreateChain_RegularUser_Owner(t *testing.T) {
+	owner := createTestUser(entities.RegularUser)
+	addr := createTestAddress(owner)
+	assert.True(t, canCreateChain(owner, addr))
+}
+
+func TestCanCreateChain_MilterUser_OwnAddress(t *testing.T) {
+	// a milter user owning the alias still passes through the service-user branch
+	milter := createTestUser(entities.MilterUser)
+	addr := createTestAddress(milter)
+	assert.True(t, canCreateChain(milter, addr))
 }
 
 // Tests for canDeleteChain

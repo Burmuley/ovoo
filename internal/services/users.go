@@ -58,14 +58,13 @@ func (u *UsersService) Create(ctx context.Context, cuser entities.User, cmd User
 		return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	{
-		if cmd.Password != nil {
-			var err error
-			user.PasswordHash, err = entities.NewPasswordHash(user.PasswordHash)
-			if err != nil {
-				return entities.User{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
-			}
+	// no password means the account is OIDC-only: leave the hash empty
+	if cmd.Password != nil && len(*cmd.Password) > 0 {
+		hash, err := entities.NewPasswordHash(*cmd.Password)
+		if err != nil {
+			return entities.User{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
 		}
+		user.PasswordHash = hash
 	}
 
 	user.UpdatedBy = &cuser
@@ -86,12 +85,14 @@ func (u *UsersService) CreatePriv(ctx context.Context, user entities.User) (enti
 		return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
-	{
-		var err error
-		user.PasswordHash, err = entities.NewPasswordHash(user.PasswordHash)
+	// the field carries a plaintext password on the way in; an empty one means the account
+	// is OIDC-only and keeps an empty hash
+	if len(user.PasswordHash) > 0 {
+		hash, err := entities.NewPasswordHash(user.PasswordHash)
 		if err != nil {
 			return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 		}
+		user.PasswordHash = hash
 	}
 
 	if err := user.Validate(); err != nil {

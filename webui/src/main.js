@@ -13,7 +13,7 @@ import CIcon from '@coreui/icons-vue'
 import {
   cilBan, cilBook, cilCheck, cilCheckCircle, cilCode,
   cilEnvelopeClosed, cilGlobeAlt, cilMenu, cilPencil, cilPeople,
-  cilPlus, cilSearch, cilShieldAlt, cilTrash, cilX
+  cilPlus, cilSearch, cilSend, cilShieldAlt, cilTrash, cilX
 } from '@coreui/icons'
 import './styles/style.scss'
 import App from './App.vue'
@@ -21,7 +21,7 @@ import App from './App.vue'
 const icons = {
   cilBan, cilBook, cilCheck, cilCheckCircle, cilCode,
   cilEnvelopeClosed, cilGlobeAlt, cilMenu, cilPencil, cilPeople,
-  cilPlus, cilSearch, cilShieldAlt, cilTrash, cilX
+  cilPlus, cilSearch, cilSend, cilShieldAlt, cilTrash, cilX
 }
 
 const app = createApp(App)

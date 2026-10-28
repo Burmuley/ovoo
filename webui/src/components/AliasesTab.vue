@@ -62,6 +62,10 @@
                             </CBadge>
                         </CTableDataCell>
                         <CTableDataCell class="text-end text-nowrap">
+                            <CButton v-c-tooltip="'Chains'" color="info" size="sm" variant="outline" class="me-1"
+                                @click="chainsAlias = alias">
+                                <CIcon icon="cilSend" />
+                            </CButton>
                             <CButton v-c-tooltip="'Edit'" color="primary" size="sm" variant="outline" class="me-1"
                                 @click="startEdit(alias)">
                                 <CIcon icon="cilPencil" />
@@ -159,6 +163,8 @@
     </CModalFooter>
 </CModal>
 
+<AliasChainsModal :alias="chainsAlias" @close="chainsAlias = null" />
+
 <CModal :visible="showAddModal" @close="showAddModal = false" size="lg">
     <CModalHeader>
         <CModalTitle>Add New Alias</CModalTitle>
@@ -177,6 +183,7 @@ import Paginator from './Paginator.vue'
 import EmptyState from './EmptyState.vue'
 import InfoPopover from './InfoPopover.vue'
 import AddAliasForm from './AddAliasForm.vue'
+import AliasChainsModal from './AliasChainsModal.vue'
 
 const { showToast } = useToast()
 
@@ -192,6 +199,7 @@ const saving = ref(false)
 const deletingId = ref(null)
 const confirmingDeactivateId = ref(null)
 const confirmingActivateId = ref(null)
+const chainsAlias = ref(null)
 const apiError = ref(null)
 
 const deletingAlias = computed(() => aliases.value.find(a => a.id === deletingId.value))

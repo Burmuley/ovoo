@@ -74,11 +74,12 @@ func TestAliasesService_Create_Success(t *testing.T) {
 
 	prAddrId := entities.NewId()
 	protectedAddr := entities.Address{
-		ID:     prAddrId,
-		Type:   entities.ProtectedAddress,
-		Email:  "protected@example.com",
-		Owner:  user,
-		Active: true,
+		ID:       prAddrId,
+		Type:     entities.ProtectedAddress,
+		Email:    "protected@example.com",
+		Owner:    user,
+		Active:   true,
+		Verified: true,
 	}
 
 	serviceName := "Test Service"
@@ -867,11 +868,12 @@ func TestAliasesService_Create_WithCustomPrefix(t *testing.T) {
 
 	prAddrId := entities.NewId()
 	protectedAddr := entities.Address{
-		ID:     prAddrId,
-		Type:   entities.ProtectedAddress,
-		Email:  "protected@example.com",
-		Owner:  user,
-		Active: true,
+		ID:       prAddrId,
+		Type:     entities.ProtectedAddress,
+		Email:    "protected@example.com",
+		Owner:    user,
+		Active:   true,
+		Verified: true,
 	}
 
 	prefix := "mycustomprefix"

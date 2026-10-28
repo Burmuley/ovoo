@@ -24,6 +24,33 @@ func (a *Application) getChainByHash(w http.ResponseWriter, r *http.Request) {
 	a.successResponse(w, resp, http.StatusOK)
 }
 
+func (a *Application) GetChains(w http.ResponseWriter, r *http.Request) {
+	cuser, err := userFromContext(r)
+	if err != nil {
+		a.errorLogNResponse(w, "getting chains: identifying user", err)
+		return
+	}
+
+	filter, err := entities.NewChainFilter(r.URL.Query())
+	if err != nil {
+		a.errorLogNResponse(w, "getting chains: parsing filters", err)
+		return
+	}
+
+	chains, err := a.svcGw.Chains.GetAll(r.Context(), cuser, filter)
+	if err != nil {
+		a.errorLogNResponse(w, "getting chains", err)
+		return
+	}
+
+	resp := GetChainsResponse{Chains: make([]ChainData, 0, len(chains))}
+	for _, chain := range chains {
+		resp.Chains = append(resp.Chains, chainTChainData(chain))
+	}
+
+	a.successResponse(w, resp, http.StatusOK)
+}
+
 func (a *Application) CreateChain(w http.ResponseWriter, r *http.Request) {
 	cuser, err := userFromContext(r)
 	if err != nil {
