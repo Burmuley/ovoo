@@ -33,7 +33,7 @@ func SecurityHeaders() Adapter {
 			}
 
 			scriptSrcUrls := []string{
-				"https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js",
+				"https://cdn.redoc.ly/redoc/v3.x/bundles/redoc.standalone.js",
 			}
 			cspElems := []string{
 				"default-src 'none'",
