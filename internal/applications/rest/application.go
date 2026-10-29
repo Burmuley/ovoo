@@ -242,8 +242,11 @@ func (a *Application) Start() error {
 	mux.Handle("/", withIndexHTML(webuiFileServer))
 
 	handler := middleware.Adapt(mux,
+		middleware.MaxBodyBytes(2*1024*1024), // max body size - 2MB
 		middleware.SecurityHeaders(),
 		middleware.Logging(a.logger),
+		middleware.CrossOriginProtection(),
+		middleware.RequireJSONBody(),
 		middleware.Authentication(a.authSkipURIs, a.svcGw),
 	)
 	srv := &http.Server{
@@ -254,6 +257,7 @@ func (a *Application) Start() error {
 		WriteTimeout:                 15 * time.Second,
 		IdleTimeout:                  60 * time.Second,
 		BaseContext:                  func(net.Listener) context.Context { return ctx },
+		MaxHeaderBytes:               8 * 1024, // 8KB headers limit to prevent CWE-407 attacks
 	}
 
 	go func() {
@@ -303,6 +307,7 @@ func parseProvidersCfg(cfg map[string]config.ConfigOIDC) (map[string]middleware.
 		var err error
 		p := middleware.OIDCProvider{}
 		p.Issuer = config.Issuer
+		p.AllowUnverifiedEmail = config.AllowUnverifiedEmail
 		if p.OIDCProvider, err = oidc.NewProvider(context.Background(), p.Issuer); err != nil {
 			return nil, err
 		}

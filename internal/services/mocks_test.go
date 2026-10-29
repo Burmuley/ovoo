@@ -221,3 +221,26 @@ func (m *MockDomainRepo) Delete(ctx context.Context, cuser entities.User, id ent
 	args := m.Called(ctx, cuser, id)
 	return args.Error(0)
 }
+
+// MockAddressVerifyRepo is a mock implementation of repositories.AddressVerifyReadWriter
+type MockAddressVerifyRepo struct {
+	mock.Mock
+}
+
+func (m *MockAddressVerifyRepo) GetById(ctx context.Context, id entities.Id) (entities.AddressVerifyToken, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(entities.AddressVerifyToken), args.Error(1)
+}
+
+func (m *MockAddressVerifyRepo) GetByAddrId(ctx context.Context, addrId entities.Id) ([]entities.AddressVerifyToken, error) {
+	args := m.Called(ctx, addrId)
+	return args.Get(0).([]entities.AddressVerifyToken), args.Error(1)
+}
+
+func (m *MockAddressVerifyRepo) Create(ctx context.Context, token entities.AddressVerifyToken) error {
+	return m.Called(ctx, token).Error(0)
+}
+
+func (m *MockAddressVerifyRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
+	return m.Called(ctx, cuser, id).Error(0)
+}

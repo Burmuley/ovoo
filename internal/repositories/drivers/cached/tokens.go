@@ -124,6 +124,7 @@ func (t *TokensRepo) BatchDeleteForUser(ctx context.Context, cuser entities.User
 	if err := t.repo.BatchDeleteForUser(ctx, cuser, id); err != nil {
 		return err
 	}
-	evictPrefix(ctx, t.cache, tokenUserPrefix(id))
+	// token:id:<tokenId> entries are not keyed by user, so evict all token entries
+	evictPrefix(ctx, t.cache, "token:")
 	return nil
 }

@@ -82,3 +82,8 @@ func (u User) Validate() error {
 func (u User) String() string {
 	return strings.TrimSpace(strings.Join([]string{u.FirstName, u.LastName}, " "))
 }
+
+// IsLockedOut reports whether the account is temporarily locked after repeated failed logins.
+func (u User) IsLockedOut(now time.Time) bool {
+	return u.LockoutUntil.After(now)
+}

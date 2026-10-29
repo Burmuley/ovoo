@@ -146,7 +146,8 @@ chmod 640 /usr/local/etc/ovoo/config.json
         "extra_url_params": {
           "access_type": "offline",
           "prompt": "consent"
-        }
+        },
+        "allow_unverified_email": false
       }
     }
   },

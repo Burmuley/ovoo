@@ -68,6 +68,11 @@ func (als *AliasesService) Create(
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrDatabase, err)
 	}
 
+	// respond as if the address does not exist to not disclose other users' addresses
+	if protAddr.Type != entities.ProtectedAddress || !canGetPrAddr(cuser, protAddr) {
+		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, entities.ErrNotFound)
+	}
+
 	if err := protAddr.Validate(); err != nil {
 		return entities.Address{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}

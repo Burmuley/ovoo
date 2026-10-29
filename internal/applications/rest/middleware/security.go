@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"mime"
 	"net/http"
 	"strings"
 )
@@ -54,6 +55,43 @@ func SecurityHeaders() Adapter {
 			w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
 			w.Header().Add("Referrer-Policy", "no-referrer")
 			w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
+func MaxBodyBytes(size int64) Adapter {
+	return func(h http.Handler) http.Handler {
+		return http.MaxBytesHandler(h, size)
+	}
+}
+
+// CrossOriginProtection rejects cross-origin state-changing browser requests (CSRF).
+// Requests with a non-safe method (anything but GET, HEAD, OPTIONS) are checked with
+// Sec-Fetch-Site, falling back to comparing Origin with Host. Requests carrying neither
+// header are not from browsers and pass, so API clients and tokens keep working.
+func CrossOriginProtection() Adapter {
+	cop := http.NewCrossOriginProtection()
+	cop.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "cross-origin request rejected", http.StatusForbidden)
+	}))
+
+	return cop.Handler
+}
+
+// RequireJSONBody rejects requests with a body unless it is declared as application/json.
+// Cross-site HTML forms can only send form or text/plain bodies without a CORS preflight
+func RequireJSONBody() Adapter {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.ContentLength != 0 && r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
+				mt, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+				if err != nil || mt != "application/json" {
+					http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
+					return
+				}
+			}
+
 			h.ServeHTTP(w, r)
 		})
 	}

@@ -222,6 +222,12 @@ func canUpdateUser(cuser entities.User, user_id entities.Id) bool {
 	return false
 }
 
+// canSetUserType determines if cuser can change the type of the target user.
+// Only admins can do it, and never for their own account.
+func canSetUserType(cuser, target entities.User) bool {
+	return cuser.Type == entities.AdminUser && cuser.ID != target.ID
+}
+
 // canDeleteUser determines if cuser can delete the given target user.
 // Returns true if cuser is an Admin and the target user is not themselves.
 func canDeleteUser(cuser, targetU entities.User) bool {

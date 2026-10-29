@@ -22,6 +22,10 @@ func Base62Encode(b []byte) string {
 	return i.Text(62)
 }
 
+// MaxBase62DecodeLen bounds the input of Base62Decode: decoding is quadratic in the input
+// length, and legitimate tokens are around 100 characters.
+const MaxBase62DecodeLen = 256
+
 // Base62Decode converts a base62 encoded string back to a string.
 // Base62 decoding interprets the characters 0-9, a-z, and A-Z to
 // convert the string back to its original binary data.
@@ -33,6 +37,10 @@ func Base62Encode(b []byte) string {
 //   - string: the decoded string
 //   - error: an error if the input is not a valid base62 string
 func Base62Decode(s string) (string, error) {
+	if len(s) > MaxBase62DecodeLen {
+		return "", errors.New("base62 string is too long")
+	}
+
 	var i big.Int
 	_, ok := i.SetString(s, 62)
 	if !ok {

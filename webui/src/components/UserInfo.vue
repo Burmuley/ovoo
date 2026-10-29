@@ -6,12 +6,26 @@
         </div>
         <div class="text-body-secondary" style="font-size: 0.75rem;">{{ props.userInfo.login }}</div>
     </div>
-    <CButton component="a" href="/auth/logout" color="danger" variant="outline" size="sm">
+    <CButton color="danger" variant="outline" size="sm" :disabled="loggingOut" @click="logout">
         Logout
     </CButton>
 </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
 const props = defineProps(['userInfo'])
+const loggingOut = ref(false)
+
+// logout is a state-changing request, so it must be a POST
+const logout = async () => {
+    loggingOut.value = true
+    try {
+        await fetch('/auth/logout', { method: 'POST', credentials: 'include' })
+    } finally {
+        sessionStorage.removeItem('oidcProvider')
+        window.location.href = '/'
+    }
+}
 </script>

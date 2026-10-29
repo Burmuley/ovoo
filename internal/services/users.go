@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
@@ -51,15 +52,19 @@ func (u *UsersService) Create(ctx context.Context, cuser entities.User, cmd User
 		LastName:  cmd.LastName,
 		Type:      cmd.Type,
 		Active:    true,
+		ID:        entities.NewId(),
 	}
 
-	user.ID = entities.NewId()
 	if err := user.Validate(); err != nil {
 		return entities.User{}, fmt.Errorf("%w: %w", entities.ErrValidation, err)
 	}
 
 	// no password means the account is OIDC-only: leave the hash empty
 	if cmd.Password != nil && len(*cmd.Password) > 0 {
+		if err := entities.ValidatePasswordStrength(*cmd.Password); err != nil {
+			return entities.User{}, err
+		}
+
 		hash, err := entities.NewPasswordHash(*cmd.Password)
 		if err != nil {
 			return entities.User{}, fmt.Errorf("%w: %w", entities.ErrGeneral, err)
@@ -131,7 +136,10 @@ func (u *UsersService) Update(ctx context.Context, cuser entities.User, cmd User
 		user.LastName = *cmd.LastName
 	}
 
-	if cmd.Type != nil {
+	if cmd.Type != nil && *cmd.Type != user.Type {
+		if !canSetUserType(cuser, user) {
+			return entities.User{}, entities.ErrNotAuthorized
+		}
 		user.Type = *cmd.Type
 	}
 
@@ -258,4 +266,52 @@ func (u *UsersService) GetAll(ctx context.Context, cuser entities.User, filter e
 	}
 
 	return u.repof.Users.GetAll(ctx, filter)
+}
+
+const (
+	// MaxFailedLogins is the number of consecutive failed password logins after which
+	// the account gets locked.
+	MaxFailedLogins = 5
+	// baseLockout is the first lockout duration, it doubles with every further failure.
+	baseLockout = time.Minute
+	// maxLockout caps the lockout duration.
+	maxLockout = time.Hour
+)
+
+// lockoutDuration returns how long an account with the given number of consecutive failed
+// logins stays locked. Zero means the account is not locked yet.
+func lockoutDuration(failedAttempts int) time.Duration {
+	if failedAttempts < MaxFailedLogins {
+		return 0
+	}
+
+	d := baseLockout
+	for i := MaxFailedLogins; i < failedAttempts && d < maxLockout; i++ {
+		d *= 2
+	}
+
+	return min(d, maxLockout)
+}
+
+// RegisterLoginFailure records a failed password login for the user and locks the account
+// once MaxFailedLogins is reached. Should only be used by the authentication middleware.
+func (u *UsersService) RegisterLoginFailure(ctx context.Context, user entities.User) error {
+	user.FailedAttempts++
+	if d := lockoutDuration(user.FailedAttempts); d > 0 {
+		user.LockoutUntil = time.Now().UTC().Add(d)
+	}
+
+	return u.repof.Users.Update(ctx, user)
+}
+
+// ResetLoginFailures clears the failed login counter and lockout of the user.
+// Should only be used by the authentication middleware.
+func (u *UsersService) ResetLoginFailures(ctx context.Context, user entities.User) error {
+	if user.FailedAttempts == 0 && user.LockoutUntil.IsZero() {
+		return nil
+	}
+
+	user.FailedAttempts = 0
+	user.LockoutUntil = time.Time{}
+	return u.repof.Users.Update(ctx, user)
 }

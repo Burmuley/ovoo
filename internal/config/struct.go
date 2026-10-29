@@ -65,6 +65,9 @@ type ConfigOIDC struct {
 	Issuer         string            `koanf:"issuer"`
 	ExtraScopes    []string          `koanf:"extra_scopes"`     // extra scopes to include in request
 	ExtraURLParams map[string]string `koanf:"extra_url_params"` // extra parameters to include in authorization URL
+	// AllowUnverifiedEmail accepts users whose UserInfo response has no `email_verified: true`.
+	// Keep it off unless the provider does not return the claim and is known to verify emails.
+	AllowUnverifiedEmail bool `koanf:"allow_unverified_email"`
 }
 
 type ConfigCache struct {

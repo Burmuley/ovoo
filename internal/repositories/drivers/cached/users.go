@@ -102,6 +102,7 @@ func (u *UsersRepo) Update(ctx context.Context, user entities.User) error {
 	}
 	evict(ctx, u.cache, userIdKey(user.ID), userLoginKey(user.Login))
 	evictPrefix(ctx, u.cache, userListPrefix())
+	u.evictDependents(ctx)
 	return nil
 }
 
@@ -119,5 +120,14 @@ func (u *UsersRepo) Delete(ctx context.Context, cuser entities.User, id entities
 		evict(ctx, u.cache, userLoginKey(cached.Login))
 	}
 	evictPrefix(ctx, u.cache, userListPrefix())
+	u.evictDependents(ctx)
 	return nil
+}
+
+// evictDependents drops cached entries that embed a copy of the user: API tokens carry
+// the owner (type, active) and chains carry owner and address state. Without it a
+// demotion or deactivation would not apply until the entries expire.
+func (u *UsersRepo) evictDependents(ctx context.Context) {
+	evictPrefix(ctx, u.cache, "token:")
+	evictPrefix(ctx, u.cache, chainPrefix())
 }

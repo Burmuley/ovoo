@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,8 +17,9 @@ import (
 // stubUsersRepo implements repositories.UsersReadWriter and only answers GetByLogin;
 // validateBasicAuth never reaches the other methods.
 type stubUsersRepo struct {
-	user entities.User
-	err  error
+	user    entities.User
+	err     error
+	updated []entities.User
 }
 
 func (s *stubUsersRepo) GetByLogin(ctx context.Context, login string) (entities.User, error) {
@@ -40,7 +42,11 @@ func (s *stubUsersRepo) GetAll(ctx context.Context, filter entities.UserFilter) 
 
 func (s *stubUsersRepo) Create(ctx context.Context, user entities.User) error     { return nil }
 func (s *stubUsersRepo) BatchCreate(ctx context.Context, u []entities.User) error { return nil }
-func (s *stubUsersRepo) Update(ctx context.Context, user entities.User) error     { return nil }
+func (s *stubUsersRepo) Update(ctx context.Context, user entities.User) error {
+	s.user = user
+	s.updated = append(s.updated, user)
+	return nil
+}
 func (s *stubUsersRepo) Delete(ctx context.Context, cuser entities.User, id entities.Id) error {
 	return nil
 }
@@ -138,4 +144,70 @@ func TestValidateBasicAuth_InactiveUser(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "inactive user")
 	assert.Equal(t, entities.User{}, got)
+}
+
+func newTestGatewayWithRepo(t *testing.T, repo *stubUsersRepo) *services.ServiceGateway {
+	t.Helper()
+	usersSvc, err := services.NewUsersService(&factory.RepoFactory{Users: repo})
+	require.NoError(t, err)
+	return &services.ServiceGateway{Users: usersSvc}
+}
+
+func TestValidateBasicAuth_LocksAfterRepeatedFailures(t *testing.T) {
+	hash, err := entities.NewPasswordHash("s3cr3t-p@ssw0rd")
+	require.NoError(t, err)
+	repo := &stubUsersRepo{user: testAuthUser(t, hash)}
+	gw := newTestGatewayWithRepo(t, repo)
+
+	for i := 0; i < services.MaxFailedLogins; i++ {
+		_, err := validateBasicAuth(context.Background(), repo.user.Login, "wrong", gw)
+		assert.Error(t, err)
+	}
+	assert.Equal(t, services.MaxFailedLogins, repo.user.FailedAttempts)
+	assert.True(t, repo.user.IsLockedOut(time.Now()))
+
+	// the correct password is rejected while the account is locked
+	_, err = validateBasicAuth(context.Background(), repo.user.Login, "s3cr3t-p@ssw0rd", gw)
+	assert.ErrorIs(t, err, errAccountLocked)
+}
+
+func TestValidateBasicAuth_SuccessResetsFailures(t *testing.T) {
+	hash, err := entities.NewPasswordHash("s3cr3t-p@ssw0rd")
+	require.NoError(t, err)
+	user := testAuthUser(t, hash)
+	user.FailedAttempts = 3
+	repo := &stubUsersRepo{user: user}
+	gw := newTestGatewayWithRepo(t, repo)
+
+	_, err = validateBasicAuth(context.Background(), user.Login, "s3cr3t-p@ssw0rd", gw)
+	require.NoError(t, err)
+	assert.Zero(t, repo.user.FailedAttempts)
+}
+
+func TestValidateBasicAuth_ExpiredLockoutAllowsLogin(t *testing.T) {
+	hash, err := entities.NewPasswordHash("s3cr3t-p@ssw0rd")
+	require.NoError(t, err)
+	user := testAuthUser(t, hash)
+	user.FailedAttempts = services.MaxFailedLogins
+	user.LockoutUntil = time.Now().Add(-time.Minute)
+	repo := &stubUsersRepo{user: user}
+
+	_, err = validateBasicAuth(context.Background(), user.Login, "s3cr3t-p@ssw0rd", newTestGatewayWithRepo(t, repo))
+	require.NoError(t, err)
+	assert.Zero(t, repo.user.FailedAttempts)
+	assert.True(t, repo.user.LockoutUntil.IsZero())
+}
+
+func TestValidateBasicAuth_OIDCOnlyAccountNeverLocked(t *testing.T) {
+	repo := &stubUsersRepo{user: testAuthUser(t, "")}
+	gw := newTestGatewayWithRepo(t, repo)
+
+	for i := 0; i < services.MaxFailedLogins*2; i++ {
+		_, err := validateBasicAuth(context.Background(), repo.user.Login, "wrong", gw)
+		assert.Error(t, err)
+	}
+
+	assert.Empty(t, repo.updated, "OIDC-only account must not be written to")
+	assert.Zero(t, repo.user.FailedAttempts)
+	assert.False(t, repo.user.IsLockedOut(time.Now()))
 }

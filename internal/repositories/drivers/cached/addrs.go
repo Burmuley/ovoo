@@ -103,6 +103,7 @@ func (a *AddrsRepo) Update(ctx context.Context, address entities.Address) error 
 	}
 	evict(ctx, a.cache, addrIdKey(address.ID), addrEmailKey(address.Email))
 	evictPrefix(ctx, a.cache, addrListPrefix())
+	evictPrefix(ctx, a.cache, chainPrefix())
 	return nil
 }
 
@@ -120,6 +121,7 @@ func (a *AddrsRepo) DeleteById(ctx context.Context, cuser entities.User, id enti
 		evict(ctx, a.cache, addrEmailKey(cached.Email))
 	}
 	evictPrefix(ctx, a.cache, addrListPrefix())
+	evictPrefix(ctx, a.cache, chainPrefix())
 	return nil
 }
 
@@ -128,6 +130,7 @@ func (a *AddrsRepo) BatchDeleteById(ctx context.Context, cuser entities.User, id
 		return err
 	}
 	evictPrefix(ctx, a.cache, "addr:")
+	evictPrefix(ctx, a.cache, chainPrefix())
 	return nil
 }
 
@@ -136,5 +139,6 @@ func (a *AddrsRepo) BatchUpdate(ctx context.Context, filter entities.AddressFilt
 		return err
 	}
 	evictPrefix(ctx, a.cache, "addr:")
+	evictPrefix(ctx, a.cache, chainPrefix())
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"log/slog"
+	"net"
 	"net/mail"
 	"slices"
 	"strings"
@@ -46,6 +47,37 @@ type ProtectedAddrService struct {
 	praddrVerifyFrom     mail.Address
 	logger               *slog.Logger
 	verifyEmailWG        sync.WaitGroup
+
+	verifySentMu sync.Mutex
+	verifySentAt map[entities.Id]time.Time
+}
+
+// verifyResendInterval is the minimal time between two verification emails for the same address.
+const verifyResendInterval = time.Minute
+
+// allowVerifySend reports whether a verification email for the address may be sent now and,
+// if so, records the attempt. It limits mail-bombing of the address and token table growth.
+func (prs *ProtectedAddrService) allowVerifySend(id entities.Id, now time.Time) bool {
+	prs.verifySentMu.Lock()
+	defer prs.verifySentMu.Unlock()
+
+	if prs.verifySentAt == nil {
+		prs.verifySentAt = map[entities.Id]time.Time{}
+	}
+
+	if last, ok := prs.verifySentAt[id]; ok && now.Sub(last) < verifyResendInterval {
+		return false
+	}
+
+	// drop expired entries so the map can not grow without bound
+	for k, t := range prs.verifySentAt {
+		if now.Sub(t) >= verifyResendInterval {
+			delete(prs.verifySentAt, k)
+		}
+	}
+
+	prs.verifySentAt[id] = now
+	return true
 }
 
 // NewProtectedAddrService creates a new ProtectedAddrService
@@ -74,15 +106,65 @@ func NewProtectedAddrService(repoFactory *factory.RepoFactory, template string, 
 	}, nil
 }
 
+// smtpTLSSettings resolves the configured `tls_mode` into the go-mail TLS policy.
+//
+// Supported modes (case-insensitive):
+//   - "mandatory": STARTTLS is required, the connection fails if the server does not offer it
+//   - "ssl": implicit TLS from the first byte (usually port 465)
+//   - "opportunistic": STARTTLS when advertised, plaintext otherwise (can be downgraded by an on-path attacker)
+//   - "none": never use TLS
+//
+// An empty mode defaults to "mandatory", except for loopback hosts where "opportunistic"
+// is used since there is no network path to attack.
+func smtpTLSSettings(cfg config.MailNotificationConfig) (policy gomail.TLSPolicy, implicitTLS bool, err error) {
+	switch mode := strings.ToLower(strings.TrimSpace(cfg.TLSMode)); mode {
+	case "":
+		if isLoopbackHost(cfg.SMTPHost) {
+			return gomail.TLSOpportunistic, false, nil
+		}
+		return gomail.TLSMandatory, false, nil
+	case "mandatory":
+		return gomail.TLSMandatory, false, nil
+	case "ssl":
+		return gomail.TLSMandatory, true, nil
+	case "opportunistic":
+		return gomail.TLSOpportunistic, false, nil
+	case "none":
+		return gomail.NoTLS, false, nil
+	default:
+		return 0, false, fmt.Errorf("%w: unknown smtp tls_mode %q, expected one of: mandatory, ssl, opportunistic, none", entities.ErrConfiguration, cfg.TLSMode)
+	}
+}
+
+func isLoopbackHost(host string) bool {
+	host = strings.TrimSpace(host)
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
 func setupSMTPClient(cfg config.MailNotificationConfig) (*gomail.Client, error) {
+	policy, implicitTLS, err := smtpTLSSettings(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	smtpOptions := []gomail.Option{
 		gomail.WithPort(cfg.SMTPPort),
-		gomail.WithTLSPolicy(gomail.TLSOpportunistic),
+		gomail.WithTLSPolicy(policy),
+	}
+
+	if implicitTLS {
+		smtpOptions = append(smtpOptions, gomail.WithSSL())
 	}
 
 	if strings.TrimSpace(cfg.SMTPUsername) != "" &&
 		strings.TrimSpace(cfg.SMTPPassword) != "" {
 		smtpOptions = append(smtpOptions,
+			gomail.WithSMTPAuth(gomail.SMTPAuthAutoDiscover),
 			gomail.WithUsername(cfg.SMTPUsername),
 			gomail.WithPassword(cfg.SMTPPassword),
 		)
@@ -314,6 +396,22 @@ func (prs *ProtectedAddrService) SendVerifyEmail(ctx context.Context, cuser enti
 		return err
 	}
 
+	if !canUpdatePrAddr(cuser, prAddr) {
+		return entities.ErrNotAuthorized
+	}
+
+	if prAddr.Type != entities.ProtectedAddress {
+		return fmt.Errorf("%w: address is not a protected address", entities.ErrValidation)
+	}
+
+	if prAddr.Verified {
+		return fmt.Errorf("%w: address is already verified", entities.ErrValidation)
+	}
+
+	if !prs.allowVerifySend(prAddrId, time.Now()) {
+		return fmt.Errorf("%w: verification email was sent recently, try again later", entities.ErrValidation)
+	}
+
 	token, tokenStr, err := entities.NewAddressVerifyToken(time.Now().Add(time.Hour*12), prAddrId)
 	if err != nil {
 		return err
@@ -384,20 +482,25 @@ func (prs *ProtectedAddrService) ValidateVerifyToken(ctx context.Context, cuser 
 		return entities.Address{}, fmt.Errorf("%w: verification token has expired", entities.ErrValidation)
 	}
 
+	// verify token belongs to the address before anything about the address is looked up or returned
+	if subtle.ConstantTimeCompare([]byte(token.AddrId), []byte(addrId)) != 1 {
+		return entities.Address{}, fmt.Errorf("%w: token does not belong to the address", entities.ErrValidation)
+	}
+
 	// get protected address by ID
 	addr, err := prs.repof.Address.GetById(ctx, addrId)
 	if err != nil {
 		return entities.Address{}, err
 	}
 
+	// possession of the token is not enough: only the address owner (or an admin) gets its data
+	if !canGetPrAddr(cuser, addr) {
+		return entities.Address{}, entities.ErrNotAuthorized
+	}
+
 	// if address is already verified - return clean
 	if addr.Verified {
 		return addr, nil
-	}
-
-	// verify token belongs to the address
-	if subtle.ConstantTimeCompare([]byte(token.AddrId), []byte(addrId)) != 1 {
-		return entities.Address{}, fmt.Errorf("%w: token does not belong to the address", entities.ErrValidation)
 	}
 
 	// mark address as verified
