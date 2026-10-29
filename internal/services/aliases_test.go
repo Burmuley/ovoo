@@ -156,6 +156,90 @@ func TestAliasesService_Create_ProtectedAddressNotFound(t *testing.T) {
 	assert.Equal(t, entities.Address{}, alias)
 }
 
+func TestAliasesService_Create_ForeignProtectedAddress(t *testing.T) {
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
+	ctx := context.Background()
+
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "owner@test.com"}
+	attacker := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "attacker@test.com"}
+
+	prAddrId := entities.NewId()
+	protectedAddr := entities.Address{
+		ID:       prAddrId,
+		Type:     entities.ProtectedAddress,
+		Email:    "protected@example.com",
+		Owner:    owner,
+		Active:   true,
+		Verified: true,
+	}
+	addressRepo.On("GetById", ctx, prAddrId).Return(protectedAddr, nil)
+
+	alias, err := service.Create(ctx, attacker, AliasCreateCmd{
+		ProtectedAddressId: string(prAddrId),
+		DomainId:           entities.NewId(),
+	})
+
+	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+	assert.Equal(t, entities.Address{}, alias)
+	addressRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+}
+
+func TestAliasesService_Create_AdminForeignProtectedAddress(t *testing.T) {
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
+	ctx := context.Background()
+
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "owner@test.com"}
+	admin := entities.User{ID: entities.NewId(), Type: entities.AdminUser, Login: "admin@test.com"}
+
+	prAddrId := entities.NewId()
+	addressRepo.On("GetById", ctx, prAddrId).Return(entities.Address{
+		ID:       prAddrId,
+		Type:     entities.ProtectedAddress,
+		Email:    "protected@example.com",
+		Owner:    owner,
+		Active:   true,
+		Verified: true,
+	}, nil)
+	addressRepo.On("Create", ctx, mock.AnythingOfType("entities.Address")).Return(nil)
+
+	_, err := service.Create(ctx, admin, AliasCreateCmd{
+		ProtectedAddressId: string(prAddrId),
+		DomainId:           entities.NewId(),
+	})
+
+	assert.NoError(t, err)
+}
+
+func TestAliasesService_Create_NonProtectedAddressType(t *testing.T) {
+	service, repof := setupAliasesService(t)
+	addressRepo := repof.Address.(*MockAddressRepo)
+	ctx := context.Background()
+
+	user := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "user@test.com"}
+
+	// an alias owned by the caller must not be accepted as a forward target
+	aliasId := entities.NewId()
+	addressRepo.On("GetById", ctx, aliasId).Return(entities.Address{
+		ID:       aliasId,
+		Type:     entities.AliasAddress,
+		Email:    "alias@example.com",
+		Owner:    user,
+		Active:   true,
+		Verified: true,
+	}, nil)
+
+	_, err := service.Create(ctx, user, AliasCreateCmd{
+		ProtectedAddressId: string(aliasId),
+		DomainId:           entities.NewId(),
+	})
+
+	assert.ErrorIs(t, err, entities.ErrValidation)
+	addressRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+}
+
 func TestAliasesService_Update_Success(t *testing.T) {
 	service, repof := setupAliasesService(t)
 	addressRepo := repof.Address.(*MockAddressRepo)

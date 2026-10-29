@@ -12,6 +12,8 @@ import (
 	"github.com/Burmuley/ovoo/internal/services"
 )
 
+const maxInputTokenSize int = 128
+
 // getApiToken extracts an API token from the HTTP request.
 // It first checks the Authorization header for a "Bearer" token with the format "Bearer {prefix}_{token}".
 // If not found in the header, it attempts to retrieve the token from a cookie named by apiTokenCookieName.
@@ -45,10 +47,15 @@ func getApiToken(r *http.Request) string {
 //   - entities.User: The user associated with the valid token
 //   - error: An error if the token is invalid, expired, or not found
 func validateApiToken(ctx context.Context, svcGw *services.ServiceGateway, apiToken string) (entities.User, error) {
+	if len(apiToken) > maxInputTokenSize {
+		return entities.User{}, errors.New("token too long")
+	}
+
 	tokenParts := strings.SplitN(apiToken, "_", 2)
 	if len(tokenParts) < 2 {
-		return entities.User{}, errors.New("error parsing token body")
+		return entities.User{}, errors.New("invalid token format")
 	}
+
 	tokenId, err := entities.Base62Decode(tokenParts[0])
 	if err != nil {
 		return entities.User{}, err

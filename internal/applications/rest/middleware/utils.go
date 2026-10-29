@@ -47,6 +47,7 @@ func setSecureCookie(w http.ResponseWriter, r *http.Request, name, value string,
 		HttpOnly: true,
 		Path:     path,
 		Domain:   r.URL.Hostname(),
+		SameSite: http.SameSiteLaxMode,
 	}
 	http.SetCookie(w, c)
 }

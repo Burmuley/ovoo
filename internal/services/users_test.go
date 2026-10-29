@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -310,6 +311,56 @@ func TestUsersService_Update_NotAuthorized(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
 	assert.Equal(t, entities.User{}, user)
+}
+
+func TestUsersService_Update_SelfPromotionDenied(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	regularUser := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "user@test.com"}
+	admin := entities.AdminUser
+	cmd := UserUpdateCmd{UserID: regularUser.ID, Type: &admin}
+
+	usersRepo.On("GetById", ctx, regularUser.ID).Return(regularUser, nil)
+
+	user, err := service.Update(ctx, regularUser, cmd)
+
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	assert.Equal(t, entities.User{}, user)
+	usersRepo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+}
+
+func TestUsersService_Update_AdminChangesOtherUserType(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminUser := entities.User{ID: entities.NewId(), Type: entities.AdminUser, Login: "admin@test.com"}
+	target := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "john@test.com"}
+	admin := entities.AdminUser
+	cmd := UserUpdateCmd{UserID: target.ID, Type: &admin}
+
+	usersRepo.On("GetById", ctx, target.ID).Return(target, nil)
+	usersRepo.On("Update", ctx, mock.AnythingOfType("entities.User")).Return(nil)
+
+	user, err := service.Update(ctx, adminUser, cmd)
+
+	assert.NoError(t, err)
+	assert.Equal(t, entities.AdminUser, user.Type)
+}
+
+func TestUsersService_Update_AdminSelfTypeChangeDenied(t *testing.T) {
+	service, usersRepo, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminUser := entities.User{ID: entities.NewId(), Type: entities.AdminUser, Login: "admin@test.com"}
+	regular := entities.RegularUser
+	cmd := UserUpdateCmd{UserID: adminUser.ID, Type: &regular}
+
+	usersRepo.On("GetById", ctx, adminUser.ID).Return(adminUser, nil)
+
+	_, err := service.Update(ctx, adminUser, cmd)
+
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
 }
 
 func TestUsersService_Update_UserNotFound(t *testing.T) {
@@ -861,4 +912,23 @@ func TestUsersService_Update_SetActive_AdminSelf(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+}
+
+func TestLockoutDuration(t *testing.T) {
+	assert.Zero(t, lockoutDuration(MaxFailedLogins-1))
+	assert.Equal(t, time.Minute, lockoutDuration(MaxFailedLogins))
+	assert.Equal(t, 2*time.Minute, lockoutDuration(MaxFailedLogins+1))
+	assert.Equal(t, time.Hour, lockoutDuration(MaxFailedLogins+50))
+}
+
+func TestUsersService_Create_WeakPassword(t *testing.T) {
+	service, _, _, _, _ := setupUsersService(t)
+	ctx := context.Background()
+
+	adminUser := entities.User{ID: entities.NewId(), Type: entities.AdminUser, Login: "admin@test.com"}
+	password := "short"
+	cmd := UserCreateCmd{FirstName: "John", LastName: "Doe", Login: "john@test.com", Type: entities.RegularUser, Password: &password}
+
+	_, err := service.Create(ctx, adminUser, cmd)
+	assert.ErrorIs(t, err, entities.ErrValidation)
 }

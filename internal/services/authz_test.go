@@ -474,30 +474,30 @@ func TestCanCreateUser_MilterUser(t *testing.T) {
 }
 
 // Tests for canUpdateUser
-func TestCanUpdateUser_AdminUser(t *testing.T) {
+func TestCanUpdateUser(t *testing.T) {
 	admin := createTestUser(entities.AdminUser)
-	targetUserId := entities.NewId()
-
-	assert.True(t, canUpdateUser(admin, targetUserId))
-}
-
-func TestCanUpdateUser_RegularUserSelf(t *testing.T) {
-	user := createTestUser(entities.RegularUser)
-	assert.True(t, canUpdateUser(user, user.ID))
-}
-
-func TestCanUpdateUser_RegularUserOther(t *testing.T) {
-	user := createTestUser(entities.RegularUser)
-	otherUserId := entities.NewId()
-
-	assert.False(t, canUpdateUser(user, otherUserId))
-}
-
-func TestCanUpdateUser_MilterUser(t *testing.T) {
+	regular := createTestUser(entities.RegularUser)
 	milter := createTestUser(entities.MilterUser)
-	targetUserId := entities.NewId()
 
-	assert.False(t, canUpdateUser(milter, targetUserId))
+	assert.True(t, canUpdateUser(admin, entities.NewId()))
+	assert.True(t, canUpdateUser(regular, regular.ID))
+	assert.False(t, canUpdateUser(regular, entities.NewId()))
+	assert.False(t, canUpdateUser(milter, entities.NewId()))
+	assert.False(t, canUpdateUser(milter, milter.ID))
+}
+
+// Tests for canSetUserType
+func TestCanSetUserType(t *testing.T) {
+	admin := createTestUser(entities.AdminUser)
+	regular := createTestUser(entities.RegularUser)
+	milter := createTestUser(entities.MilterUser)
+
+	assert.True(t, canSetUserType(admin, regular))
+	assert.True(t, canSetUserType(admin, createTestUser(entities.AdminUser)))
+	assert.False(t, canSetUserType(admin, admin), "admin can not change own type")
+	assert.False(t, canSetUserType(regular, regular), "regular user can not change own type")
+	assert.False(t, canSetUserType(regular, createTestUser(entities.RegularUser)))
+	assert.False(t, canSetUserType(milter, milter))
 }
 
 // Tests for canDeleteUser

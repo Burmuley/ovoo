@@ -331,3 +331,25 @@ func TestTokensRepo_BatchDeleteForUser_EvictsUserList(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, result)
 }
+
+func TestTokensRepo_BatchDeleteForUser_EvictsTokenIdEntries(t *testing.T) {
+	e := setupTokensTest(t)
+	ctx := context.Background()
+	user := insertUser(t, e.rawUsers)
+	t1 := insertToken(t, e.rawTokens, user)
+	t2 := insertToken(t, e.rawTokens, user)
+
+	// Populate the token:id:<id> entries used by API token authentication.
+	_, err := e.cachedTokens.GetById(ctx, t1.ID)
+	require.NoError(t, err)
+	_, err = e.cachedTokens.GetById(ctx, t2.ID)
+	require.NoError(t, err)
+
+	require.NoError(t, e.cachedTokens.BatchDeleteForUser(ctx, user, user.ID))
+
+	// Deleted tokens must not be served from the cache anymore.
+	_, err = e.cachedTokens.GetById(ctx, t1.ID)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+	_, err = e.cachedTokens.GetById(ctx, t2.ID)
+	assert.ErrorIs(t, err, entities.ErrNotFound)
+}

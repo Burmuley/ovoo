@@ -1,7 +1,10 @@
 package entities
 
 import (
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBase62Decode(t *testing.T) {
@@ -38,4 +41,17 @@ func TestBase62Decode(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBase62Decode_TooLong(t *testing.T) {
+	_, err := Base62Decode(strings.Repeat("a", MaxBase62DecodeLen+1))
+	assert.Error(t, err)
+
+	_, err = Base62Decode(strings.Repeat("a", MaxBase62DecodeLen))
+	assert.NoError(t, err)
+}
+
+func TestDecodeAddressVerifyToken_TooLong(t *testing.T) {
+	_, _, err := DecodeAddressVerifyToken(strings.Repeat("a", MaxBase62DecodeLen+1))
+	assert.Error(t, err)
 }

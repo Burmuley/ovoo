@@ -91,6 +91,9 @@ func chainHashKey(hash entities.Hash) string {
 	return "chain:hash:" + hash.String()
 }
 
+// chainPrefix covers every cached chain entry (by hash and lists).
+func chainPrefix() string { return "chain:" }
+
 func chainListPrefix() string { return "chain:list:" }
 
 func chainListKey(filter entities.ChainFilter) string {

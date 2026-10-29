@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Burmuley/ovoo/internal/services"
 )
@@ -66,6 +68,11 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 			}
 
 			if r.URL.Path == authLogoutUrl {
+				if r.Method != http.MethodPost {
+					w.Header().Set("Allow", http.MethodPost)
+					http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+					return
+				}
 				logout(w, r)
 				return
 			}
@@ -124,8 +131,17 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 
 			// Process Basic authentication (username/password) header
 			if username, password, ok := r.BasicAuth(); ok {
+				key := clientKey(r)
+				if basicAuthLimiter.blocked(key, time.Now()) {
+					logger.Error("too many failed basic authentication attempts", "src", r.RemoteAddr)
+					w.Header().Set("Retry-After", strconv.Itoa(int(failedAuthWindow.Seconds())))
+					http.Error(w, "too many failed attempts", http.StatusTooManyRequests)
+					return
+				}
+
 				user, err := validateBasicAuth(r.Context(), username, password, svcGw)
 				if err != nil {
+					basicAuthLimiter.fail(key, time.Now())
 					logger.Error("invalid basic authentication credentials", "src", r.RemoteAddr, "msg", err.Error())
 					http.Error(w, "invalid basic credentials", http.StatusUnauthorized)
 					return
@@ -175,6 +191,12 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 						return
 					}
 
+					if !user.Active {
+						logger.Error("user account is inactive", "src", r.RemoteAddr)
+						http.Error(w, "inactive user", http.StatusUnauthorized)
+						return
+					}
+
 					r = r.WithContext(context.WithValue(r.Context(), UserContextKey, user))
 					h.ServeHTTP(w, r)
 					return
@@ -197,6 +219,12 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 							if err != nil {
 								logger.Error("user from OAuth2 token not found in database", "src", r.RemoteAddr, "error", err.Error())
 								http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)
+								return
+							}
+
+							if !user.Active {
+								logger.Error("user account is inactive", "src", r.RemoteAddr)
+								http.Error(w, "inactive user", http.StatusUnauthorized)
 								return
 							}
 
@@ -238,6 +266,12 @@ func Authentication(skipUris []string, svcGw *services.ServiceGateway) Adapter {
 						if err != nil {
 							logger.Error("user from refreshed OAuth2 token not found in database", "src", r.RemoteAddr, "error", err.Error())
 							http.Error(w, "invalid OAuth2 credentials provided", http.StatusUnauthorized)
+							return
+						}
+
+						if !user.Active {
+							logger.Error("user account is inactive", "src", r.RemoteAddr)
+							http.Error(w, "inactive user", http.StatusUnauthorized)
 							return
 						}
 

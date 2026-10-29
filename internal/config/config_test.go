@@ -35,7 +35,8 @@ func TestLoadConfig_APIConfig_Full(t *testing.T) {
 				"google": {
 					"client_id": "cid",
 					"client_secret": "csecret",
-					"issuer": "https://accounts.google.com"
+					"issuer": "https://accounts.google.com",
+					"allow_unverified_email": true
 				}
 			},
 			"default_admin": {
@@ -70,6 +71,7 @@ func TestLoadConfig_APIConfig_Full(t *testing.T) {
 	assert.Equal(t, "cid", cfg.OIDC["google"].ClientId)
 	assert.Equal(t, "csecret", cfg.OIDC["google"].ClientSecret)
 	assert.Equal(t, "https://accounts.google.com", cfg.OIDC["google"].Issuer)
+	assert.True(t, cfg.OIDC["google"].AllowUnverifiedEmail)
 	require.NotNil(t, cfg.DefaultAdmin)
 	assert.Equal(t, "Admin", cfg.DefaultAdmin.FirstName)
 	assert.Equal(t, "User", cfg.DefaultAdmin.LastName)

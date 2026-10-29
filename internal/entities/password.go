@@ -6,6 +6,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// MinPasswordLength is the minimum length of a password accepted for new accounts.
+const MinPasswordLength = 8
+
+// ValidatePasswordStrength checks that password satisfies the password policy.
+func ValidatePasswordStrength(password string) error {
+	if len(password) < MinPasswordLength {
+		return fmt.Errorf("%w: password must be at least %d characters long", ErrValidation, MinPasswordLength)
+	}
+
+	return nil
+}
+
 // NewPasswordHash returns a bcrypt hash of password.
 // An empty password is rejected: accounts without a password are represented by an empty
 // hash and are authenticated through OIDC only, never by hashing the empty string.

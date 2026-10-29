@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -11,6 +12,7 @@ import (
 	"github.com/Burmuley/ovoo/internal/config"
 	"github.com/Burmuley/ovoo/internal/entities"
 	"github.com/Burmuley/ovoo/internal/repositories/factory"
+	gomail "github.com/wneessen/go-mail"
 )
 
 func testSMTPCfg() config.MailNotificationConfig {
@@ -989,4 +991,239 @@ func TestProtectedAddrService_Update_SetActive_NotAuthorized(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
 	addressRepo.AssertNotCalled(t, "Update")
+}
+
+func sendVerifyFixture(t *testing.T, mutate func(*entities.Address)) (*ProtectedAddrService, entities.User, entities.Address) {
+	service, addressRepo, _ := setupProtectedAddrService(t)
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "owner@test.com"}
+	addr := entities.Address{
+		ID:    entities.NewId(),
+		Type:  entities.ProtectedAddress,
+		Email: "protected@example.com",
+		Owner: owner,
+	}
+	if mutate != nil {
+		mutate(&addr)
+	}
+	addressRepo.On("GetById", mock.Anything, addr.ID).Return(addr, nil)
+	return service, owner, addr
+}
+
+func TestProtectedAddrService_SendVerifyEmail_NotOwner(t *testing.T) {
+	service, _, addr := sendVerifyFixture(t, nil)
+	other := entities.User{ID: entities.NewId(), Type: entities.RegularUser, Login: "other@test.com"}
+
+	err := service.SendVerifyEmail(context.Background(), other, addr.ID)
+
+	assert.ErrorIs(t, err, entities.ErrNotAuthorized)
+	assert.Empty(t, service.verifySentAt)
+}
+
+func TestProtectedAddrService_SendVerifyEmail_NotProtectedAddress(t *testing.T) {
+	service, owner, addr := sendVerifyFixture(t, func(a *entities.Address) { a.Type = entities.AliasAddress })
+
+	err := service.SendVerifyEmail(context.Background(), owner, addr.ID)
+
+	assert.ErrorIs(t, err, entities.ErrValidation)
+}
+
+func TestProtectedAddrService_SendVerifyEmail_AlreadyVerified(t *testing.T) {
+	service, owner, addr := sendVerifyFixture(t, func(a *entities.Address) { a.Verified = true })
+
+	err := service.SendVerifyEmail(context.Background(), owner, addr.ID)
+
+	assert.ErrorIs(t, err, entities.ErrValidation)
+}
+
+func TestProtectedAddrService_SendVerifyEmail_Throttled(t *testing.T) {
+	service, owner, addr := sendVerifyFixture(t, nil)
+	require.True(t, service.allowVerifySend(addr.ID, time.Now()))
+
+	err := service.SendVerifyEmail(context.Background(), owner, addr.ID)
+
+	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.Contains(t, err.Error(), "try again later")
+}
+
+func TestProtectedAddrService_AllowVerifySend(t *testing.T) {
+	service, _, _ := setupProtectedAddrService(t)
+	id1, id2 := entities.NewId(), entities.NewId()
+	now := time.Now()
+
+	assert.True(t, service.allowVerifySend(id1, now))
+	assert.False(t, service.allowVerifySend(id1, now.Add(verifyResendInterval-time.Second)))
+	assert.True(t, service.allowVerifySend(id2, now), "other addresses are not affected")
+	assert.True(t, service.allowVerifySend(id1, now.Add(verifyResendInterval)))
+	assert.NotContains(t, service.verifySentAt, id2, "expired entries are dropped")
+}
+
+type validateTokenEnv struct {
+	service   *ProtectedAddrService
+	addrRepo  *MockAddressRepo
+	tokenRepo *MockAddressVerifyRepo
+}
+
+func setupValidateTokenEnv(t *testing.T) validateTokenEnv {
+	t.Helper()
+	addrRepo := new(MockAddressRepo)
+	tokenRepo := new(MockAddressVerifyRepo)
+	repof := &factory.RepoFactory{Address: addrRepo, Chain: new(MockChainRepo), AddressVerify: tokenRepo}
+	service, err := NewProtectedAddrService(repof, "", testSMTPCfg(), nil)
+	require.NoError(t, err)
+	return validateTokenEnv{service, addrRepo, tokenRepo}
+}
+
+// issueToken creates a verification token for addrId and registers it in the token repo mock.
+func (e validateTokenEnv) issueToken(t *testing.T, addrId entities.Id) string {
+	t.Helper()
+	token, userToken, err := entities.NewAddressVerifyToken(time.Now().Add(time.Hour), addrId)
+	require.NoError(t, err)
+	e.tokenRepo.On("GetById", mock.Anything, token.ID).Return(token, nil)
+	e.tokenRepo.On("Delete", mock.Anything, mock.Anything, token.ID).Return(nil).Maybe()
+	return userToken
+}
+
+func testPrAddr(owner entities.User, verified bool) entities.Address {
+	return entities.Address{
+		ID:       entities.NewId(),
+		Type:     entities.ProtectedAddress,
+		Email:    "protected@example.com",
+		Owner:    owner,
+		Verified: verified,
+	}
+}
+
+func TestProtectedAddrService_ValidateVerifyToken_Success(t *testing.T) {
+	e := setupValidateTokenEnv(t)
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	addr := testPrAddr(owner, false)
+	tokenStr := e.issueToken(t, addr.ID)
+	e.addrRepo.On("GetById", mock.Anything, addr.ID).Return(addr, nil)
+	e.addrRepo.On("Update", mock.Anything, mock.MatchedBy(func(a entities.Address) bool { return a.Verified })).Return(nil)
+
+	got, err := e.service.ValidateVerifyToken(context.Background(), owner, addr.ID, tokenStr)
+
+	require.NoError(t, err)
+	assert.True(t, got.Verified)
+	e.addrRepo.AssertExpectations(t)
+}
+
+func TestProtectedAddrService_ValidateVerifyToken_VerifiedAddressOwner(t *testing.T) {
+	e := setupValidateTokenEnv(t)
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	addr := testPrAddr(owner, true)
+	tokenStr := e.issueToken(t, addr.ID)
+	e.addrRepo.On("GetById", mock.Anything, addr.ID).Return(addr, nil)
+
+	got, err := e.service.ValidateVerifyToken(context.Background(), owner, addr.ID, tokenStr)
+
+	require.NoError(t, err)
+	assert.Equal(t, addr.ID, got.ID)
+	e.addrRepo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+}
+
+// F19/F27: a valid token for the attacker's own address must not unlock a victim's verified address
+func TestProtectedAddrService_ValidateVerifyToken_TokenForOtherAddress(t *testing.T) {
+	e := setupValidateTokenEnv(t)
+	attacker := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	victim := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	own := testPrAddr(attacker, false)
+	victimAddr := testPrAddr(victim, true)
+	tokenStr := e.issueToken(t, own.ID)
+
+	got, err := e.service.ValidateVerifyToken(context.Background(), attacker, victimAddr.ID, tokenStr)
+
+	assert.ErrorIs(t, err, entities.ErrValidation)
+	assert.Equal(t, entities.Address{}, got)
+	e.addrRepo.AssertNotCalled(t, "GetById", mock.Anything, mock.Anything)
+	e.addrRepo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+}
+
+// a user who holds a valid token for the address but does not own it gets nothing and verifies nothing
+func TestProtectedAddrService_ValidateVerifyToken_NotOwner(t *testing.T) {
+	for _, verified := range []bool{false, true} {
+		e := setupValidateTokenEnv(t)
+		owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+		other := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+		addr := testPrAddr(owner, verified)
+		tokenStr := e.issueToken(t, addr.ID)
+		e.addrRepo.On("GetById", mock.Anything, addr.ID).Return(addr, nil)
+
+		got, err := e.service.ValidateVerifyToken(context.Background(), other, addr.ID, tokenStr)
+
+		assert.ErrorIs(t, err, entities.ErrNotAuthorized, "verified=%v", verified)
+		assert.Equal(t, entities.Address{}, got)
+		e.addrRepo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+	}
+}
+
+func TestProtectedAddrService_ValidateVerifyToken_Admin(t *testing.T) {
+	e := setupValidateTokenEnv(t)
+	owner := entities.User{ID: entities.NewId(), Type: entities.RegularUser}
+	admin := entities.User{ID: entities.NewId(), Type: entities.AdminUser}
+	addr := testPrAddr(owner, true)
+	tokenStr := e.issueToken(t, addr.ID)
+	e.addrRepo.On("GetById", mock.Anything, addr.ID).Return(addr, nil)
+
+	_, err := e.service.ValidateVerifyToken(context.Background(), admin, addr.ID, tokenStr)
+
+	assert.NoError(t, err)
+}
+
+func TestSMTPTLSSettings(t *testing.T) {
+	tests := []struct {
+		name    string
+		host    string
+		mode    string
+		policy  gomail.TLSPolicy
+		ssl     bool
+		wantErr bool
+	}{
+		{"remote host defaults to mandatory", "smtp.example.com", "", gomail.TLSMandatory, false, false},
+		{"localhost defaults to opportunistic", "localhost", "", gomail.TLSOpportunistic, false, false},
+		{"loopback IPv4 defaults to opportunistic", "127.0.0.1", "", gomail.TLSOpportunistic, false, false},
+		{"loopback IPv6 defaults to opportunistic", "::1", "", gomail.TLSOpportunistic, false, false},
+		{"mandatory", "smtp.example.com", "mandatory", gomail.TLSMandatory, false, false},
+		{"mode is case-insensitive", "smtp.example.com", " Mandatory ", gomail.TLSMandatory, false, false},
+		{"ssl", "smtp.example.com", "ssl", gomail.TLSMandatory, true, false},
+		{"explicit opportunistic on remote host", "smtp.example.com", "opportunistic", gomail.TLSOpportunistic, false, false},
+		{"none", "smtp.example.com", "none", gomail.NoTLS, false, false},
+		{"explicit mode wins over loopback default", "localhost", "mandatory", gomail.TLSMandatory, false, false},
+		{"unknown mode", "smtp.example.com", "starttls", 0, false, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			policy, ssl, err := smtpTLSSettings(config.MailNotificationConfig{SMTPHost: tt.host, TLSMode: tt.mode})
+			if tt.wantErr {
+				assert.ErrorIs(t, err, entities.ErrConfiguration)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.policy, policy)
+			assert.Equal(t, tt.ssl, ssl)
+		})
+	}
+}
+
+func TestNewProtectedAddrService_InvalidTLSMode(t *testing.T) {
+	cfg := testSMTPCfg()
+	cfg.TLSMode = "bogus"
+
+	service, err := NewProtectedAddrService(&factory.RepoFactory{}, "", cfg, nil)
+
+	assert.ErrorIs(t, err, entities.ErrConfiguration)
+	assert.Nil(t, service)
+}
+
+func TestSetupSMTPClient_WithCredentials(t *testing.T) {
+	cfg := testSMTPCfg()
+	cfg.SMTPHost = "smtp.example.com"
+	cfg.SMTPUsername = "user"
+	cfg.SMTPPassword = "pass"
+
+	client, err := setupSMTPClient(cfg)
+
+	require.NoError(t, err)
+	assert.NotNil(t, client)
 }

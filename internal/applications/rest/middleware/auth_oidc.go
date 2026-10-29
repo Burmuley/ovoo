@@ -36,12 +36,13 @@ var (
 )
 
 type OIDCProvider struct {
-	OAuth2Config   *oauth2.Config
-	OIDCProvider   *oidc.Provider
-	OIDCConfig     *oidc.Config
-	Issuer         string
-	ExtraScopes    []string
-	ExtraURLParams map[string]string
+	OAuth2Config         *oauth2.Config
+	OIDCProvider         *oidc.Provider
+	OIDCConfig           *oidc.Config
+	Issuer               string
+	ExtraScopes          []string
+	ExtraURLParams       map[string]string
+	AllowUnverifiedEmail bool
 }
 
 // SetOIDCConfigs stores the OIDC provider configurations and populates the list
@@ -83,6 +84,10 @@ func validateAccessTokenViaUserInfo(ctx context.Context, accessToken string, pro
 
 	if userInfo.Email == "" {
 		return "", errors.New("userinfo response contains no email")
+	}
+
+	if !userInfo.EmailVerified && !prov.AllowUnverifiedEmail {
+		return "", errors.New("userinfo response contains no verified email")
 	}
 
 	userInfoCache.Store(accessToken, cachedUserInfo{
@@ -311,10 +316,17 @@ func handleOIDCLogin(w http.ResponseWriter, r *http.Request, prov OIDCProvider) 
 		oidc.Nonce(nonce),
 		oauth2.SetAuthURLParam("redirect_uri", redirectUrl),
 	}
+	// adding extra URL parameters if defined in the provider configuration
 	if len(prov.ExtraURLParams) > 0 {
 		for key, val := range prov.ExtraURLParams {
 			opts = append(opts, oauth2.SetAuthURLParam(key, val))
 		}
+	}
+	// adding extra scopes if defined in the provider configuration
+	if len(prov.ExtraScopes) > 0 {
+		scopes := []string{"openid", "email", "profile"} // default scopes
+		scopes = append(scopes, prov.ExtraScopes...)
+		prov.OAuth2Config.Scopes = scopes
 	}
 	http.Redirect(w, r,
 		prov.OAuth2Config.AuthCodeURL(state, opts...),
