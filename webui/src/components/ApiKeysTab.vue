@@ -47,16 +47,16 @@
                         </CTableDataCell>
                         <CTableDataCell class="text-end text-nowrap">
                             <template v-if="key.active">
-                                <CButton color="primary" size="sm" variant="outline" class="me-1"
+                                <CButton v-c-tooltip="'Edit'" color="primary" size="sm" variant="outline" class="me-1"
                                     @click="startEdit(key)">
                                     <CIcon icon="cilPencil" />
                                 </CButton>
-                                <CButton color="warning" size="sm" variant="outline" class="me-1"
+                                <CButton v-c-tooltip="'Deactivate'" color="warning" size="sm" variant="outline" class="me-1"
                                     @click="confirmingId = key.id">
                                     <CIcon icon="cilBan" />
                                 </CButton>
                             </template>
-                            <CButton color="danger" size="sm" variant="outline" @click="deletingId = key.id">
+                            <CButton v-c-tooltip="'Delete'" color="danger" size="sm" variant="outline" @click="deletingId = key.id">
                                 <CIcon icon="cilTrash" />
                             </CButton>
                         </CTableDataCell>

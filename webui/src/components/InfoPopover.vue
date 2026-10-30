@@ -1,5 +1,5 @@
 <template><span class="position-relative d-inline-flex align-items-center ms-1">
-    <button type="button" class="btn p-0 border-0" style="vertical-align: middle; background: transparent;"
+    <button v-c-tooltip="'Info'" aria-label="Info" type="button" class="btn p-0 border-0" style="vertical-align: middle; background: transparent;"
         @click.stop="open = !open">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
             style="width: 1.1rem; height: 1.1rem; display: block; overflow: visible;">

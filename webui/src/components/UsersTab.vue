@@ -54,15 +54,15 @@
                                 <CIcon icon="cilPencil" />
                             </CButton>
                             <template v-if="props.userInfo.type === 'admin'">
-                                <CButton v-if="user.active" color="warning" size="sm" variant="outline" class="me-1"
+                                <CButton v-if="user.active" v-c-tooltip="'Deactivate'" color="warning" size="sm" variant="outline" class="me-1"
                                     @click.stop="confirmingDeactivateId = user.id">
                                     <CIcon icon="cilBan" />
                                 </CButton>
-                                <CButton v-else color="success" size="sm" variant="outline" class="me-1"
+                                <CButton v-else v-c-tooltip="'Activate'" color="success" size="sm" variant="outline" class="me-1"
                                     @click.stop="confirmingActivateId = user.id">
                                     <CIcon icon="cilCheckCircle" />
                                 </CButton>
-                                <CButton color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
+                                <CButton v-c-tooltip="'Delete'" color="danger" size="sm" variant="outline" @click.stop="deletingId = user.id">
                                     <CIcon icon="cilTrash" />
                                 </CButton>
                             </template>
@@ -99,17 +99,17 @@
                         <div v-if="editingField === 'first_name'" class="d-flex gap-1 align-items-center">
                             <CFormInput size="sm" v-model="editValue" autofocus class="flex-grow-1"
                                 @keydown.enter.prevent="saveEdit" />
-                            <CButton size="sm" color="success" variant="outline" :disabled="saving" @click="saveEdit">
+                            <CButton v-c-tooltip="'Save'" size="sm" color="success" variant="outline" :disabled="saving" @click="saveEdit">
                                 <CIcon icon="cilCheck" />
                             </CButton>
-                            <CButton size="sm" color="secondary" variant="outline" :disabled="saving"
+                            <CButton v-c-tooltip="'Cancel'" size="sm" color="secondary" variant="outline" :disabled="saving"
                                 @click="cancelEdit">
                                 <CIcon icon="cilX" />
                             </CButton>
                         </div>
                         <div v-else class="d-flex align-items-center justify-content-between gap-2">
                             <span>{{ selectedUser?.first_name }}</span>
-                            <CButton size="sm" color="primary" variant="outline"
+                            <CButton v-c-tooltip="'Edit'" size="sm" color="primary" variant="outline"
                                 @click="startEdit('first_name', selectedUser.first_name)">
                                 <CIcon icon="cilPencil" />
                             </CButton>
@@ -122,17 +122,17 @@
                         <div v-if="editingField === 'last_name'" class="d-flex gap-1 align-items-center">
                             <CFormInput size="sm" v-model="editValue" autofocus class="flex-grow-1"
                                 @keydown.enter.prevent="saveEdit" />
-                            <CButton size="sm" color="success" variant="outline" :disabled="saving" @click="saveEdit">
+                            <CButton v-c-tooltip="'Save'" size="sm" color="success" variant="outline" :disabled="saving" @click="saveEdit">
                                 <CIcon icon="cilCheck" />
                             </CButton>
-                            <CButton size="sm" color="secondary" variant="outline" :disabled="saving"
+                            <CButton v-c-tooltip="'Cancel'" size="sm" color="secondary" variant="outline" :disabled="saving"
                                 @click="cancelEdit">
                                 <CIcon icon="cilX" />
                             </CButton>
                         </div>
                         <div v-else class="d-flex align-items-center justify-content-between gap-2">
                             <span>{{ selectedUser?.last_name }}</span>
-                            <CButton size="sm" color="primary" variant="outline"
+                            <CButton v-c-tooltip="'Edit'" size="sm" color="primary" variant="outline"
                                 @click="startEdit('last_name', selectedUser.last_name)">
                                 <CIcon icon="cilPencil" />
                             </CButton>
@@ -149,10 +149,10 @@
                                 <option value="admin">admin</option>
                                 <option value="milter">milter</option>
                             </CFormSelect>
-                            <CButton size="sm" color="success" variant="outline" :disabled="saving" @click="saveEdit">
+                            <CButton v-c-tooltip="'Save'" size="sm" color="success" variant="outline" :disabled="saving" @click="saveEdit">
                                 <CIcon icon="cilCheck" />
                             </CButton>
-                            <CButton size="sm" color="secondary" variant="outline" :disabled="saving"
+                            <CButton v-c-tooltip="'Cancel'" size="sm" color="secondary" variant="outline" :disabled="saving"
                                 @click="cancelEdit">
                                 <CIcon icon="cilX" />
                             </CButton>
@@ -160,7 +160,7 @@
                         <div v-else-if="props.userInfo.type === 'admin'"
                             class="d-flex align-items-center justify-content-between gap-2">
                             <CBadge :color="typeBadgeColor(selectedUser?.type)">{{ selectedUser?.type }}</CBadge>
-                            <CButton size="sm" color="primary" variant="outline"
+                            <CButton v-c-tooltip="'Edit'" size="sm" color="primary" variant="outline"
                                 @click="startEdit('type', selectedUser.type)">
                                 <CIcon icon="cilPencil" />
                             </CButton>

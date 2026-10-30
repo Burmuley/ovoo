@@ -4,7 +4,7 @@
         :visible="!sidebarCollapsed || !isMobile" :narrow="sidebarCollapsed"
         @update:visible="(v) => { if (!v) sidebarCollapsed = true }">
         <CSidebarHeader class="border-bottom sidebar-header-toggle" :class="{ 'is-collapsed': sidebarCollapsed }">
-            <button class="sidebar-toggler-btn" @click="sidebarCollapsed = !sidebarCollapsed">
+            <button v-c-tooltip="'Toggle menu'" aria-label="Toggle menu" class="sidebar-toggler-btn" @click="sidebarCollapsed = !sidebarCollapsed">
                 <CIcon icon="cilMenu" size="lg" />
             </button>
             <span class="sidebar-brand-text fw-semibold ms-2" :class="{ 'is-collapsed': sidebarCollapsed }">
