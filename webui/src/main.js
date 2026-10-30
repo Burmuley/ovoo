@@ -7,7 +7,7 @@ import {
   CModalTitle, CNavItem, CNavLink, CPagination, CPaginationItem,
   CSidebar, CSidebarFooter, CSidebarHeader, CSidebarNav, CSpinner,
   CTable, CTableBody, CTableDataCell, CTableHead, CTableHeaderCell,
-  CTableRow, CToast, CToastBody
+  CTableRow, CToast, CToastBody, vctooltip
 } from '@coreui/vue'
 import CIcon from '@coreui/icons-vue'
 import {
@@ -39,5 +39,6 @@ const coreUiComponents = [
 ]
 coreUiComponents.forEach(c => app.component(c.name, c))
 app.component('CIcon', CIcon)
+app.directive('c-tooltip', vctooltip)
 
 app.mount('#app')

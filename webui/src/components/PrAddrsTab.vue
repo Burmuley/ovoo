@@ -12,7 +12,7 @@
                     <CIcon icon="cilSearch" />
                 </span>
                 <CFormInput v-model="searchQuery" placeholder="Search…" />
-                <CButton v-if="searchQuery" color="secondary" variant="outline" @click="searchQuery = ''">
+                <CButton v-if="searchQuery" v-c-tooltip="'Clear search'" color="secondary" variant="outline" @click="searchQuery = ''">
                     <CIcon icon="cilX" />
                 </CButton>
             </div>
